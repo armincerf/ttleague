@@ -1,25 +1,39 @@
 "use client";
 
-import { useSignIn } from "@clerk/nextjs";
+import { useSignIn, useSignUp } from "@clerk/nextjs";
 import { Button } from "@/components/ui/button";
 
 export default function GoogleSignInButton() {
-	const { signIn } = useSignIn();
+	const { signIn, isLoaded: isSignInLoaded } = useSignIn();
+	const { signUp, isLoaded: isSignUpLoaded } = useSignUp();
 
-	const handleGoogleSignIn = async () => {
+	const handleGoogleAuth = async () => {
+		if (!isSignInLoaded || !isSignUpLoaded) return;
+
 		try {
-			await signIn?.authenticateWithRedirect({
-				strategy: "oauth_google",
-				redirectUrl: "/sso-callback",
-				redirectUrlComplete: "/dashboard",
+			const result = await signUp.create({
+				strategy: "google_one_tap",
+				redirectUrl: "/sign-up",
 			});
+			console.log(result);
+
+			if (result.status === "complete") {
+				console.log("User created successfully");
+			} else {
+				// User already exists, proceed with sign in
+				await signIn.authenticateWithRedirect({
+					strategy: "oauth_google",
+					redirectUrl: "/sso-callback",
+					redirectUrlComplete: "/leaderboard",
+				});
+			}
 		} catch (err) {
 			console.error("Error:", JSON.stringify(err, null, 2));
 		}
 	};
 
 	return (
-		<Button onClick={handleGoogleSignIn} variant="outline" className="w-full">
+		<Button onClick={handleGoogleAuth} variant="outline" className="w-full">
 			<svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
 				<title>Sign in with Google</title>
 				<path

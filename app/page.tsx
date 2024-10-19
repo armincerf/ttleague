@@ -1,27 +1,36 @@
-import Logo from "@/components/Logo";
-import SignInButton from "@/components/SignInButton";
-import GoogleSignInButton from "@/components/GoogleSignInButton";
-import { Separator } from "@/components/ui/separator";
+"use client";
+import { ClerkProvider, SignedIn, useUser } from "@clerk/clerk-react";
+import { SignedOut, SignInButton } from "@clerk/nextjs";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
+function Redirecter() {
+	const router = useRouter();
+	const { user } = useUser();
+	//hmmmmmmmmm
+	useEffect(() => {
+		if (!user) {
+			setTimeout(() => {
+				if (!user) {
+					router.push("/sign-up");
+				}
+			}, 1000);
+		}
+	}, [router, user]);
+	return null;
+}
 
 export default function Home() {
 	return (
-		<main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
-			<div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-				<Logo className="mx-auto mb-8" />
-				<p className="text-gray-600 text-center mb-8">
-					Play in the Milton Keynes table tennis singles league held on Tuesday
-					nights at Kingston. Get matched with other players automatically or
-					choose your opponents yourself. See leaderboards and results and earn
-					the chance to win the coveted top 8 trophy!
-				</p>
-				<SignInButton />
-				<div className="flex items-center my-4">
-					<Separator className="flex-grow w-auto" />
-					<span className="px-4 text-gray-500 text-sm">Or</span>
-					<Separator className="flex-grow w-auto" />
-				</div>
-				<GoogleSignInButton />
-			</div>
-		</main>
+		<ClerkProvider
+			publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? ""}
+		>
+			<SignedOut>
+				<Redirecter />
+			</SignedOut>
+			<SignedIn>
+				<div>Signed In</div>
+			</SignedIn>
+		</ClerkProvider>
 	);
 }
