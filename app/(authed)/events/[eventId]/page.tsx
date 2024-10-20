@@ -115,7 +115,9 @@ export default async function EventPage({
 
 				<Card className="mt-8">
 					<CardHeader>
-						<CardTitle>Registered Players In Your Selected Level</CardTitle>
+						<CardTitle>
+							Registered Players {userId ? "In Your Selected Level" : ""}
+						</CardTitle>
 					</CardHeader>
 					<CardContent>
 						<ParticipantsTable eventId={event.id} />

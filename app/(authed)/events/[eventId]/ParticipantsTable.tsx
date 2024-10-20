@@ -1,7 +1,5 @@
 "use client";
 
-import { useQuery } from "@triplit/react";
-import { useSearchParams } from "next/navigation";
 import { client } from "@/lib/triplit";
 import {
 	Table,
@@ -19,25 +17,29 @@ import {
 
 interface ParticipantsTableProps {
 	eventId: string;
+	minLevel?: LeagueDivision;
+	maxLevel?: LeagueDivision;
 }
 
-export default function ParticipantsTable({ eventId }: ParticipantsTableProps) {
-	const searchParams = useSearchParams();
-	const minLevel = searchParams.get("minLevel") as LeagueDivision | null;
-	const maxLevel = searchParams.get("maxLevel") as LeagueDivision | null;
-
+async function fetchParticipants(eventId: string) {
 	const query = client
 		.query("event_registrations")
 		.where("event_id", "=", eventId)
 		.include("user")
 		.build();
 
-	const { results, fetching, error } = useQuery(client, query);
+	const results = await client.fetch(query);
+	return results;
+}
 
-	if (fetching) return <div>Loading...</div>;
-	if (error) return <div>Error: {error.message}</div>;
+export default async function ParticipantsTable({
+	eventId,
+	minLevel,
+	maxLevel,
+}: ParticipantsTableProps) {
+	const participants = await fetchParticipants(eventId);
 
-	const filterParticipants = (registrations: typeof results) => {
+	const filterParticipants = (registrations: typeof participants) => {
 		if (!minLevel || !maxLevel) return registrations;
 
 		return registrations?.filter((registration) => {
@@ -52,7 +54,7 @@ export default function ParticipantsTable({ eventId }: ParticipantsTableProps) {
 		});
 	};
 
-	const filteredParticipants = filterParticipants(results);
+	const filteredParticipants = filterParticipants(participants);
 
 	return (
 		<Table>

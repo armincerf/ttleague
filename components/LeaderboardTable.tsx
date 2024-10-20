@@ -46,6 +46,7 @@ import {
 	CompactPaginationNumbers,
 } from "./PaginationComponents";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useRouter } from "next/navigation";
 
 export type User = Entity<typeof schema, "users">;
 
@@ -99,6 +100,8 @@ const COLUMNS = 6;
 const ROWS = 10;
 
 export default function LeaderboardTable() {
+	const router = useRouter();
+
 	const [{ pageIndex, pageSize }, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
@@ -234,7 +237,11 @@ export default function LeaderboardTable() {
 					</TableHeader>
 					<TableBody>
 						{table.getRowModel().rows.map((row) => (
-							<TableRow key={row.id}>
+							<TableRow
+								key={row.id}
+								onClick={() => router.push(`/users/${row.original.id}`)}
+								className="cursor-pointer"
+							>
 								{row.getVisibleCells().map((cell) => (
 									<TableCell key={cell.id}>
 										{flexRender(cell.column.columnDef.cell, cell.getContext())}
