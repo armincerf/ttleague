@@ -2,16 +2,29 @@
 
 import { client } from "@/lib/triplit";
 import { useEffect } from "react";
-export default function TriplitClientInit({ token }: { token: string }) {
+import { useAuth } from "@clerk/clerk-react";
+import posthog from "posthog-js";
+
+export default function TriplitClientInit() {
+	const { getToken, isSignedIn, userId } = useAuth();
+
 	useEffect(() => {
-		console.log("TriplitClientInit", token);
-		if (client && client.connectionStatus !== "OPEN") {
-			console.log("Updating token", token, client.token);
-			client.disconnect();
-			client.updateToken(token);
-			console.log("Token updated", client.token);
-			client.connect();
+		async function initializeClient() {
+			const token = await getToken();
+			console.log("TriplitClientInit", token);
+			if (client && client.connectionStatus !== "OPEN" && token) {
+				console.log("Updating token", token, client.token);
+				client.disconnect();
+				client.updateToken(token);
+				if (isSignedIn && userId) {
+					posthog.identify(userId);
+				}
+				console.log("Token updated", client.token);
+				client.connect();
+			}
 		}
-	}, [token]);
+		initializeClient();
+	}, [getToken]);
+
 	return null;
 }

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import { headers } from "next/headers";
 import TriplitClientInit from "@/components/TriplitClientInit";
 import TopBar from "@/components/TopBar";
 import BottomNav from "@/components/BottomNav";
@@ -11,9 +10,7 @@ export const metadata: Metadata = {
 };
 
 async function TriplitInit() {
-	const headersList = await headers();
-	const token = headersList.get("x-auth-token");
-	return <TriplitClientInit token={token ?? ""} />;
+	return <TriplitClientInit />;
 }
 
 export default function RootLayout({

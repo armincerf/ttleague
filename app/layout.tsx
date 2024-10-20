@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
+import { CSPostHogProvider } from './providers'; // Import the PostHog provider
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -35,8 +36,10 @@ function RootLayout({
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
-				{children}
-				<Toaster />
+				<CSPostHogProvider>
+					{children}
+					<Toaster />
+				</CSPostHogProvider>
 			</body>
 		</html>
 	);

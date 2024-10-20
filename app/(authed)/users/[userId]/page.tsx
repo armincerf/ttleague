@@ -12,7 +12,7 @@ async function fetchUser(userId: string) {
 
 interface UserPageProps {
   params: Promise<{ userId: string }>
-}
+} 
 
 export default async function UserPage({ params }: UserPageProps) {
   try {
