@@ -462,8 +462,18 @@ export default function Onboarding() {
 						selector={(state) => [state.canSubmit, state.isSubmitting]}
 					>
 						{([canSubmit, isSubmitting]) => (
-							<Button type="submit" disabled={!canSubmit}>
-								{isSubmitting ? "Submitting..." : "Submit"}
+							<Button
+								type="submit"
+								disabled={!canSubmit}
+								data-umami-event="Submit Onboarding"
+								data-umami-event-league-division={form.getFieldValue(
+									"currentLeagueDivision",
+								)}
+								data-umami-event-table-tennis-england-id={form.getFieldValue(
+									"tableTennisEnglandId",
+								)}
+							>
+								Submit
 							</Button>
 						)}
 					</form.Subscribe>

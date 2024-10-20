@@ -26,6 +26,11 @@ function RootLayout({
 					name="viewport"
 					content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
 				/>
+				<script
+					defer
+					src="/bunseki.js"
+					data-website-id="a8747a05-e034-47ec-a1fd-839f69723b03"
+				/>
 			</head>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}

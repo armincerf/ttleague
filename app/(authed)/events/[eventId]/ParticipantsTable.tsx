@@ -23,8 +23,8 @@ interface ParticipantsTableProps {
 
 export default function ParticipantsTable({ eventId }: ParticipantsTableProps) {
 	const searchParams = useSearchParams();
-	const minLevel = searchParams.get("minLevel") as LeagueDivision;
-	const maxLevel = searchParams.get("maxLevel") as LeagueDivision;
+	const minLevel = searchParams.get("minLevel") as LeagueDivision | null;
+	const maxLevel = searchParams.get("maxLevel") as LeagueDivision | null;
 
 	const query = client
 		.query("event_registrations")
@@ -37,14 +37,22 @@ export default function ParticipantsTable({ eventId }: ParticipantsTableProps) {
 	if (fetching) return <div>Loading...</div>;
 	if (error) return <div>Error: {error.message}</div>;
 
-	const filteredParticipants = results?.filter((registration) => {
-		if (!registration.user?.current_division) return false;
-		const currentDivision = getDivision(registration.user.current_division);
-		const minIndex = leagueDivisionsSchema.options.indexOf(minLevel);
-		const maxIndex = leagueDivisionsSchema.options.indexOf(maxLevel);
-		const currentIndex = leagueDivisionsSchema.options.indexOf(currentDivision);
-		return currentIndex >= minIndex && currentIndex <= maxIndex;
-	});
+	const filterParticipants = (registrations: typeof results) => {
+		if (!minLevel || !maxLevel) return registrations;
+
+		return registrations?.filter((registration) => {
+			const currentDivision = registration.user?.current_division;
+			if (!currentDivision) return true;
+
+			const division = getDivision(currentDivision);
+			const minIndex = leagueDivisionsSchema.options.indexOf(minLevel);
+			const maxIndex = leagueDivisionsSchema.options.indexOf(maxLevel);
+			const currentIndex = leagueDivisionsSchema.options.indexOf(division);
+			return currentIndex >= minIndex && currentIndex <= maxIndex;
+		});
+	};
+
+	const filteredParticipants = filterParticipants(results);
 
 	return (
 		<Table>
@@ -56,16 +64,19 @@ export default function ParticipantsTable({ eventId }: ParticipantsTableProps) {
 				</TableRow>
 			</TableHeader>
 			<TableBody>
-				{filteredParticipants?.map((registration) => {
-					if (!registration.user) return null;
-					return (
-						<TableRow key={registration.id}>
-							<TableCell>{`${registration.user.first_name} ${registration.user.last_name}`}</TableCell>
-							<TableCell>{registration.user.current_division}</TableCell>
-							<TableCell>{registration.user.rating}</TableCell>
-						</TableRow>
-					);
-				})}
+				{filteredParticipants?.map((registration) => (
+					<TableRow key={registration.id}>
+						<TableCell>
+							{registration.user
+								? `${registration.user.first_name} ${registration.user.last_name}`
+								: "Unknown User"}
+						</TableCell>
+						<TableCell>
+							{registration.user?.current_division ?? "N/A"}
+						</TableCell>
+						<TableCell>{registration.user?.rating ?? "N/A"}</TableCell>
+					</TableRow>
+				))}
 			</TableBody>
 		</Table>
 	);
