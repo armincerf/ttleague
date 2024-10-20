@@ -1,4 +1,6 @@
-export const leagueDivisions = [
+import { z } from "zod";
+
+export const leagueDivisionsSchema = z.enum([
 	"MKTTL - Premier",
 	"MKTTL - Division 1",
 	"MKTTL - Division 2",
@@ -8,17 +10,24 @@ export const leagueDivisions = [
 	"MKTTL - Division 6",
 	"MKTTL - Division 7",
 	"Not in a league",
-] as const;
+]);
+
+export type LeagueDivision = z.infer<typeof leagueDivisionsSchema>;
 
 const baseRating = 1000;
 
-export function initialRating(division?: (typeof leagueDivisions)[number]) {
+export function initialRating(division?: LeagueDivision) {
 	if (!division) {
 		return baseRating;
 	}
-	const index = leagueDivisions.indexOf(division);
-	if (index === -1) {
-		return baseRating;
-	}
+	const index = leagueDivisionsSchema.options.indexOf(division);
 	return baseRating - index * 100;
+}
+
+export function getDivision(input?: string): LeagueDivision {
+	const parsedDivision = leagueDivisionsSchema.safeParse(input);
+	if (!parsedDivision.success) {
+		return "Not in a league";
+	}
+	return parsedDivision.data;
 }

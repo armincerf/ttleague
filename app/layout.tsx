@@ -20,7 +20,7 @@ function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<html className="max-h-[100dvh]" lang="en">
+		<html className="max-h-[100dvh] overflow-hidden" lang="en">
 			<head>
 				<meta
 					name="viewport"

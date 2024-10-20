@@ -134,12 +134,14 @@ export const schema = {
 			created_at: S.Date(),
 			minimum_opponent_level: S.Optional(S.String()),
 			max_opponent_level: S.Optional(S.String()),
+			confidence_level: S.Number(),
 			user: S.RelationById("users", "$user_id"),
 			event: S.RelationById("events", "$event_id"),
 		}),
 		permissions: {
 			admin: adminFullAccess,
 			user: {
+				read: { filter: [true] },
 				insert: {
 					filter: [["user_id", "=", "$role.userId"]],
 				},

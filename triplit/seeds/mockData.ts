@@ -1,6 +1,7 @@
 import type { BulkInsert } from "@triplit/client";
 import { faker } from "@faker-js/faker";
 import type { schema } from "../schema";
+import { getDivision } from "@/lib/ratingSystem";
 
 export default function seed(): BulkInsert<typeof schema> {
 	const users = generateUsers(100);
@@ -11,7 +12,23 @@ export default function seed(): BulkInsert<typeof schema> {
 	const games = generateGames(600, matches, users);
 
 	return {
-		users,
+		users: [
+			...users,
+			{
+				id: "user_2ni5mdUIelzVgDHPFUKsnCantWm",
+				email: "armincerf@gmail.com",
+				first_name: "Alex",
+				last_name: "Davis",
+				gender: "male",
+				table_tennis_england_id: "123456",
+				current_division: "MKTTL - Division 5",
+				rating: 69420,
+				matches_played: 1000,
+				wins: 694,
+				losses: 420,
+				no_shows: 0,
+			},
+		],
 		clubs,
 		events,
 		event_registrations: eventRegistrations,
@@ -52,10 +69,15 @@ function generateUsers(count: number) {
 				})
 				.toString(),
 			current_division: faker.helpers.arrayElement([
-				"A",
-				"B",
-				"C",
-				"D",
+				"MKTTL - Premier",
+				"MKTTL - Division 1",
+				"MKTTL - Division 2",
+				"MKTTL - Division 3",
+				"MKTTL - Division 4",
+				"MKTTL - Division 5",
+				"MKTTL - Division 6",
+				"MKTTL - Division 7",
+				"Not in a league",
 			] as const),
 			rating,
 			matches_played,
@@ -114,6 +136,7 @@ function generateEventRegistrations(
 		id: faker.string.uuid(),
 		user_id: faker.helpers.arrayElement(users).id,
 		event_id: faker.helpers.arrayElement(events).id,
+		confidence_level: faker.number.int({ min: 1, max: 100 }),
 		created_at: faker.date.past(),
 		minimum_opponent_level: faker.helpers.arrayElement(["A", "B", "C", "D"]),
 	}));

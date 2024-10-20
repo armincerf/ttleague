@@ -1,7 +1,5 @@
 import Logo from "@/components/Logo";
 import SignInButton from "@/components/SignInButton";
-import GoogleSignInButton from "@/components/GoogleSignInButton";
-import { Separator } from "@/components/ui/separator";
 import { auth } from "@clerk/nextjs/server";
 
 export default function Home() {

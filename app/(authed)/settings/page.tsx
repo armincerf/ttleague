@@ -1,8 +1,10 @@
+import PageLayout from "@/components/PageLayout";
+
 export default function SettingsPage() {
 	return (
-		<div>
+		<PageLayout>
 			<h1 className="text-3xl font-bold mb-6">Settings</h1>
 			<p>Settings page content coming soon...</p>
-		</div>
+		</PageLayout>
 	);
 }

@@ -1,5 +1,5 @@
 import { schema } from "@/triplit/schema";
-import { TriplitClient } from "@triplit/client";
+import { HttpClient, TriplitClient } from "@triplit/client";
 
 console.log(
 	"NEXT_PUBLIC_TRIPLIT_SERVER_URL",
@@ -21,8 +21,13 @@ export async function checkAccountExists(email: string) {
 		throw new Error("NEXT_PUBLIC_TRIPLIT_TOKEN is not defined");
 	}
 
-	const res = await client.http.fetchOne(
-		client.query("users").where("email", "=", email).build(),
+	const httpClient = new HttpClient({
+		serverUrl: process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
+		token: process.env.NEXT_PUBLIC_TRIPLIT_TOKEN,
+	});
+
+	const res = await httpClient.fetchOne(
+		httpClient.query("users").where("email", "=", email).build(),
 	);
 	return res !== null;
 }

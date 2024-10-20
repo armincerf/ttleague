@@ -43,13 +43,17 @@ import { useDropzone } from "react-dropzone";
 import { FileIcon, UploadIcon } from "lucide-react";
 import { z } from "zod";
 import { checkAccountExists, client } from "@/lib/triplit";
-import { initialRating, leagueDivisions } from "@/lib/ratingSystem";
+import {
+	getDivision,
+	initialRating,
+	leagueDivisionsSchema,
+} from "@/lib/ratingSystem";
 
 const schema = z.object({
 	email: z.string().email(),
 	firstName: z.string().min(1),
 	lastName: z.string().min(1),
-	currentLeagueDivision: z.enum(leagueDivisions).optional(),
+	currentLeagueDivision: leagueDivisionsSchema.optional(),
 	tableTennisEnglandId: z.string().regex(/^\d{6}$/, "Must be a 6-digit number"),
 	profilePicture: z.instanceof(File).optional(),
 });
@@ -84,10 +88,9 @@ export default function Onboarding() {
 				"",
 			firstName: searchParams.get("firstName") || user?.firstName || "",
 			lastName: searchParams.get("lastName") || user?.lastName || "",
-			currentLeagueDivision:
-				(searchParams.get(
-					"currentLeagueDivision",
-				) as (typeof leagueDivisions)[number]) || undefined,
+			currentLeagueDivision: getDivision(
+				searchParams.get("currentLeagueDivision") || "",
+			),
 			tableTennisEnglandId: searchParams.get("tableTennisEnglandId") || "",
 		} as FormValues,
 		onSubmit: async ({ value }) => {
@@ -210,7 +213,7 @@ export default function Onboarding() {
 	}
 
 	return (
-		<Card className="w-full max-w-[450px] mx-auto mt-8 px-4 sm:px-0">
+		<Card className="w-[90vw] sm:w-full max-w-[450px] mx-auto mt-8 px-4 sm:px-0">
 			<CardHeader>
 				<CardTitle>Onboarding</CardTitle>
 				<CardDescription>Complete your profile to get started</CardDescription>
@@ -318,9 +321,7 @@ export default function Onboarding() {
 									<Select
 										value={field.state.value}
 										onValueChange={(value) => {
-											field.handleChange(
-												value as (typeof leagueDivisions)[number],
-											);
+											field.handleChange(getDivision(value));
 											updateUrlWithFormState("currentLeagueDivision", value);
 										}}
 									>
@@ -328,7 +329,7 @@ export default function Onboarding() {
 											<SelectValue placeholder="Select division" />
 										</SelectTrigger>
 										<SelectContent>
-											{leagueDivisions.map((division) => (
+											{leagueDivisionsSchema.options.map((division) => (
 												<SelectItem key={division} value={division}>
 													{division}
 												</SelectItem>

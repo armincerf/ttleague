@@ -28,6 +28,7 @@ export default function SignUpButton() {
 
 		try {
 			const accountExists = await checkAccountExists(email);
+			console.log("accountExists", accountExists);
 			setUserExists(accountExists);
 			if (!accountExists) {
 				await handleSignUp();
@@ -169,6 +170,22 @@ export default function SignUpButton() {
 								validation.complexity &&
 								Object.keys(validation.complexity).length > 0
 							) {
+								if (validation.complexity.max_length) {
+									toast({
+										title: "Password is too long",
+										description: "Password must be between 8 and 64 characters",
+										variant: "destructive",
+									});
+									return;
+								}
+								if (validation.complexity.min_length) {
+									toast({
+										title: "Password is too short",
+										description: "Password must be between 8 and 64 characters",
+										variant: "destructive",
+									});
+									return;
+								}
 								console.error("Password is too weak", validation);
 								throw new Error("Password is too weak");
 							}
