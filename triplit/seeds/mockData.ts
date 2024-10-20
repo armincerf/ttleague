@@ -15,7 +15,7 @@ export default function seed(): BulkInsert<typeof schema> {
 		users: [
 			...users,
 			{
-				id: "user_2ni5mdUIelzVgDHPFUKsnCantWm",
+				id: "1",
 				email: "armincerf@gmail.com",
 				first_name: "Alex",
 				last_name: "Davis",
@@ -38,7 +38,7 @@ export default function seed(): BulkInsert<typeof schema> {
 }
 
 function generateUsers(count: number) {
-	return Array.from({ length: count }, () => {
+	return Array.from({ length: count }, (_, index) => {
 		const matches_played = faker.number.int({ min: 10, max: 100 });
 		const wins = faker.number.int({ min: 0, max: matches_played });
 		const losses = matches_played - wins;
@@ -56,7 +56,7 @@ function generateUsers(count: number) {
 		);
 
 		return {
-			id: faker.string.uuid(),
+			id: (index + 2).toString(), // Start from 2 to avoid conflict with the hardcoded user
 			email: faker.internet.email(),
 			profile_image_url: faker.image.avatar(),
 			first_name: faker.person.firstName(),
@@ -89,8 +89,8 @@ function generateUsers(count: number) {
 }
 
 function generateClubs(count: number, users: ReturnType<typeof generateUsers>) {
-	return Array.from({ length: count }, () => ({
-		id: faker.string.uuid(),
+	return Array.from({ length: count }, (_, index) => ({
+		id: (index + 1).toString(),
 		name: faker.company.name(),
 		tables: faker.number.int({ min: 1, max: 10 }),
 		admins: new Set(
@@ -107,13 +107,16 @@ function generateEvents(
 	count: number,
 	clubs: ReturnType<typeof generateClubs>,
 ) {
-	return Array.from({ length: count }, () => ({
-		id: faker.string.uuid(),
+	return Array.from({ length: count }, (_, index) => ({
+		id: (index + 1).toString(),
 		name: faker.lorem.words({ min: 2, max: 5 }),
 		description: faker.lorem.sentence(),
 		start_time: faker.date.future(),
 		club_id: faker.helpers.arrayElement(clubs).id,
-		best_of: faker.helpers.arrayElement([3, 5, 7]),
+		best_of: faker.helpers.arrayElement([5, 7]),
+		end_time: faker.date.future(),
+		created_at: faker.date.past(),
+		updated_at: faker.date.recent(),
 		tables: new Set(
 			faker.helpers.arrayElements([1, 2, 3, 4, 5], { min: 1, max: 5 }),
 		),
@@ -132,8 +135,8 @@ function generateEventRegistrations(
 	users: ReturnType<typeof generateUsers>,
 	events: ReturnType<typeof generateEvents>,
 ) {
-	return Array.from({ length: count }, () => ({
-		id: faker.string.uuid(),
+	return Array.from({ length: count }, (_, index) => ({
+		id: (index + 1).toString(),
 		user_id: faker.helpers.arrayElement(users).id,
 		event_id: faker.helpers.arrayElement(events).id,
 		confidence_level: faker.number.int({ min: 1, max: 100 }),
@@ -147,11 +150,11 @@ function generateMatches(
 	users: ReturnType<typeof generateUsers>,
 	events: ReturnType<typeof generateEvents>,
 ) {
-	return Array.from({ length: count }, () => {
+	return Array.from({ length: count }, (_, index) => {
 		const [player1, player2] = faker.helpers.arrayElements(users, 2);
 		const event = faker.helpers.arrayElement(events);
 		return {
-			id: faker.string.uuid(),
+			id: (index + 1).toString(),
 			player_1: player1.id,
 			player_2: player2.id,
 			umpire: faker.helpers.maybe(() => faker.helpers.arrayElement(users).id),
@@ -178,10 +181,10 @@ function generateGames(
 	matches: ReturnType<typeof generateMatches>,
 	users: ReturnType<typeof generateUsers>,
 ) {
-	return Array.from({ length: count }, () => {
+	return Array.from({ length: count }, (_, index) => {
 		const match = faker.helpers.arrayElement(matches);
 		return {
-			id: faker.string.uuid(),
+			id: (index + 1).toString(),
 			match_id: match.id,
 			player_1_score: faker.number.int({ min: 0, max: 11 }),
 			player_2_score: faker.number.int({ min: 0, max: 11 }),

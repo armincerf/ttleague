@@ -102,12 +102,16 @@ export const schema = {
 		schema: S.Schema({
 			id: S.Id(),
 			name: S.String(),
-			description: S.String(),
+			description: S.Optional(S.String()),
 			start_time: S.Date(),
+			end_time: S.Date(),
+			created_at: S.Date(),
+			updated_at: S.Date(),
 			club_id: S.Id(),
 			club: S.RelationById("clubs", "$club_id"),
 			best_of: S.Number(),
 			tables: S.Set(S.Number()),
+			capacity: S.Optional(S.Number()),
 			status: S.String({
 				enum: [
 					"draft",
