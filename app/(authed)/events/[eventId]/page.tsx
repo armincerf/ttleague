@@ -129,7 +129,7 @@ export default async function EventPage({
 						defaultMaxLevel={sortedLeagueDivisions[defaultMaxLevel]}
 					/>
 				) : (
-					<Card>
+					<Card className="mt-8">
 						<CardContent className="pt-6">
 							<p className="mb-4">Sign in to register for this event.</p>
 							<Button asChild>

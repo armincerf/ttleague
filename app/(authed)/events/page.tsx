@@ -142,16 +142,20 @@ export default async function EventsPage() {
 			<h1 className="text-3xl font-bold mb-6">Events</h1>
 
 			<h2 className="text-2xl font-semibold mb-4">Upcoming Events</h2>
-			<div className="space-y-6 mb-8">
+			<div className="flex flex-wrap gap-6 mb-8">
 				{futureEvents.map((event) => (
-					<EventCard key={event.id} event={event} />
+					<div key={event.id} className="w-full md:w-[calc(50%-12px)]">
+						<EventCard event={event} />
+					</div>
 				))}
 			</div>
 
 			<h2 className="text-2xl font-semibold mb-4">Past Events</h2>
-			<div className="space-y-6 pb-24">
+			<div className="flex flex-wrap gap-6 pb-24">
 				{pastEvents.map((event) => (
-					<EventCard key={event.id} event={event} />
+					<div key={event.id} className="w-full md:w-[calc(50%-12px)]">
+						<EventCard event={event} />
+					</div>
 				))}
 			</div>
 		</PageLayout>

@@ -11,6 +11,11 @@ export default clerkMiddleware(async (auth, request) => {
 	const path = new URL(request.url).pathname;
 	const { userId } = auth();
 
+	// Redirect from root to /leaderboard
+	if (path === "/") {
+		return NextResponse.redirect(new URL("/leaderboard", request.url));
+	}
+
 	if (isProtectedRoute(path)) {
 		if (!userId) {
 			return NextResponse.redirect(new URL("/sign-up", request.url));

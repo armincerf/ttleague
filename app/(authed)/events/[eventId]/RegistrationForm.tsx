@@ -107,7 +107,7 @@ export default function RegistrationForm({
 	}
 
 	return (
-		<Card className="mt-6">
+		<Card className="mt-8">
 			<CardHeader>
 				<CardTitle>Register for Event</CardTitle>
 			</CardHeader>
