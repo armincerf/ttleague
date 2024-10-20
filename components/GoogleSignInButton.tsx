@@ -12,7 +12,7 @@ export default function GoogleSignInButton() {
 
 		try {
 			const result = await signUp.create({
-				strategy: "google_one_tap",
+				strategy: "oauth_google",
 				redirectUrl: "/sign-up",
 			});
 			console.log(result);

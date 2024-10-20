@@ -12,6 +12,11 @@ export const roles: Roles = {
 			sub: "$userId",
 		},
 	},
+	anonymous: {
+		match: {
+			"x-triplit-token-type": "anon",
+		},
+	},
 };
 
 const adminFullAccess = {
@@ -28,12 +33,16 @@ const userReadOnly = {
 const defaultPermissions = {
 	admin: adminFullAccess,
 	user: userReadOnly,
+	anonymous: {
+		read: { filter: [true] },
+	},
 };
 
 export const schema = {
 	users: {
 		schema: S.Schema({
 			id: S.Id(),
+			table_tennis_england_id: S.String(),
 			email: S.String(),
 			profile_image_url: S.Optional(S.String()),
 			first_name: S.String(),
@@ -50,8 +59,14 @@ export const schema = {
 			admin: adminFullAccess,
 			user: {
 				...userReadOnly,
+				insert: {
+					filter: [["id", "=", "$role.userId"]],
+				},
 				update: { filter: [["id", "=", "$role.userId"]] },
 				delete: { filter: [["id", "=", "$role.userId"]] },
+			},
+			anonymous: {
+				read: { filter: [true] },
 			},
 		},
 	},

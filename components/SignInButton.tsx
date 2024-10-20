@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Separator } from "./ui/separator";
+import { checkAccountExists } from "@/lib/triplit";
 
 export default function SignUpButton() {
+	const { user } = useUser();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [code, setCode] = useState("");
@@ -19,56 +20,58 @@ export default function SignUpButton() {
 	const { signIn, setActive: setActiveSignIn } = useSignIn();
 	const router = useRouter();
 	const { toast } = useToast();
+	console.log("user", user);
 
 	const handleInitialSubmit = async () => {
 		if (!email) return;
-
 		setIsLoading(true);
 
 		try {
-			if (!signUp) {
-				console.error("SignUp is undefined");
-				return;
+			const accountExists = await checkAccountExists(email);
+			setUserExists(accountExists);
+			if (!accountExists) {
+				await handleSignUp();
 			}
-
-			// Start the sign-up process
-			const signUpAttempt = await signUp.create({
-				emailAddress: email,
-			});
-
-			// Prepare the email verification
-			const emailLinkFlow = await signUpAttempt.createEmailLinkFlow();
-
-			// Send the email verification
-			await emailLinkFlow.startEmailLinkFlow({
-				redirectUrl: `${window.location.origin}/onboarding`,
-			});
-
-			toast({
-				title: "Email sent",
-				description: "Please check your email for the verification link",
-			});
 		} catch (err) {
-			if (err instanceof Error && "status" in err) {
-				if (err.status === 422) {
-					setUserExists(true);
-				}
-			} else {
-				console.error("Error:", JSON.stringify(err, null, 2));
-				toast({
-					title: "Error",
-					description: "An error occurred. Please try again.",
-					variant: "destructive",
-				});
-			}
+			console.error("Error:", JSON.stringify(err, null, 2));
+			toast({
+				title: "Error",
+				description: "An error occurred. Please try again.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsLoading(false);
 		}
 	};
 
+	const handleSignUp = async () => {
+		if (!signUp) {
+			console.error("SignUp is undefined");
+			return;
+		}
+
+		try {
+			await signUp.create({
+				emailAddress: email,
+			});
+			await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+			setIsCodeSent(true);
+			toast({
+				title: "Verification code sent",
+				description: "Please check your email for the verification code",
+			});
+		} catch (err) {
+			console.error("Error:", JSON.stringify(err, null, 2));
+			toast({
+				title: "Error",
+				description: "Failed to send verification code.",
+				variant: "destructive",
+			});
+		}
+	};
+
 	const handleSignIn = async () => {
 		if (!email || !password) return;
-
 		setIsLoading(true);
 
 		try {
@@ -97,8 +100,7 @@ export default function SignUpButton() {
 			console.error("Error:", JSON.stringify(err, null, 2));
 			toast({
 				title: "Sign-in failed",
-				description:
-					"Please check your credentials and try again, use the Magic Link if you can't remember your password",
+				description: "Please check your credentials and try again",
 				variant: "destructive",
 			});
 		} finally {
@@ -108,7 +110,6 @@ export default function SignUpButton() {
 
 	const handleEmailCode = async () => {
 		if (!email) return;
-
 		setIsLoading(true);
 
 		try {
@@ -131,8 +132,7 @@ export default function SignUpButton() {
 			console.error("Error:", JSON.stringify(err, null, 2));
 			toast({
 				title: "Error",
-				description:
-					"Failed to send verification code. This error has been reported to the Admin.",
+				description: "Failed to send verification code.",
 				variant: "destructive",
 			});
 		} finally {
@@ -140,38 +140,98 @@ export default function SignUpButton() {
 		}
 	};
 
-	async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-		event.preventDefault();
-		if (userExists) {
-			if (isCodeSent && code) {
+	const handleVerification = async () => {
+		setIsLoading(true);
+		try {
+			if (userExists) {
+				if (!signIn) {
+					console.error("SignIn is undefined");
+					return;
+				}
+				const attempt = await signIn.attemptFirstFactor({
+					strategy: "email_code",
+					code,
+				});
+				console.log("attempt", attempt);
+				if (attempt.status === "complete") {
+					await setActiveSignIn({ session: attempt.createdSessionId });
+					router.push("/leaderboard");
+				}
+			} else {
+				if (!signUp) {
+					console.error("SignUp is undefined");
+					return;
+				}
 				try {
-					const attempt = await signIn?.attemptFirstFactor({
-						strategy: "email_code",
+					await signUp.validatePassword(password, {
+						onValidation: (validation) => {
+							if (
+								validation.complexity &&
+								Object.keys(validation.complexity).length > 0
+							) {
+								console.error("Password is too weak", validation);
+								throw new Error("Password is too weak");
+							}
+						},
+					});
+					await signUp.update({
+						password,
+					});
+					const attempt = await signUp.attemptEmailAddressVerification({
 						code,
 					});
-					console.log("attempt", attempt, signIn);
-					if (attempt && attempt.status === "complete") {
-						await setActiveSignIn?.({ session: attempt.createdSessionId });
-						router.push("/leaderboard");
+					console.log("attempt", attempt);
+					if (attempt.status === "complete") {
+						await setActiveSignUp({ session: attempt.createdSessionId });
+						router.push("/onboarding");
 					}
 				} catch (err) {
-					if (JSON.stringify(err).includes("session_exists")) {
-						router.push("/leaderboard");
+					const errStr =
+						err instanceof Error
+							? err.message.includes("weak")
+								? err.message
+								: JSON.stringify(err, null, 2)
+							: JSON.stringify(err, null, 2);
+					console.error("Error is:", JSON.stringify(err));
+					if (JSON.stringify(err).includes("pwned")) {
+						toast({
+							title: "Password is too weak",
+							description: "Please try again",
+							variant: "destructive",
+						});
+						return;
 					}
-					console.error("Error:", JSON.stringify(err, null, 2));
+					if (errStr.includes("too weak")) {
+						toast({
+							title: "Password is too weak",
+							description: "Please try again",
+							variant: "destructive",
+						});
+						return;
+					}
 					toast({
-						title: "Sign-in failed",
-						description: "Please try again",
+						title: "Verification failed",
+						description:
+							"Please try again or contact support - make sure your password is strong",
 						variant: "destructive",
 					});
 				}
-			} else if (password) {
-				handleSignIn();
 			}
-		} else {
-			handleInitialSubmit();
+		} finally {
+			setIsLoading(false);
 		}
-	}
+	};
+
+	const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		if (!isCodeSent) {
+			handleInitialSubmit();
+		} else if (userExists && password) {
+			handleSignIn();
+		} else {
+			handleVerification();
+		}
+	};
 
 	return (
 		<form onSubmit={handleSubmit} className="space-y-4">
@@ -183,49 +243,49 @@ export default function SignUpButton() {
 				autoComplete="email"
 				className="w-full"
 			/>
-			{!userExists && (
-				<Button type="submit" className="w-full" disabled={isLoading}>
-					{isLoading ? "Processing..." : "Continue"}
-				</Button>
-			)}
-			{userExists && (
+			{userExists && !isCodeSent && (
 				<>
-					{isCodeSent ? (
-						<Input
-							type="text"
-							value={code}
-							onChange={(e) => setCode(e.target.value)}
-							placeholder="Enter verification code"
-							className="w-full"
-						/>
-					) : (
-						<Input
-							type="password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							autoComplete="current-password"
-							placeholder="Enter your password"
-							className="w-full"
-						/>
-					)}
-					<Button type="submit" className="w-full" disabled={isLoading}>
-						{isLoading ? "Processing..." : userExists ? "Sign In" : "Continue"}
-					</Button>
-					<div className="flex items-center my-4">
-						<Separator className="flex-grow w-auto" />
-						<span className="px-4 text-gray-500 text-sm">Or</span>
-						<Separator className="flex-grow w-auto" />
-					</div>
-					<Button
-						type="button"
-						onClick={handleEmailCode}
+					<Input
+						type="password"
+						value={password}
+						onChange={(e) => setPassword(e.target.value)}
+						autoComplete="current-password"
+						placeholder="Enter your password"
 						className="w-full"
-						disabled={isLoading}
-					>
-						Send Verification Code
+					/>
+					<Button type="button" onClick={handleEmailCode} className="w-full">
+						Send Code Instead
 					</Button>
 				</>
 			)}
+			{isCodeSent && (
+				<Input
+					type="text"
+					value={code}
+					onChange={(e) => setCode(e.target.value)}
+					placeholder="Enter verification code"
+					className="w-full"
+				/>
+			)}
+			{!userExists && isCodeSent && (
+				<Input
+					type="password"
+					value={password}
+					onChange={(e) => setPassword(e.target.value)}
+					placeholder="Create a password"
+					autoComplete="new-password"
+					className="w-full"
+				/>
+			)}
+			<Button type="submit" className="w-full" disabled={isLoading}>
+				{isLoading
+					? "Processing..."
+					: !isCodeSent
+						? "Continue"
+						: userExists
+							? "Log In"
+							: "Create Account"}
+			</Button>
 		</form>
 	);
 }

@@ -45,6 +45,12 @@ function generateUsers(count: number) {
 			first_name: faker.person.firstName(),
 			last_name: faker.person.lastName(),
 			gender: faker.helpers.arrayElement(["male", "female"] as const),
+			table_tennis_england_id: faker.number
+				.int({
+					min: 100000,
+					max: 999999,
+				})
+				.toString(),
 			current_division: faker.helpers.arrayElement([
 				"A",
 				"B",

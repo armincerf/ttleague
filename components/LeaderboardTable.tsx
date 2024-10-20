@@ -45,6 +45,7 @@ import {
 	PaginationNumbers,
 	CompactPaginationNumbers,
 } from "./PaginationComponents";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export type User = Entity<typeof schema, "users">;
 
@@ -94,6 +95,9 @@ const columns = [
 	}),
 ];
 
+const COLUMNS = 6;
+const ROWS = 10;
+
 export default function LeaderboardTable() {
 	const [{ pageIndex, pageSize }, setPagination] = useState({
 		pageIndex: 0,
@@ -114,6 +118,7 @@ export default function LeaderboardTable() {
 			"last_name",
 			"gender",
 			"matches_played",
+			"table_tennis_england_id",
 			"wins",
 			"losses",
 			"no_shows",
@@ -180,6 +185,15 @@ export default function LeaderboardTable() {
 			null,
 			totalPages - 1,
 		];
+	}
+
+	// Show skeleton if fetching or if there are no results yet
+	if (fetching || !results || results.length === 0) {
+		return <LeaderboardSkeleton columns={COLUMNS} rows={ROWS} />;
+	}
+
+	if (error) {
+		return <div>Error loading leaderboard: {error.message}</div>;
 	}
 
 	return (
@@ -266,6 +280,77 @@ export default function LeaderboardTable() {
 						</PaginationItem>
 					</PaginationContent>
 				</Pagination>
+			</div>
+		</>
+	);
+}
+
+interface SkeletonProps {
+	className?: string;
+}
+
+function TableHeaderSkeleton({ className }: SkeletonProps) {
+	return <Skeleton className={`h-6 w-full ${className}`} />;
+}
+
+function TableCellSkeleton({ className }: SkeletonProps) {
+	return <Skeleton className={`h-6 w-full ${className}`} />;
+}
+
+interface LeaderboardSkeletonProps {
+	columns: number;
+	rows: number;
+}
+
+function LeaderboardSkeleton({ columns, rows }: LeaderboardSkeletonProps) {
+	return (
+		<>
+			<div className="flex justify-between mb-4 gap-4">
+				<Skeleton className="h-10 w-[200px]" />
+				<Skeleton className="h-10 w-[180px]" />
+			</div>
+			<div className="flex-grow overflow-auto">
+				<Table>
+					<TableHeader>
+						<TableRow>
+							{Array.from({ length: columns }).map((_, i) => (
+								<TableHead
+									key={`header-${
+										// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+										i
+									}`}
+								>
+									<TableHeaderSkeleton />
+								</TableHead>
+							))}
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{Array.from({ length: rows }).map((_, rowIndex) => (
+							<TableRow
+								key={`row-${
+									// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+									rowIndex
+								}`}
+							>
+								{Array.from({ length: columns }).map((_, colIndex) => (
+									<TableCell
+										key={`cell-${rowIndex}-${
+											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+											colIndex
+										}`}
+									>
+										<TableCellSkeleton />
+									</TableCell>
+								))}
+							</TableRow>
+						))}
+					</TableBody>
+				</Table>
+			</div>
+			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:space-x-4 pb-6">
+				<Skeleton className="h-6 w-[200px]" />
+				<Skeleton className="h-10 w-full md:w-[300px]" />
 			</div>
 		</>
 	);
