@@ -1,10 +1,13 @@
 import LeaderboardTable from "@/components/LeaderboardTable";
+import PageLayout from "@/components/PageLayout";
 
-export default function LeaderboardPage() {
+function LeaderboardPage() {
 	return (
-		<div className="h-[calc(100dvh-128px)] flex flex-col px-4 py-8 pb-0">
+		<PageLayout>
 			<h1 className="text-3xl font-bold mb-6">Leaderboard</h1>
 			<LeaderboardTable />
-		</div>
+		</PageLayout>
 	);
 }
+
+export default LeaderboardPage;

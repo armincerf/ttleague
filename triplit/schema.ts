@@ -1,4 +1,9 @@
-import { type ClientSchema, type Roles, Schema as S } from "@triplit/client";
+import {
+	type ClientSchema,
+	type Entity,
+	type Roles,
+	Schema as S,
+} from "@triplit/client";
 
 export const roles: Roles = {
 	admin: {
@@ -54,6 +59,15 @@ export const schema = {
 			wins: S.Number(),
 			losses: S.Number(),
 			no_shows: S.Number(),
+			events: S.RelationMany("event_registrations", {
+				where: [["$user_id", "=", "$id"]],
+			}),
+			matches: S.RelationMany("matches", {
+				where: [
+					["$player_1", "=", "$id"],
+					["$player_2", "=", "$id"],
+				],
+			}),
 		}),
 		permissions: {
 			admin: adminFullAccess,
@@ -78,6 +92,9 @@ export const schema = {
 			admins: S.Set(S.Id()),
 			latitude: S.Number(),
 			longitude: S.Number(),
+			events: S.RelationMany("events", {
+				where: [["$club_id", "=", "$id"]],
+			}),
 		}),
 		permissions: defaultPermissions,
 	},
@@ -88,6 +105,7 @@ export const schema = {
 			description: S.String(),
 			start_time: S.Date(),
 			club_id: S.Id(),
+			club: S.RelationById("clubs", "$club_id"),
 			best_of: S.Number(),
 			tables: S.Set(S.Number()),
 			status: S.String({
@@ -99,6 +117,12 @@ export const schema = {
 					"cancelled",
 				] as const,
 			}),
+			registrations: S.RelationMany("event_registrations", {
+				where: [["event_id", "=", "$id"]],
+			}),
+			matches: S.RelationMany("matches", {
+				where: [["event_id", "=", "$id"]],
+			}),
 		}),
 		permissions: defaultPermissions,
 	},
@@ -109,6 +133,9 @@ export const schema = {
 			event_id: S.Id(),
 			created_at: S.Date(),
 			minimum_opponent_level: S.Optional(S.String()),
+			max_opponent_level: S.Optional(S.String()),
+			user: S.RelationById("users", "$user_id"),
+			event: S.RelationById("events", "$event_id"),
 		}),
 		permissions: {
 			admin: adminFullAccess,
@@ -119,6 +146,9 @@ export const schema = {
 				delete: {
 					filter: [["user_id", "=", "$role.userId"]],
 				},
+			},
+			anonymous: {
+				read: { filter: [true] },
 			},
 		},
 	},
@@ -137,9 +167,15 @@ export const schema = {
 			status: S.String({
 				enum: ["pending", "confirmed", "cancelled"] as const,
 			}),
-
 			ranking_score_delta: S.Number(),
 			winner: S.Optional(S.Id()),
+			player1: S.RelationById("users", "$player_1"),
+			player2: S.RelationById("users", "$player_2"),
+			umpireUser: S.RelationById("users", "$umpire"),
+			event: S.RelationById("events", "$event_id"),
+			games: S.RelationMany("games", {
+				where: [["match_id", "=", "$id"]],
+			}),
 		}),
 		permissions: {
 			...defaultPermissions,
@@ -167,6 +203,9 @@ export const schema = {
 					],
 				},
 			},
+			anonymous: {
+				read: { filter: [true] },
+			},
 		},
 	},
 	games: {
@@ -180,7 +219,12 @@ export const schema = {
 			last_edited_at: S.Date(),
 			edited_by: S.Id(),
 			game_number: S.Number(),
+			match: S.RelationById("matches", "$match_id"),
+			editor: S.RelationById("users", "$edited_by"),
 		}),
 		permissions: defaultPermissions,
 	},
 } satisfies ClientSchema;
+
+export type Event = Entity<typeof schema, "events">;
+export type Club = Entity<typeof schema, "clubs">;
