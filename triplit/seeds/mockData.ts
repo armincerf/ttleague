@@ -1,15 +1,25 @@
 import type { BulkInsert } from "@triplit/client";
 import { faker } from "@faker-js/faker";
 import type { schema } from "../schema";
-import { getDivision } from "@/lib/ratingSystem";
 
 export default function seed(): BulkInsert<typeof schema> {
-	const users = generateUsers(100);
+	// Generate users without league information
+	const usersWithoutLeague = generateUsersWithoutLeague(100);
+
+	// Generate league using these users
+	const league = generateLeague(usersWithoutLeague);
+
+	// Update users with league information
+	const users = usersWithoutLeague.map((user) => ({
+		...user,
+		registered_league_ids: new Set([league.id]),
+	}));
+
 	const clubs = generateClubs(10, users);
-	const events = generateEvents(100, clubs);
-	const eventRegistrations = generateEventRegistrations(200, users, events);
-	const matches = generateMatches(300, users, events);
-	const games = generateGames(600, matches, users);
+	const events = generateEventsForLeague(league, clubs);
+	const matches = generateMatchesForEvents(events, users);
+	const games = generateGamesForMatches(matches, users);
+	const eventRegistrations = generateEventRegistrations(events, users);
 
 	return {
 		users: [
@@ -27,6 +37,26 @@ export default function seed(): BulkInsert<typeof schema> {
 				wins: 694,
 				losses: 420,
 				no_shows: 0,
+				created_at: faker.date.past(),
+				updated_at: faker.date.recent(),
+				updated_by: "alex",
+			},
+			{
+				id: "user_2nkVcjC0FmzEjOPgDuu4t8kisEe",
+				email: "alx@juxt.pro",
+				first_name: "Alex",
+				last_name: "Davis",
+				table_tennis_england_id: "123457",
+				current_division: "MKTTL - Division 5",
+				rating: 620,
+				matches_played: 1000,
+				wins: 694,
+				losses: 420,
+				no_shows: 0,
+				created_at: faker.date.past(),
+				updated_at: faker.date.recent(),
+				updated_by: "alex",
+				registered_league_ids: new Set([league.id]),
 			},
 		],
 		clubs,
@@ -34,10 +64,11 @@ export default function seed(): BulkInsert<typeof schema> {
 		event_registrations: eventRegistrations,
 		matches,
 		games,
+		leagues: [league],
 	};
 }
 
-function generateUsers(count: number) {
+function generateUsersWithoutLeague(count: number) {
 	return Array.from({ length: count }, (_, index) => {
 		const matches_played = faker.number.int({ min: 10, max: 100 });
 		const wins = faker.number.int({ min: 0, max: matches_played });
@@ -88,103 +119,176 @@ function generateUsers(count: number) {
 	});
 }
 
-function generateClubs(count: number, users: ReturnType<typeof generateUsers>) {
-	return Array.from({ length: count }, (_, index) => ({
-		id: (index + 1).toString(),
-		name: faker.company.name(),
-		tables: faker.number.int({ min: 1, max: 10 }),
+function generateLeague(users: ReturnType<typeof generateUsersWithoutLeague>) {
+	return {
+		id: "mk-ttl-singles",
+		name: "Milton Keynes Singles League",
+		description:
+			"The official singles league for Milton Keynes table tennis players",
+		logo_image_url: faker.image.url(),
+		faq_html:
+			"<h2>FAQ</h2><p>Frequently asked questions about the Milton Keynes Singles League...</p>",
 		admins: new Set(
-			faker.helpers
-				.arrayElements(users, { min: 1, max: 3 })
-				.map((user) => user.id),
+			faker.helpers.arrayElements(users, 3).map((user) => user.id),
 		),
-		latitude: faker.location.latitude(),
-		longitude: faker.location.longitude(),
-	}));
+		club_ids: new Set(["mk-ttc"]),
+		created_at: faker.date.past({ years: 2, refDate: new Date() }),
+		updated_at: faker.date.recent(),
+		updated_by: faker.helpers.arrayElement(users).id,
+	};
 }
 
-function generateEvents(
+function generateClubs(
 	count: number,
+	users: ReturnType<typeof generateUsersWithoutLeague>,
+) {
+	return [
+		{
+			id: "mk-ttc",
+			name: "Milton Keynes Table Tennis Center",
+			tables: faker.number.int({ min: 5, max: 15 }),
+			admins: new Set(
+				faker.helpers
+					.arrayElements(users, { min: 2, max: 4 })
+					.map((user) => user.id),
+			),
+			latitude: 52.03509999454491,
+			longitude: -0.6864270729677547,
+		},
+		...Array.from({ length: count - 1 }, (_, index) => ({
+			id: (index + 2).toString(),
+			name: faker.company.name(),
+			tables: faker.number.int({ min: 1, max: 10 }),
+			admins: new Set(
+				faker.helpers
+					.arrayElements(users, { min: 1, max: 3 })
+					.map((user) => user.id),
+			),
+			latitude: faker.location.latitude(),
+			longitude: faker.location.longitude(),
+		})),
+	];
+}
+
+function generateEventsForLeague(
+	league: ReturnType<typeof generateLeague>,
 	clubs: ReturnType<typeof generateClubs>,
 ) {
-	return Array.from({ length: count }, (_, index) => ({
-		id: (index + 1).toString(),
-		name: faker.lorem.words({ min: 2, max: 5 }),
-		description: faker.lorem.sentence(),
-		start_time: faker.date.future(),
+	const now = new Date();
+	const eventCount = 20;
+
+	const todayEvent = {
+		id: `${league.id}-mock-event-today`,
+		name: `${now.toLocaleDateString("en-GB", {
+			weekday: "long",
+		})} Session - ${now.toLocaleDateString("en-GB", {
+			day: "numeric",
+			month: "long",
+		})}`,
+		description: "mock event happening today",
+		start_time: new Date(now.setHours(19, 30, 0, 0)), // 7:30 PM today
+		end_time: new Date(now.setHours(22, 0, 0, 0)), // 10:00 PM today
 		club_id: faker.helpers.arrayElement(clubs).id,
+		league_id: league.id,
 		best_of: faker.helpers.arrayElement([5, 7]),
-		end_time: faker.date.future(),
-		created_at: faker.date.past(),
+		tables: new Set([3, 4, 5, 6]),
+		capacity: 12,
+		status: "active" as const,
+		created_at: faker.date.past({ years: 1, refDate: now }),
 		updated_at: faker.date.recent(),
-		tables: new Set(
-			faker.helpers.arrayElements([1, 2, 3, 4, 5], { min: 1, max: 5 }),
-		),
-		status: faker.helpers.arrayElement([
-			"draft",
-			"scheduled",
-			"active",
-			"completed",
-			"cancelled",
-		] as const),
-	}));
+		updated_by: faker.helpers.arrayElement(clubs).admins.values().next().value,
+	};
+
+	const otherEvents = Array.from(
+		{ length: eventCount - 1 },
+		(_, eventIndex) => {
+			const eventStart = faker.date.between({
+				from: faker.date.past({ years: 1, refDate: now }),
+				to: faker.date.future({ years: 1, refDate: now }),
+			});
+			const eventEnd = faker.date.soon({ days: 1, refDate: eventStart });
+
+			let status: "draft" | "scheduled" | "active" | "completed" | "cancelled";
+			if (eventStart > now) {
+				status = faker.helpers.arrayElement(["draft", "scheduled"]);
+			} else if (eventEnd < now) {
+				status = "completed";
+			} else {
+				status = "active";
+			}
+
+			return {
+				id: `${league.id}-event-${eventIndex + 1}`,
+				name: `Event ${eventIndex + 1}`,
+				description: faker.lorem.sentence(),
+				start_time: eventStart,
+				end_time: eventEnd,
+				club_id: faker.helpers.arrayElement(clubs).id,
+				league_id: league.id,
+				best_of: faker.helpers.arrayElement([5, 7]),
+				tables: new Set(
+					faker.helpers.arrayElements([1, 2, 3, 4, 5], { min: 1, max: 5 }),
+				),
+				capacity: faker.helpers.maybe(() =>
+					faker.number.int({ min: 10, max: 50 }),
+				),
+				status,
+				created_at: faker.date.past({ years: 1, refDate: eventStart }),
+				updated_at: faker.date.recent(),
+				updated_by: faker.helpers.arrayElement(clubs).admins.values().next()
+					.value,
+			};
+		},
+	);
+
+	return [todayEvent, ...otherEvents];
 }
 
-function generateEventRegistrations(
-	count: number,
-	users: ReturnType<typeof generateUsers>,
-	events: ReturnType<typeof generateEvents>,
+function generateMatchesForEvents(
+	events: ReturnType<typeof generateEventsForLeague>,
+	users: ReturnType<typeof generateUsersWithoutLeague>,
 ) {
-	return Array.from({ length: count }, (_, index) => ({
-		id: (index + 1).toString(),
-		user_id: faker.helpers.arrayElement(users).id,
-		event_id: faker.helpers.arrayElement(events).id,
-		confidence_level: faker.number.int({ min: 1, max: 100 }),
-		created_at: faker.date.past(),
-		minimum_opponent_level: faker.helpers.arrayElement(["A", "B", "C", "D"]),
-	}));
-}
-
-function generateMatches(
-	count: number,
-	users: ReturnType<typeof generateUsers>,
-	events: ReturnType<typeof generateEvents>,
-) {
-	return Array.from({ length: count }, (_, index) => {
-		const [player1, player2] = faker.helpers.arrayElements(users, 2);
-		const event = faker.helpers.arrayElement(events);
-		return {
-			id: (index + 1).toString(),
-			player_1: player1.id,
-			player_2: player2.id,
-			umpire: faker.helpers.maybe(() => faker.helpers.arrayElement(users).id),
-			manually_created: faker.datatype.boolean(),
-			event_id: event.id,
-			table_number: faker.number.int({ min: 1, max: 10 }),
-			created_at: faker.date.past(),
-			edited_at: faker.date.recent(),
-			status: faker.helpers.arrayElement([
-				"pending",
-				"confirmed",
-				"cancelled",
-			] as const),
-			ranking_score_delta: faker.number.int({ min: -100, max: 100 }),
-			winner: faker.helpers.maybe(() =>
-				faker.helpers.arrayElement([player1.id, player2.id]),
-			),
-		};
+	return events.flatMap((event, eventIndex) => {
+		const matchCount = event.status === "completed" ? 20 : 10;
+		return Array.from({ length: matchCount }, (_, matchIndex) => {
+			const [player1, player2] = faker.helpers.arrayElements(users, 2);
+			return {
+				id: `${event.id}-match-${matchIndex + 1}`,
+				player_1: player1.id,
+				player_2: player2.id,
+				umpire:
+					faker.helpers.maybe(() => faker.helpers.arrayElement(users).id) ??
+					undefined,
+				manually_created: faker.datatype.boolean(),
+				event_id: event.id,
+				table_number: faker.number.int({ min: 1, max: 10 }),
+				created_at: faker.date.past(),
+				updated_at: faker.date.recent(),
+				updated_by: faker.helpers.arrayElement(users).id,
+				edited_at: faker.date.recent(),
+				status:
+					event.status === "completed"
+						? "confirmed"
+						: faker.helpers.arrayElement(["pending", "confirmed"] as const),
+				ranking_score_delta: faker.number.int({ min: -100, max: 100 }),
+				winner:
+					event.status === "completed"
+						? faker.helpers.arrayElement([player1.id, player2.id])
+						: undefined,
+			};
+		});
 	});
 }
 
-function generateGames(
-	count: number,
-	matches: ReturnType<typeof generateMatches>,
-	users: ReturnType<typeof generateUsers>,
+function generateGamesForMatches(
+	matches: ReturnType<typeof generateMatchesForEvents>,
+	users: ReturnType<typeof generateUsersWithoutLeague>,
 ) {
-	return Array.from({ length: count }, (_, index) => {
-		const match = faker.helpers.arrayElement(matches);
-		return {
-			id: (index + 1).toString(),
+	return matches.flatMap((match, matchIndex) => {
+		const gameCount =
+			match.status === "confirmed" ? faker.helpers.arrayElement([3, 4, 5]) : 0;
+		return Array.from({ length: gameCount }, (_, gameIndex) => ({
+			id: `${match.id}-game-${gameIndex + 1}`,
 			match_id: match.id,
 			player_1_score: faker.number.int({ min: 0, max: 11 }),
 			player_2_score: faker.number.int({ min: 0, max: 11 }),
@@ -192,7 +296,43 @@ function generateGames(
 			first_completed_at: faker.date.past(),
 			last_edited_at: faker.date.recent(),
 			edited_by: faker.helpers.arrayElement(users).id,
-			game_number: faker.number.int({ min: 1, max: 5 }),
-		};
+			game_number: gameIndex + 1,
+			created_at: faker.date.past(),
+			updated_at: faker.date.recent(),
+			updated_by: faker.helpers.arrayElement(users).id,
+		}));
+	});
+}
+
+function generateEventRegistrations(
+	events: ReturnType<typeof generateEventsForLeague>,
+	users: ReturnType<typeof generateUsersWithoutLeague>,
+) {
+	return events.flatMap((event) => {
+		let registrationCount: number;
+		let eligibleUsers: typeof users;
+
+		if (event.id === `${event.league_id}-event-today`) {
+			registrationCount = 12;
+			eligibleUsers = users.filter(
+				(user) => user.id !== "user_2nkVcjC0FmzEjOPgDuu4t8kisEe",
+			);
+		} else {
+			registrationCount = faker.number.int({ min: 5, max: 20 });
+			eligibleUsers = users;
+		}
+
+		return Array.from({ length: registrationCount }, (_, regIndex) => ({
+			id: `${event.id}-registration-${regIndex + 1}`,
+			user_id: faker.helpers.arrayElement(eligibleUsers).id,
+			event_id: event.id,
+			league_id: event.league_id,
+			created_at: faker.date.past(),
+			updated_at: faker.date.recent(),
+			updated_by: faker.helpers.arrayElement(users).id,
+			minimum_opponent_level: faker.helpers.arrayElement(["A", "B", "C", "D"]),
+			max_opponent_level: faker.helpers.arrayElement(["A", "B", "C", "D"]),
+			confidence_level: faker.number.int({ min: 1, max: 100 }),
+		}));
 	});
 }

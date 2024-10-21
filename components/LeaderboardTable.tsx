@@ -99,9 +99,14 @@ const columns = [
 const COLUMNS = 6;
 const ROWS = 10;
 
-export default function LeaderboardTable() {
-	const router = useRouter();
+interface LeaderboardTableProps {
+  initialUsers: User[];
+}
 
+export default function LeaderboardTable({
+	initialUsers,
+}: LeaderboardTableProps) {
+  const router = useRouter();
 	const [{ pageIndex, pageSize }, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
@@ -112,27 +117,19 @@ export default function LeaderboardTable() {
 
 	const memoizedColumns = useMemo(() => columns, []);
 
-	const playersQuery = client
-		.query("users")
-		.select([
-			"id",
-			"email",
-			"first_name",
-			"last_name",
-			"gender",
-			"matches_played",
-			"table_tennis_england_id",
-			"wins",
-			"losses",
-			"no_shows",
-			"rating",
-		])
-		.order("rating", "DESC");
+	const playersQuery = client.query("users").order("rating", "DESC");
 
 	const { results, fetching, error } = useQuery(client, playersQuery);
 
+	const tableData = useMemo(() => {
+		if (fetching) return initialUsers;
+		return results && results.length >= initialUsers.length
+			? results
+			: initialUsers;
+	}, [results, initialUsers, fetching]);
+
 	const table = useReactTable({
-		data: results ?? [],
+		data: tableData,
 		columns: memoizedColumns,
 		getCoreRowModel: getCoreRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
@@ -191,10 +188,6 @@ export default function LeaderboardTable() {
 	}
 
 	// Show skeleton if fetching or if there are no results yet
-	if (fetching || !results || results.length === 0) {
-		return <LeaderboardSkeleton columns={COLUMNS} rows={ROWS} />;
-	}
-
 	if (error) {
 		return <div>Error loading leaderboard: {error.message}</div>;
 	}
@@ -254,8 +247,9 @@ export default function LeaderboardTable() {
 			</div>
 			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:space-x-4 pb-6">
 				<div className="text-sm text-muted-foreground">
-					Showing {table.getRowModel().rows.length} of {results?.length ?? 0}{" "}
+					Showing {table.getRowModel().rows.length} of {tableData.length}{" "}
 					players
+					{fetching && " (updating...)"}
 				</div>
 				<Pagination className="w-full md:w-auto">
 					<PaginationContent className="w-full justify-between">

@@ -63,9 +63,19 @@ export default function SignUpButton() {
 			});
 		} catch (err) {
 			console.error("Error:", JSON.stringify(err, null, 2));
+			const errorMessage =
+				err instanceof Error &&
+				"errors" in err &&
+				Array.isArray(err.errors) &&
+				typeof err.errors[0] === "object" &&
+				// @ts-expect-error - TODO: shrug emoji
+				"longMessage" in err.errors[0] &&
+				typeof err.errors[0].longMessage === "string"
+					? err.errors[0].longMessage
+					: "Failed to send verification code.";
 			toast({
 				title: "Error",
-				description: "Failed to send verification code.",
+				description: errorMessage,
 				variant: "destructive",
 			});
 		}
@@ -294,7 +304,20 @@ export default function SignUpButton() {
 					className="w-full"
 				/>
 			)}
-			<Button type="submit" className="w-full" disabled={isLoading}>
+			<Button
+				type="submit"
+				className="w-full"
+				disabled={isLoading}
+				data-umami-event={
+					isLoading
+						? "Processing"
+						: !isCodeSent
+							? "Continue"
+							: userExists
+								? "Log In"
+								: "Create Account"
+				}
+			>
 				{isLoading
 					? "Processing..."
 					: !isCodeSent

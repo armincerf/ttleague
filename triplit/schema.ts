@@ -59,6 +59,10 @@ export const schema = {
 			wins: S.Number(),
 			losses: S.Number(),
 			no_shows: S.Number(),
+			registered_league_ids: S.Set(S.Id()),
+			leagues: S.RelationMany("leagues", {
+				where: [["id", "in", "$registered_league_ids"]],
+			}),
 			events: S.RelationMany("event_registrations", {
 				where: [["$user_id", "=", "$id"]],
 			}),
@@ -68,6 +72,9 @@ export const schema = {
 					["$player_2", "=", "$id"],
 				],
 			}),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Optional(S.Id()),
 		}),
 		permissions: {
 			admin: adminFullAccess,
@@ -95,6 +102,9 @@ export const schema = {
 			events: S.RelationMany("events", {
 				where: [["$club_id", "=", "$id"]],
 			}),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Optional(S.Id()),
 		}),
 		permissions: defaultPermissions,
 	},
@@ -105,10 +115,13 @@ export const schema = {
 			description: S.Optional(S.String()),
 			start_time: S.Date(),
 			end_time: S.Date(),
-			created_at: S.Date(),
-			updated_at: S.Date(),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Optional(S.Id()),
 			club_id: S.Id(),
 			club: S.RelationById("clubs", "$club_id"),
+			league_id: S.Id(),
+			season_id: S.Optional(S.Id()),
 			best_of: S.Number(),
 			tables: S.Set(S.Number()),
 			capacity: S.Optional(S.Number()),
@@ -135,7 +148,10 @@ export const schema = {
 			id: S.Id(),
 			user_id: S.Id(),
 			event_id: S.Id(),
-			created_at: S.Date(),
+			league_id: S.Id(),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Optional(S.Id()),
 			minimum_opponent_level: S.Optional(S.String()),
 			max_opponent_level: S.Optional(S.String()),
 			confidence_level: S.Number(),
@@ -168,7 +184,9 @@ export const schema = {
 			manually_created: S.Boolean(),
 			event_id: S.Id(),
 			table_number: S.Number(),
-			created_at: S.Date(),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Optional(S.Id()),
 			edited_at: S.Date(),
 			status: S.String({
 				enum: ["pending", "confirmed", "cancelled"] as const,
@@ -227,6 +245,51 @@ export const schema = {
 			game_number: S.Number(),
 			match: S.RelationById("matches", "$match_id"),
 			editor: S.RelationById("users", "$edited_by"),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Optional(S.Id()),
+		}),
+		permissions: defaultPermissions,
+	},
+	leagues: {
+		schema: S.Schema({
+			id: S.Id(),
+			name: S.String(),
+			description: S.String(),
+			logo_image_url: S.String(),
+			faq_html: S.String(),
+			club_ids: S.Set(S.Id()),
+			admins: S.Set(S.Id()),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Id(),
+			clubs: S.RelationMany("clubs", {
+				where: [["id", "in", "$club_ids"]],
+			}),
+			players: S.RelationMany("users", {
+				where: [["registered_league_ids", "has", "$id"]],
+			}),
+			seasons: S.RelationMany("seasons", {
+				where: [["league_id", "=", "$id"]],
+			}),
+		}),
+		permissions: defaultPermissions,
+	},
+	seasons: {
+		schema: S.Schema({
+			id: S.Id(),
+			name: S.String(),
+			league_id: S.Id(),
+			start_date: S.Date(),
+			end_date: S.Date(),
+			status: S.String({
+				enum: ["active", "upcoming", "completed"] as const,
+			}),
+			rules_html: S.String(),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Id(),
+			league: S.RelationById("leagues", "$league_id"),
 		}),
 		permissions: defaultPermissions,
 	},
@@ -234,3 +297,7 @@ export const schema = {
 
 export type Event = Entity<typeof schema, "events">;
 export type Club = Entity<typeof schema, "clubs">;
+export type League = Entity<typeof schema, "leagues">;
+export type Season = Entity<typeof schema, "seasons">;
+export type User = Entity<typeof schema, "users">;
+export type EventRegistration = Entity<typeof schema, "event_registrations">;
