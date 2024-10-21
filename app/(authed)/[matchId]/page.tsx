@@ -1,3 +1,3 @@
 export default function MatchPage() {
-	return <div>MatchPage</div>;
+	return <div>Placeholder page</div>;
 }

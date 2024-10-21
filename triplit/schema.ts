@@ -54,6 +54,8 @@ export const schema = {
 			last_name: S.String(),
 			gender: S.Optional(S.String({ enum: ["male", "female"] as const })),
 			current_division: S.Optional(S.String()),
+			default_min_opponent_level: S.Optional(S.String()),
+			default_max_opponent_level: S.Optional(S.String()),
 			rating: S.Number(),
 			matches_played: S.Number(),
 			wins: S.Number(),
@@ -238,10 +240,10 @@ export const schema = {
 			match_id: S.Id(),
 			player_1_score: S.Number(),
 			player_2_score: S.Number(),
+			final_score: S.Optional(S.String()),
 			started_at: S.Date(),
-			first_completed_at: S.Date(),
+			completed_at: S.Optional(S.Date()),
 			last_edited_at: S.Date(),
-			edited_by: S.Id(),
 			game_number: S.Number(),
 			match: S.RelationById("matches", "$match_id"),
 			editor: S.RelationById("users", "$edited_by"),
@@ -249,7 +251,18 @@ export const schema = {
 			updated_at: S.Date({ default: S.Default.now() }),
 			updated_by: S.Optional(S.Id()),
 		}),
-		permissions: defaultPermissions,
+		permissions: {
+			...defaultPermissions,
+			user: {
+				...userReadOnly,
+				insert: {
+					filter: [true],
+				},
+				update: {
+					filter: [true],
+				},
+			},
+		},
 	},
 	leagues: {
 		schema: S.Schema({
@@ -301,3 +314,5 @@ export type League = Entity<typeof schema, "leagues">;
 export type Season = Entity<typeof schema, "seasons">;
 export type User = Entity<typeof schema, "users">;
 export type EventRegistration = Entity<typeof schema, "event_registrations">;
+export type Match = Entity<typeof schema, "matches">;
+export type Game = Entity<typeof schema, "games">;

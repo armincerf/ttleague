@@ -2,13 +2,15 @@ import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
 import { MapPin, Calendar, Clock, Users } from "lucide-react";
-import { format, differenceInSeconds } from "date-fns";
+import { format, differenceInSeconds, formatDistanceToNow } from "date-fns";
 import { client } from "@/lib/triplit";
 import PageLayout from "@/components/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import CountdownTimer from "./CountdownTimer";
 import MatchList from "./MatchList";
+import ClubLocationLink from "@/components/ClubLocationLink";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 async function fetchEvent(eventId: string) {
 	const event = await client.fetchOne(
@@ -37,10 +39,10 @@ async function fetchMatches(eventId: string) {
 export default async function EventPage({
 	params,
 }: {
-	params: { leagueId: string; eventId: string };
+	params: Promise<{ leagueId: string; eventId: string }>;
 }) {
 	const { userId } = auth();
-	const { eventId, leagueId } = params;
+	const { eventId, leagueId } = await params;
 	const [event, matches] = await Promise.all([
 		fetchEvent(eventId),
 		fetchMatches(eventId),
@@ -56,6 +58,15 @@ export default async function EventPage({
 		(match) => match.player_1 === userId || match.player_2 === userId,
 	);
 	const nextMatch = userMatches.find((match) => match.status === "pending");
+	const nextOpponent =
+		nextMatch?.player_1 === userId ? nextMatch.player2 : nextMatch?.player1;
+	const nextTable = nextMatch?.table_number;
+	const tableMatches = matches.filter(
+		(match) => match.table_number === nextTable,
+	);
+	const tableMatchInProgress = tableMatches.some(
+		(match) => match.status === "confirmed" && !match.winner,
+	);
 
 	return (
 		<PageLayout>
@@ -63,24 +74,25 @@ export default async function EventPage({
 				<h1 className="text-3xl font-bold mb-6">{event.name}</h1>
 
 				<Card className="mb-8">
-					<CardContent className="pt-6">
-						<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-							<div className="flex items-center">
-								<MapPin className="mr-2" />
-								<span>{event.club?.name}</span>
-							</div>
-							<div className="flex items-center">
-								<Calendar className="mr-2" />
-								<span>{format(event.start_time, "MMMM d, yyyy")}</span>
-							</div>
-							<div className="flex items-center">
-								<Clock className="mr-2" />
-								<span>{format(event.start_time, "h:mm a")}</span>
-							</div>
-							<div className="flex items-center">
-								<Users className="mr-2" />
-								<span>{event.registrations?.length ?? 0} registered</span>
-							</div>
+					<CardContent className="pt-6 flex flex-col gap-4">
+						{event.club && (
+							<ClubLocationLink
+								club={event.club}
+								iconClassName="w-6 h-6 text-black"
+								textClassName="text-black"
+							/>
+						)}
+						<div className="flex items-center">
+							<Calendar className="mr-2" />
+							<span>{format(event.start_time, "MMMM d, yyyy")}</span>
+						</div>
+						<div className="flex items-center">
+							<Clock className="mr-2" />
+							<span>{format(event.start_time, "h:mm a")}</span>
+						</div>
+						<div className="flex items-center">
+							<Users className="mr-2" />
+							<span>{event.registrations?.length ?? 0} registered</span>
 						</div>
 					</CardContent>
 				</Card>
@@ -91,7 +103,7 @@ export default async function EventPage({
 							<CardTitle>Event Starts In</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<CountdownTimer seconds={secondsUntilStart} />
+							<CountdownTimer seconds={secondsUntilStart} event={event} />
 						</CardContent>
 					</Card>
 				)}
@@ -104,20 +116,35 @@ export default async function EventPage({
 					</Card>
 				)}
 
-				{isActive && nextMatch && (
+				{nextMatch && (
 					<Card className="mb-8">
 						<CardHeader>
 							<CardTitle>Your Next Match</CardTitle>
 						</CardHeader>
 						<CardContent>
-							<p>
-								vs{" "}
-								{nextMatch.player_1 === userId
-									? nextMatch.player2?.first_name
-									: nextMatch.player1?.first_name}
+							<p className="flex flex-row items-center gap-2">
+								You <span className="font-semibold">vs</span>
+								<Avatar>
+									<AvatarImage src={nextOpponent?.profile_image_url} />
+									<AvatarFallback>
+										{nextOpponent?.first_name[0]}
+										{nextOpponent?.last_name[0]}
+									</AvatarFallback>
+								</Avatar>
+								{nextOpponent?.first_name} {nextOpponent?.last_name}
+							</p>
+							<p className="text-sm text-gray-500 pt-2">
+								Table {nextMatch.table_number} -{" "}
+								{tableMatchInProgress
+									? "After one more match is finished"
+									: "Table should be free"}
 							</p>
 							<Button asChild className="mt-4">
-								<Link href={`/matches/${nextMatch.id}`}>Go to Match</Link>
+								<Link
+									href={`/leagues/${leagueId}/events/${eventId}/matches/${nextMatch.id}`}
+								>
+									Enter Match Scores
+								</Link>
 							</Button>
 						</CardContent>
 					</Card>
@@ -125,25 +152,25 @@ export default async function EventPage({
 
 				{isActive && (
 					<MatchList
-						matches={matches}
+						eventId={eventId}
 						title="In Progress Matches"
-						filter={(match) => match.status === "confirmed"}
+						status="in_progress"
 					/>
 				)}
 
 				{isActive && (
 					<MatchList
-						matches={matches}
+						eventId={eventId}
 						title="Upcoming Matches"
-						filter={(match) => match.status === "pending"}
+						status="pending"
 					/>
 				)}
 
 				{(isActive || isCompleted) && (
 					<MatchList
-						matches={matches}
+						eventId={eventId}
 						title="Completed Matches"
-						filter={(match) => match.status === "completed"}
+						status="completed"
 					/>
 				)}
 			</div>

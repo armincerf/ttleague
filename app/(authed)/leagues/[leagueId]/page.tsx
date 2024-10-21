@@ -10,8 +10,8 @@ import type { League, Season, Event } from "@/triplit/schema";
 import FAQDialogButton from "./FAQDialogButton";
 import RegisteredPlayersList from "./RegisteredPlayersList";
 import { EventCard, type TEventCardEvent } from "@/components/EventCard";
-import { MapPin } from "lucide-react";
 import LeagueRegistrationButton from "./LeagueRegistrationButton";
+import ClubLocationLink from "@/components/ClubLocationLink";
 
 async function fetchLeague(leagueId: string) {
 	const league = await client.fetchOne(
@@ -150,6 +150,7 @@ async function InProgressSection({
 	const isUserRegistered = registeredPlayers?.some(
 		(reg) => reg.user_id === userId,
 	);
+	console.log(inProgressEvent, inProgressSeason, registeredPlayers);
 
 	const formatDate = (date: Date) => {
 		return date.toLocaleString("en-US", {
@@ -164,7 +165,7 @@ async function InProgressSection({
 	return (
 		<div className="mb-8 relative">
 			<div className="absolute top-0 left-0 bg-primary text-primary-foreground px-3 py-1 text-sm font-semibold rounded-tl-lg rounded-br-lg">
-				In Progress
+				{inProgressEvent ? "In Progress" : "Active"}
 			</div>
 			<Card className="pt-8">
 				<CardHeader>
@@ -216,10 +217,10 @@ async function InProgressSection({
 export default async function LeaguePage({
 	params,
 }: {
-	params: { leagueId: string };
+	params: Promise<{ leagueId: string }>;
 }) {
 	const { userId } = auth();
-	const { leagueId } = params;
+	const { leagueId } = await params;
 	const [league, seasons, events] = await Promise.all([
 		fetchLeague(leagueId),
 		fetchSeasons(leagueId),
@@ -271,17 +272,7 @@ export default async function LeaguePage({
 								</h3>
 								<ul>
 									{league.clubs.map((club) => (
-										<li key={club.id} className="flex items-center mb-2">
-											<MapPin className="w-4 h-4 mr-2 text-muted-foreground" />
-											<a
-												href={`https://www.google.com/maps/search/?api=1&query=${club.latitude},${club.longitude}`}
-												target="_blank"
-												rel="noopener noreferrer"
-												className="text-sm text-muted-foreground hover:underline"
-											>
-												{club.name}
-											</a>
-										</li>
+										<ClubLocationLink key={club.id} club={club} />
 									))}
 								</ul>
 							</div>

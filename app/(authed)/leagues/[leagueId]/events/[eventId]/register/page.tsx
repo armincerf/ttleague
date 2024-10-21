@@ -3,8 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { client } from "@/lib/triplit";
 import PageLayout from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import RegistrationForm from "./RegistrationForm";
 import ParticipantsTable from "./ParticipantsTable";
+import RegistrationForm from "./RegistrationForm";
 import { getDivision, leagueDivisionsSchema } from "@/lib/ratingSystem";
 
 const sortedLeagueDivisions = leagueDivisionsSchema.options.reverse();
@@ -32,28 +32,38 @@ async function fetchUser(userId: string) {
 	};
 }
 
+function calculateLevels(user: Awaited<ReturnType<typeof fetchUser>>) {
+	const userDivisionIndex = sortedLeagueDivisions.indexOf(
+		user.current_division,
+	);
+	const defaultMin = user.default_min_opponent_level
+		? sortedLeagueDivisions.indexOf(user.default_min_opponent_level)
+		: Math.max(0, userDivisionIndex - 2);
+	const defaultMax = user.default_max_opponent_level
+		? sortedLeagueDivisions.indexOf(user.default_max_opponent_level)
+		: Math.min(sortedLeagueDivisions.length - 1, userDivisionIndex + 1);
+
+	return {
+		defaultMinLevel: defaultMin,
+		defaultMaxLevel: defaultMax,
+	};
+}
+
 export default async function EventRegistrationPage({
 	params,
 }: {
-	params: { leagueId: string; eventId: string };
+	params: Promise<{ leagueId: string; eventId: string }>;
 }) {
 	const { userId } = auth();
 	if (!userId) notFound();
 
-	const { eventId, leagueId } = params;
+	const { eventId, leagueId } = await params;
 	const [event, user] = await Promise.all([
 		fetchEvent(eventId),
 		fetchUser(userId),
 	]);
 
-	const userDivisionIndex = sortedLeagueDivisions.indexOf(
-		user.current_division,
-	);
-	const defaultMinLevel = Math.max(0, userDivisionIndex - 2);
-	const defaultMaxLevel = Math.min(
-		sortedLeagueDivisions.length - 1,
-		userDivisionIndex + 2,
-	);
+	const { defaultMinLevel, defaultMaxLevel } = calculateLevels(user);
 
 	return (
 		<PageLayout>
@@ -75,8 +85,8 @@ export default async function EventRegistrationPage({
 					eventId={event.id}
 					leagueId={leagueId}
 					userId={userId}
-					defaultMinLevel={sortedLeagueDivisions[defaultMinLevel]}
-					defaultMaxLevel={sortedLeagueDivisions[defaultMaxLevel]}
+					defaultMinLevel={defaultMinLevel}
+					defaultMaxLevel={defaultMaxLevel}
 				/>
 
 				<Card className="mt-8">
@@ -84,7 +94,11 @@ export default async function EventRegistrationPage({
 						<CardTitle>Registered Players In Your Selected Level</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<ParticipantsTable eventId={event.id} />
+						<ParticipantsTable
+							eventId={event.id}
+							defaultMinLevel={defaultMinLevel}
+							defaultMaxLevel={defaultMaxLevel}
+						/>
 					</CardContent>
 				</Card>
 			</div>

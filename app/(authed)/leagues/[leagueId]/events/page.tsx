@@ -32,9 +32,9 @@ async function fetchEvents(leagueId: string): Promise<TEventCardEvent[]> {
 export default async function LeagueEventsPage({
 	params,
 }: {
-	params: { leagueId: string };
+	params: Promise<{ leagueId: string }>;
 }) {
-	const { leagueId } = params;
+	const { leagueId } = await params;
 	const [league, events] = await Promise.all([
 		fetchLeague(leagueId),
 		fetchEvents(leagueId),

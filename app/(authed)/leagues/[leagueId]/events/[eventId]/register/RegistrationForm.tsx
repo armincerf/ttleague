@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +22,11 @@ import {
 	FormItem,
 	FormLabel,
 } from "@/components/ui/form";
+import { useState, useEffect } from "react";
+import { useEntity, useQueryOne } from "@triplit/react";
+import * as R from "remeda";
 
-const sortedLeagueDivisions = leagueDivisionsSchema.options.reverse();
+const sortedLeagueDivisions = R.reverse(leagueDivisionsSchema.options);
 
 const schema = z.object({
 	minLevel: leagueDivisionsSchema,
@@ -35,39 +38,82 @@ type FormValues = z.infer<typeof schema>;
 
 type RegistrationFormProps = {
 	eventId: string;
+	leagueId: string;
 	userId: string;
-	defaultMinLevel: LeagueDivision;
-	defaultMaxLevel: LeagueDivision;
+	defaultMinLevel: number;
+	defaultMaxLevel: number;
 };
 
 export default function RegistrationForm({
 	eventId,
+	leagueId,
 	userId,
 	defaultMinLevel,
 	defaultMaxLevel,
 }: RegistrationFormProps) {
 	const router = useRouter();
-	const searchParams = useSearchParams();
+	const defaultMinLevelString = sortedLeagueDivisions[defaultMinLevel];
+	const defaultMaxLevelString = sortedLeagueDivisions[defaultMaxLevel];
+
+	const { result: user } = useEntity(client, "users", userId);
+	const { result: existingRegistration } = useQueryOne(
+		client,
+		client
+			.query("event_registrations")
+			.where([
+				["user_id", "=", userId],
+				["event_id", "=", eventId],
+			])
+			.build(),
+	);
+	useEffect(() => {
+		if (existingRegistration) {
+			console.log("User already registered for event", {
+				existingRegistration,
+			});
+			router.push(`/leagues/${leagueId}/events/${eventId}`);
+		}
+	}, [existingRegistration, router, eventId, leagueId]);
 
 	const form = useForm({
 		defaultValues: {
-			minLevel:
-				(searchParams.get("minLevel") as LeagueDivision) || defaultMinLevel,
-			maxLevel:
-				(searchParams.get("maxLevel") as LeagueDivision) || defaultMaxLevel,
+			minLevel: user?.default_min_opponent_level ?? defaultMinLevelString,
+			maxLevel: user?.default_max_opponent_level ?? defaultMaxLevelString,
 			confidenceLevel: 5,
 		} as FormValues,
 		onSubmit: async ({ value }) => {
 			try {
 				await client.insert("event_registrations", {
+					id: `registration_${userId}-${eventId}`,
 					user_id: userId,
 					event_id: eventId,
+					league_id: leagueId,
 					created_at: new Date(),
+					updated_at: new Date(),
 					minimum_opponent_level: value.minLevel,
 					max_opponent_level: value.maxLevel,
 					confidence_level: value.confidenceLevel,
 				});
-				router.refresh();
+
+				// Update user preferences
+				await client.update("users", userId, (user) => {
+					user.default_min_opponent_level = value.minLevel;
+					user.default_max_opponent_level = value.maxLevel;
+				});
+
+				// Store confidence level in local storage only on successful submission
+				localStorage.setItem(
+					"confidenceLevel",
+					value.confidenceLevel.toString(),
+				);
+				console.log("Event registration successful", {
+					confidenceLevel: value.confidenceLevel,
+					minLevel: value.minLevel,
+					maxLevel: value.maxLevel,
+					value,
+				});
+
+				router.push(`/leagues/${leagueId}/events/${eventId}`);
 			} catch (error) {
 				console.error("Error registering for event:", error);
 				// Handle error (e.g., show error message to user)
@@ -79,32 +125,44 @@ export default function RegistrationForm({
 		},
 	});
 
-	function updateUrl(min: LeagueDivision, max: LeagueDivision) {
-		const params = new URLSearchParams(searchParams);
-		params.set("minLevel", min);
-		params.set("maxLevel", max);
-		router.push(`?${params.toString()}`, { scroll: false });
-	}
+	useEffect(() => {
+		const storedConfidence = localStorage.getItem("confidenceLevel");
+		if (storedConfidence) {
+			form.setFieldValue("confidenceLevel", Number(storedConfidence));
+		}
+	}, [form.setFieldValue]);
 
-	function handleMinLevelChange(value: LeagueDivision) {
-		const maxLevel = form.getFieldValue("maxLevel");
-		const newMax =
-			sortedLeagueDivisions.indexOf(value) >
-			sortedLeagueDivisions.indexOf(maxLevel)
-				? value
-				: maxLevel;
-		updateUrl(value, newMax);
-	}
+	const handleMinLevelChange = (value: LeagueDivision) => {
+		const currentMax = form.getFieldValue("maxLevel");
+		const minIndex = sortedLeagueDivisions.indexOf(value);
+		const maxIndex = sortedLeagueDivisions.indexOf(currentMax);
 
-	function handleMaxLevelChange(value: LeagueDivision) {
-		const minLevel = form.getFieldValue("minLevel");
-		const newMin =
-			sortedLeagueDivisions.indexOf(value) <
-			sortedLeagueDivisions.indexOf(minLevel)
-				? value
-				: minLevel;
-		updateUrl(newMin, value);
-	}
+		const adjustedMax = minIndex > maxIndex ? value : currentMax;
+
+		form.setFieldValue("minLevel", value);
+		form.setFieldValue("maxLevel", adjustedMax);
+
+		client.update("users", userId, (user) => {
+			user.default_min_opponent_level = value;
+			user.default_max_opponent_level = adjustedMax;
+		});
+	};
+
+	const handleMaxLevelChange = (value: LeagueDivision) => {
+		const currentMin = form.getFieldValue("minLevel");
+		const minIndex = sortedLeagueDivisions.indexOf(currentMin);
+		const maxIndex = sortedLeagueDivisions.indexOf(value);
+
+		const adjustedMin = maxIndex < minIndex ? value : currentMin;
+
+		form.setFieldValue("minLevel", adjustedMin);
+		form.setFieldValue("maxLevel", value);
+
+		client.update("users", userId, (user) => {
+			user.default_min_opponent_level = adjustedMin;
+			user.default_max_opponent_level = value;
+		});
+	};
 
 	return (
 		<Card className="mt-8">
@@ -119,10 +177,8 @@ export default function RegistrationForm({
 								<FormLabel>Minimum Opponent Level</FormLabel>
 								<FormControl>
 									<Select
-										onValueChange={(value) => {
-											field.handleChange(value as LeagueDivision);
-											handleMinLevelChange(value as LeagueDivision);
-										}}
+										name="minLevel"
+										onValueChange={handleMinLevelChange}
 										value={field.state.value}
 									>
 										<SelectTrigger id="min-level">
@@ -147,10 +203,8 @@ export default function RegistrationForm({
 								<FormLabel>Maximum Opponent Level</FormLabel>
 								<FormControl>
 									<Select
-										onValueChange={(value) => {
-											field.handleChange(value as LeagueDivision);
-											handleMaxLevelChange(value as LeagueDivision);
-										}}
+										name="maxLevel"
+										onValueChange={handleMaxLevelChange}
 										value={field.state.value}
 									>
 										<SelectTrigger id="max-level">

@@ -15,7 +15,7 @@ export default function seed(): BulkInsert<typeof schema> {
 		registered_league_ids: new Set([league.id]),
 	}));
 
-	const clubs = generateClubs(10, users);
+	const clubs = generateClubs(1, users);
 	const events = generateEventsForLeague(league, clubs);
 	const matches = generateMatchesForEvents(events, users);
 	const games = generateGamesForMatches(matches, users);
@@ -284,23 +284,48 @@ function generateGamesForMatches(
 	matches: ReturnType<typeof generateMatchesForEvents>,
 	users: ReturnType<typeof generateUsersWithoutLeague>,
 ) {
-	return matches.flatMap((match, matchIndex) => {
-		const gameCount =
-			match.status === "confirmed" ? faker.helpers.arrayElement([3, 4, 5]) : 0;
-		return Array.from({ length: gameCount }, (_, gameIndex) => ({
-			id: `${match.id}-game-${gameIndex + 1}`,
-			match_id: match.id,
-			player_1_score: faker.number.int({ min: 0, max: 11 }),
-			player_2_score: faker.number.int({ min: 0, max: 11 }),
-			started_at: faker.date.past(),
-			first_completed_at: faker.date.past(),
-			last_edited_at: faker.date.recent(),
-			edited_by: faker.helpers.arrayElement(users).id,
-			game_number: gameIndex + 1,
-			created_at: faker.date.past(),
-			updated_at: faker.date.recent(),
-			updated_by: faker.helpers.arrayElement(users).id,
-		}));
+	return matches.flatMap((match) => {
+		const gameCount = match.status === "confirmed" ? 4 : 0;
+		const matchCreatedAt = new Date(match.created_at);
+		const matchUpdatedAt = new Date(match.updated_at);
+
+		return Array.from({ length: gameCount }, (_, gameIndex) => {
+			const startedAt = faker.date.between({
+				from: matchCreatedAt,
+				to: matchUpdatedAt,
+			});
+			const completedAt =
+				faker.helpers.maybe(() =>
+					faker.date.soon({
+						days: 0.1,
+						refDate: startedAt,
+					}),
+				) ?? undefined;
+			const player2Score =
+				gameIndex === 3 ? 11 : faker.number.int({ min: 0, max: 9 });
+			const player1Score =
+				gameIndex === 3 ? faker.number.int({ min: 0, max: 9 }) : 11;
+
+			const final = {
+				id: `${match.id}-game-${gameIndex + 1}`,
+				match_id: match.id,
+				player_1_score: player1Score,
+				player_2_score: player2Score,
+				started_at: startedAt,
+				final_score: completedAt
+					? `${player1Score} - ${player2Score}`
+					: undefined,
+				last_edited_at: new Date(),
+				game_number: gameIndex + 1,
+				updated_by: faker.helpers.arrayElement(users).id,
+			};
+			if (completedAt) {
+				Object.assign(final, {
+					completed_at: completedAt,
+				});
+			}
+			return final;
+		});
 	});
 }
 
