@@ -28,11 +28,23 @@ import * as R from "remeda";
 
 const sortedLeagueDivisions = R.reverse(leagueDivisionsSchema.options);
 
-const schema = z.object({
-	minLevel: leagueDivisionsSchema,
-	maxLevel: leagueDivisionsSchema,
-	confidenceLevel: z.number().min(1).max(10),
-});
+const schema = z
+	.object({
+		minLevel: leagueDivisionsSchema,
+		maxLevel: leagueDivisionsSchema,
+		confidenceLevel: z.number().min(1).max(10),
+	})
+	.refine(
+		(data) => {
+			const minIndex = sortedLeagueDivisions.indexOf(data.minLevel);
+			const maxIndex = sortedLeagueDivisions.indexOf(data.maxLevel);
+			return minIndex <= maxIndex;
+		},
+		{
+			message: "Minimum level cannot be higher than maximum level",
+			path: ["minLevel", "maxLevel"],
+		},
+	);
 
 type FormValues = z.infer<typeof schema>;
 
@@ -137,6 +149,7 @@ export default function RegistrationForm({
 		const minIndex = sortedLeagueDivisions.indexOf(value);
 		const maxIndex = sortedLeagueDivisions.indexOf(currentMax);
 
+		// Ensure maxLevel is not lower than minLevel
 		const adjustedMax = minIndex > maxIndex ? value : currentMax;
 
 		form.setFieldValue("minLevel", value);
@@ -153,6 +166,7 @@ export default function RegistrationForm({
 		const minIndex = sortedLeagueDivisions.indexOf(currentMin);
 		const maxIndex = sortedLeagueDivisions.indexOf(value);
 
+		// Ensure minLevel is not higher than maxLevel
 		const adjustedMin = maxIndex < minIndex ? value : currentMin;
 
 		form.setFieldValue("minLevel", adjustedMin);

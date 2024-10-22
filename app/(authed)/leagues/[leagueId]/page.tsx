@@ -12,35 +12,10 @@ import RegisteredPlayersList from "./RegisteredPlayersList";
 import { EventCard, type TEventCardEvent } from "@/components/EventCard";
 import LeagueRegistrationButton from "./LeagueRegistrationButton";
 import ClubLocationLink from "@/components/ClubLocationLink";
-
-async function fetchLeague(leagueId: string) {
-	const league = await client.fetchOne(
-		client.query("leagues").where("id", "=", leagueId).include("clubs").build(),
-	);
-	if (!league) notFound();
-	return league;
-}
-
-async function fetchSeasons(leagueId: string) {
-	return client.fetch(
-		client.query("seasons").where("league_id", "=", leagueId).build(),
-	);
-}
-
-async function fetchEvents(leagueId: string): Promise<TEventCardEvent[]> {
-	const data = await client.fetch(
-		client
-			.query("events")
-			.where("league_id", "=", leagueId)
-			.include("registrations")
-			.build(),
-	);
-
-	return data.map((event) => ({
-		...event,
-		registrations: event.registrations ?? undefined,
-	}));
-}
+import { fetchLeague, fetchSeasons } from "@/lib/actions/leagues";
+import { fetchEvents } from "@/lib/actions/events";
+import { fetchUserForLeague } from "@/lib/actions/users";
+import logger from "@/lib/logging";
 
 function SeasonList({ title, seasons }: { title: string; seasons: Season[] }) {
 	return (
@@ -221,90 +196,100 @@ export default async function LeaguePage({
 }) {
 	const { userId } = auth();
 	const { leagueId } = await params;
-	const [league, seasons, events] = await Promise.all([
-		fetchLeague(leagueId),
-		fetchSeasons(leagueId),
-		fetchEvents(leagueId),
-	]);
 
-	const currentDate = new Date();
-	const upcomingSeasons = seasons.filter(
-		(s) => new Date(s.start_date) > currentDate,
-	);
-	const currentSeasons = seasons.filter(
-		(s) =>
-			new Date(s.start_date) <= currentDate &&
-			new Date(s.end_date) >= currentDate,
-	);
-	const pastSeasons = seasons.filter((s) => new Date(s.end_date) < currentDate);
+	try {
+		const [league, seasons, events, userInLeague] = await Promise.all([
+			fetchLeague(leagueId),
+			fetchSeasons(leagueId),
+			fetchEvents(leagueId),
+			userId ? fetchUserForLeague(userId, leagueId) : null,
+		]);
 
-	const upcomingEvents = events
-		.filter((e) => new Date(e.start_time) > currentDate)
-		.slice(0, 1);
-	const pastEvents = events
-		.filter((e) => new Date(e.end_time) < currentDate)
-		.slice(0, 10);
+		const currentDate = new Date();
+		const upcomingSeasons = seasons.filter(
+			(s) => new Date(s.start_date) > currentDate,
+		);
+		const currentSeasons = seasons.filter(
+			(s) =>
+				new Date(s.start_date) <= currentDate &&
+				new Date(s.end_date) >= currentDate,
+		);
+		const pastSeasons = seasons.filter(
+			(s) => new Date(s.end_date) < currentDate,
+		);
 
-	const hasSeasons = seasons.length > 0;
+		const upcomingEvents = events
+			.filter((e) => new Date(e.start_time) > currentDate)
+			.slice(0, 1);
+		const pastEvents = events
+			.filter((e) => new Date(e.end_time) < currentDate)
+			.slice(0, 10);
 
-	return (
-		<PageLayout>
-			<div className="max-w-4xl mx-auto pb-24">
-				<div className="flex items-center mb-6 h-16">
-					<div className="w-44 h-16 mr-4 relative overflow-hidden">
-						<Image
-							src={league.logo_image_url}
-							alt={`${league.name} logo`}
-							fill
-							className="object-cover"
-						/>
+		const hasSeasons = seasons.length > 0;
+
+		logger.info({ leagueId }, "League page rendered successfully");
+		return (
+			<PageLayout>
+				<div className="max-w-4xl mx-auto pb-24">
+					<div className="flex items-center mb-6 h-16">
+						<div className="w-44 h-16 mr-4 relative overflow-hidden">
+							<Image
+								src={league.logo_image_url}
+								alt={`${league.name} logo`}
+								fill
+								className="object-cover"
+							/>
+						</div>
+						<h1 className="text-3xl font-bold">{league.name}</h1>
 					</div>
-					<h1 className="text-3xl font-bold">{league.name}</h1>
+
+					<Card className="mb-8">
+						<CardContent className="pt-6">
+							<p className="mb-4">{league.description}</p>
+							{league.clubs && league.clubs.length > 0 && (
+								<div className="mb-4">
+									<h3 className="text-sm font-semibold mb-2">
+										{league.clubs.length === 1 ? "Location:" : "Locations:"}
+									</h3>
+									<ul>
+										{league.clubs.map((club) => (
+											<ClubLocationLink key={club.id} club={club} />
+										))}
+									</ul>
+								</div>
+							)}
+							<FAQDialogButton faqHtml={league.faq_html} />
+						</CardContent>
+					</Card>
+
+					<InProgressSection leagueId={leagueId} />
+
+					<LeagueRegistrationButton leagueId={leagueId} />
+
+					<RegisteredPlayersList leagueId={leagueId} leagueName={league.name} />
+
+					{hasSeasons ? (
+						<>
+							<SeasonList title="Upcoming Seasons" seasons={upcomingSeasons} />
+							<SeasonList title="Current Seasons" seasons={currentSeasons} />
+							<SeasonList title="Past Seasons" seasons={pastSeasons} />
+						</>
+					) : (
+						<>
+							<EventList title="Upcoming Event" events={upcomingEvents} />
+							<EventList
+								title="Past Events"
+								events={pastEvents}
+								showSeeAll={true}
+								leagueId={leagueId}
+							/>
+						</>
+					)}
 				</div>
-
-				<Card className="mb-8">
-					<CardContent className="pt-6">
-						<p className="mb-4">{league.description}</p>
-						{league.clubs && league.clubs.length > 0 && (
-							<div className="mb-4">
-								<h3 className="text-sm font-semibold mb-2">
-									{league.clubs.length === 1 ? "Location:" : "Locations:"}
-								</h3>
-								<ul>
-									{league.clubs.map((club) => (
-										<ClubLocationLink key={club.id} club={club} />
-									))}
-								</ul>
-							</div>
-						)}
-						<FAQDialogButton faqHtml={league.faq_html} />
-					</CardContent>
-				</Card>
-
-				<InProgressSection leagueId={leagueId} />
-
-				<LeagueRegistrationButton leagueId={leagueId} />
-
-				<RegisteredPlayersList leagueId={leagueId} leagueName={league.name} />
-
-				{hasSeasons ? (
-					<>
-						<SeasonList title="Upcoming Seasons" seasons={upcomingSeasons} />
-						<SeasonList title="Current Seasons" seasons={currentSeasons} />
-						<SeasonList title="Past Seasons" seasons={pastSeasons} />
-					</>
-				) : (
-					<>
-						<EventList title="Upcoming Event" events={upcomingEvents} />
-						<EventList
-							title="Past Events"
-							events={pastEvents}
-							showSeeAll={true}
-							leagueId={leagueId}
-						/>
-					</>
-				)}
-			</div>
-		</PageLayout>
-	);
+			</PageLayout>
+		);
+	} catch (error) {
+		logger.error({ leagueId, error }, "Error rendering league page");
+		throw error;
+	}
 }
