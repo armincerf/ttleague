@@ -12,7 +12,7 @@ function InProgressEvent({ event }: { event: Event }) {
 				<h3 className="text-lg font-semibold mb-2">{event.name}</h3>
 				<p>Started at: {new Date(event.start_time).toLocaleString()}</p>
 				<Link
-					href={`/events/${event.id}`}
+					href={`/leagues/${event.league_id}/events/${event.id}`}
 					className="text-blue-500 hover:underline"
 				>
 					View Event
@@ -23,8 +23,12 @@ function InProgressEvent({ event }: { event: Event }) {
 }
 
 function InProgressMatch({
+	leagueId,
 	match,
-}: { match: NonNullable<Awaited<ReturnType<typeof fetchMatches>>>[number] }) {
+}: {
+	leagueId: string;
+	match: NonNullable<Awaited<ReturnType<typeof fetchMatches>>>[number];
+}) {
 	return (
 		<Card className="mb-4">
 			<CardContent className="pt-6">
@@ -36,7 +40,7 @@ function InProgressMatch({
 					Player 2: {match.player2?.first_name} {match.player2?.last_name}
 				</p>
 				<Link
-					href={`/matches/${match.id}`}
+					href={`/leagues/${leagueId}/events/${match.event_id}/matches/${match.id}`}
 					className="text-blue-500 hover:underline"
 				>
 					View Match
@@ -64,7 +68,7 @@ export default function InProgressSection({ leagueId }: { leagueId: string }) {
 					<InProgressEvent key={event.id} event={event} />
 				))}
 				{inProgressMatches.map((match) => (
-					<InProgressMatch key={match.id} match={match} />
+					<InProgressMatch key={match.id} leagueId={leagueId} match={match} />
 				))}
 			</CardContent>
 		</Card>

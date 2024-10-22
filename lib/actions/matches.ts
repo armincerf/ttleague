@@ -66,3 +66,21 @@ export async function fetchMatch(matchId: string) {
 		logger.info({ duration: end - start, matchId }, "fetchMatch completed");
 	}
 }
+
+export async function revalidateMatch(matchId: string) {
+	const res = await fetch(`/api/revalidate?tag=match-${matchId}`, {
+		method: "POST",
+	});
+	if (!res.ok) {
+		throw new Error("Failed to revalidate match");
+	}
+}
+
+export async function revalidateMatches(eventId: string) {
+	const res = await fetch(`/api/revalidate?tag=matches-${eventId}`, {
+		method: "POST",
+	});
+	if (!res.ok) {
+		throw new Error("Failed to revalidate matches");
+	}
+}

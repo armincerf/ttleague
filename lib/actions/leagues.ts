@@ -28,7 +28,7 @@ export async function fetchLeague(leagueId: string) {
 				}
 			},
 			["league", leagueId],
-			{ revalidate: 60 }, // Cache for 1 minute
+			{ tags: [`league-${leagueId}`], revalidate: 60 },
 		)();
 		return league;
 	} finally {
@@ -50,7 +50,7 @@ export async function fetchLeagues() {
 				}
 			},
 			["leagues"],
-			{ revalidate: 60 }, // Cache for 1 minute
+			{ tags: ["leagues"], revalidate: 60 },
 		)();
 	} finally {
 		const end = performance.now();
@@ -76,11 +76,27 @@ export async function fetchSeasons(leagueId: string) {
 				}
 			},
 			["seasons", leagueId],
-			{ revalidate: 60 }, // Cache for 1 minute
+			{ tags: [`seasons-${leagueId}`], revalidate: 60 },
 		)();
 		return seasons;
 	} finally {
 		const end = performance.now();
 		logger.info({ duration: end - start, leagueId }, "fetchSeasons completed");
+	}
+}
+
+export async function revalidateLeague(leagueId: string) {
+	const res = await fetch(`/api/revalidate?tag=league-${leagueId}`, {
+		method: "POST",
+	});
+	if (!res.ok) {
+		throw new Error("Failed to revalidate league");
+	}
+}
+
+export async function revalidateLeagues() {
+	const res = await fetch("/api/revalidate?tag=leagues", { method: "POST" });
+	if (!res.ok) {
+		throw new Error("Failed to revalidate leagues");
 	}
 }

@@ -26,7 +26,7 @@ export async function fetchEvent(eventId: string) {
 				}
 			},
 			["event", eventId],
-			{ revalidate: 60 },
+			{ tags: [`event-${eventId}`], revalidate: 60 },
 		)();
 		return event;
 	} catch (error) {
@@ -54,11 +54,29 @@ export async function fetchEvents(leagueId: string) {
 				}
 			},
 			["events", leagueId],
-			{ revalidate: 3600 }, // Cache for 1 hour
+			{ tags: [`events-${leagueId}`], revalidate: 60 },
 		)();
 		return events;
 	} catch (error) {
 		logger.error({ leagueId, error }, "Error fetching events");
 		throw error;
+	}
+}
+
+export async function revalidateEvent(eventId: string) {
+	const res = await fetch(`/api/revalidate?tag=event-${eventId}`, {
+		method: "POST",
+	});
+	if (!res.ok) {
+		throw new Error("Failed to revalidate event");
+	}
+}
+
+export async function revalidateEvents(leagueId: string) {
+	const res = await fetch(`/api/revalidate?tag=events-${leagueId}`, {
+		method: "POST",
+	});
+	if (!res.ok) {
+		throw new Error("Failed to revalidate events");
 	}
 }

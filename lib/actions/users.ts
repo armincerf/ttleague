@@ -45,7 +45,7 @@ export async function fetchUsers() {
 				}
 			},
 			["users"],
-			{ revalidate: 3600 },
+			{ revalidate: 60 },
 		)();
 		return users;
 	} finally {
@@ -79,7 +79,7 @@ export async function fetchUserForLeague(userId: string, leagueId: string) {
 				}
 			},
 			["userForLeague", userId, leagueId],
-			{ revalidate: 3600 },
+			{ revalidate: 60 },
 		)();
 		return user;
 	} finally {
@@ -88,5 +88,21 @@ export async function fetchUserForLeague(userId: string, leagueId: string) {
 			{ duration: end - start, userId, leagueId },
 			"fetchUserForLeague completed",
 		);
+	}
+}
+
+export async function revalidateUser(userId: string) {
+	const res = await fetch(`/api/revalidate?tag=user-${userId}`, {
+		method: "POST",
+	});
+	if (!res.ok) {
+		throw new Error("Failed to revalidate user");
+	}
+}
+
+export async function revalidateUsers() {
+	const res = await fetch("/api/revalidate?tag=users", { method: "POST" });
+	if (!res.ok) {
+		throw new Error("Failed to revalidate users");
 	}
 }

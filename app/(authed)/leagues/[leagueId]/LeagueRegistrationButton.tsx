@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { client } from "@/lib/triplit";
 import { useConnectionStatus, useQueryOne } from "@triplit/react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function LeagueRegistrationButton({ leagueId }: { leagueId: string }) {
 	const { userId } = useAuth();
@@ -51,6 +52,10 @@ function LeagueRegistrationButton({ leagueId }: { leagueId: string }) {
 			setIsRegistering(false);
 		}
 	};
+
+	if (fetching) {
+		return <Skeleton className="w-full h-12 mb-8" />;
+	}
 
 	if (!userId) {
 		return (

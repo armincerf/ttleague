@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import PageLayout from "@/components/PageLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import FAQDialogButton from "./FAQDialogButton";
 import RegisteredPlayersList from "./RegisteredPlayersList";
@@ -88,10 +88,6 @@ export default async function LeaguePage({
 				<div className="max-w-4xl mx-auto pb-24">
 					<LeagueHeader league={league} />
 
-					<Suspense fallback={<div>Loading in-progress section...</div>}>
-						<InProgressSection leagueId={leagueId} />
-					</Suspense>
-
 					<LeagueRegistrationButton leagueId={leagueId} />
 
 					<Suspense fallback={<div>Loading registered players...</div>}>
@@ -99,6 +95,10 @@ export default async function LeaguePage({
 							leagueId={leagueId}
 							leagueName={league.name}
 						/>
+					</Suspense>
+
+					<Suspense fallback={<div>Loading in-progress section...</div>}>
+						<InProgressSection leagueId={leagueId} />
 					</Suspense>
 
 					<Suspense fallback={<div>Loading seasons and events...</div>}>
