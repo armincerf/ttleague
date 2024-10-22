@@ -1,33 +1,8 @@
-import { notFound } from "next/navigation";
-import { client } from "@/lib/triplit";
 import PageLayout from "@/components/PageLayout";
 import { EventCard, type TEventCardEvent } from "@/components/EventCard";
-import type { League } from "@/triplit/schema";
-
-async function fetchLeague(leagueId: string): Promise<League> {
-	const league = await client.fetchOne(
-		client.query("leagues").where("id", "=", leagueId).build(),
-	);
-	if (!league) notFound();
-	return league;
-}
-
-async function fetchEvents(leagueId: string): Promise<TEventCardEvent[]> {
-	const data = await client.fetch(
-		client
-			.query("events")
-			.where("league_id", "=", leagueId)
-			.include("club")
-			.include("registrations")
-			.build(),
-	);
-
-	return data.map((event) => ({
-		...event,
-		club: event.club ?? undefined,
-		registrations: event.registrations ?? undefined,
-	}));
-}
+import { fetchLeague } from "@/lib/actions/leagues";
+import { fetchEvents } from "@/lib/actions/events";
+import { notFound } from "next/navigation";
 
 export default async function LeagueEventsPage({
 	params,
@@ -45,6 +20,7 @@ export default async function LeagueEventsPage({
 		(e) => new Date(e.start_time) > currentDate,
 	);
 	const pastEvents = events.filter((e) => new Date(e.end_time) < currentDate);
+	if (!league) notFound();
 
 	return (
 		<PageLayout>

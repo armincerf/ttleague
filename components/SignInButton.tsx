@@ -6,7 +6,26 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { checkAccountExists } from "@/lib/triplit";
+import { HttpClient } from "@triplit/client";
+
+async function checkAccountExists(email: string) {
+	if (!process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL) {
+		throw new Error("NEXT_PUBLIC_TRIPLIT_SERVER_URL is not defined");
+	}
+	if (!process.env.NEXT_PUBLIC_TRIPLIT_TOKEN) {
+		throw new Error("NEXT_PUBLIC_TRIPLIT_TOKEN is not defined");
+	}
+
+	const httpClient = new HttpClient({
+		serverUrl: process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
+		token: process.env.NEXT_PUBLIC_TRIPLIT_TOKEN,
+	});
+
+	const res = await httpClient.fetchOne(
+		httpClient.query("users").where("email", "=", email).build(),
+	);
+	return res !== null;
+}
 
 export default function SignUpButton() {
 	const { user } = useUser();

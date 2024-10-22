@@ -1,53 +1,65 @@
 import { unstable_cache } from "next/cache";
 import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
-import { headers } from "next/headers";
 
-export const fetchLeague = unstable_cache(
-	async (leagueId: string) => {
-		const headersList = await headers();
-		const start = performance.now();
-		try {
-			const league = await httpClient.fetchOne(
-				httpClient
-					.query("leagues")
-					.where("id", "=", leagueId)
-					.include("clubs")
-					.include("seasons")
-					.include("players")
-					.build(),
-			);
-			if (!league) {
-				logger.warn({ leagueId }, "League not found");
-				return null;
-			}
-			return league;
-		} finally {
-			const end = performance.now();
-			headersList.append("Server-Timing", `fetchLeague;dur=${end - start}`);
-		}
-	},
-	["league"],
-	{ revalidate: 3600 }, // Cache for 1 hour
-);
+export async function fetchLeague(leagueId: string) {
+	const start = performance.now();
+	try {
+		const league = await unstable_cache(
+			async () => {
+				try {
+					const league = await httpClient.fetchOne(
+						httpClient
+							.query("leagues")
+							.where("id", "=", leagueId)
+							.include("clubs")
+							.include("seasons")
+							.include("players")
+							.build(),
+					);
+					if (!league) {
+						logger.warn({ leagueId }, "League not found");
+						return null;
+					}
+					return league;
+				} catch (error) {
+					logger.error({ leagueId, error }, "Error fetching league");
+					throw error;
+				}
+			},
+			["league", leagueId],
+			{ revalidate: 3600 }, // Cache for 1 hour
+		)();
+		return league;
+	} finally {
+		const end = performance.now();
+		logger.info({ duration: end - start, leagueId }, "fetchLeague completed");
+	}
+}
 
-export const fetchSeasons = unstable_cache(
-	async (leagueId: string) => {
-		const headersList = await headers();
-		const start = performance.now();
-		try {
-			const seasons = await httpClient.fetch(
-				httpClient.query("seasons").where("league_id", "=", leagueId).build(),
-			);
-			return seasons;
-		} catch (error) {
-			logger.error({ leagueId, error }, "Error fetching seasons");
-			throw error;
-		} finally {
-			const end = performance.now();
-			headersList.append("Server-Timing", `fetchSeasons;dur=${end - start}`);
-		}
-	},
-	["seasons"],
-	{ revalidate: 3600 }, // Cache for 1 hour
-);
+export async function fetchSeasons(leagueId: string) {
+	const start = performance.now();
+	try {
+		const seasons = await unstable_cache(
+			async () => {
+				try {
+					return await httpClient.fetch(
+						httpClient
+							.query("seasons")
+							.where("league_id", "=", leagueId)
+							.build(),
+					);
+				} catch (error) {
+					logger.error({ leagueId, error }, "Error fetching seasons");
+					throw error;
+				}
+			},
+			["seasons", leagueId],
+			{ revalidate: 3600 }, // Cache for 1 hour
+		)();
+		return seasons;
+	} finally {
+		const end = performance.now();
+		logger.info({ duration: end - start, leagueId }, "fetchSeasons completed");
+	}
+}

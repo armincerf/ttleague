@@ -2,7 +2,7 @@
 
 import { useForm } from "@tanstack/react-form";
 import { zodValidator } from "@tanstack/zod-form-adapter";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
 	CardContent,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useUser, useSignIn } from "@clerk/nextjs";
+import { useUser, useSignIn, useAuth } from "@clerk/nextjs";
 import type { Clerk } from "@clerk/types";
 import {
 	Select,
@@ -42,12 +42,33 @@ import { Slider } from "@/components/ui/slider";
 import { useDropzone } from "react-dropzone";
 import { FileIcon, UploadIcon } from "lucide-react";
 import { z } from "zod";
-import { checkAccountExists, client } from "@/lib/triplit";
+import { client } from "@/lib/triplit";
 import {
 	getDivision,
 	initialRating,
 	leagueDivisionsSchema,
 } from "@/lib/ratingSystem";
+import { Skeleton } from "@/components/ui/skeleton";
+import { HttpClient } from "@triplit/client";
+
+async function checkAccountExists(email: string) {
+	if (!process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL) {
+		throw new Error("NEXT_PUBLIC_TRIPLIT_SERVER_URL is not defined");
+	}
+	if (!process.env.NEXT_PUBLIC_TRIPLIT_TOKEN) {
+		throw new Error("NEXT_PUBLIC_TRIPLIT_TOKEN is not defined");
+	}
+
+	const httpClient = new HttpClient({
+		serverUrl: process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
+		token: process.env.NEXT_PUBLIC_TRIPLIT_TOKEN,
+	});
+
+	const res = await httpClient.fetchOne(
+		httpClient.query("users").where("email", "=", email).build(),
+	);
+	return res !== null;
+}
 
 const schema = z.object({
 	email: z.string().email(),
@@ -60,14 +81,58 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
-// Add this type declaration at the top of your file, outside of any function
-declare global {
-	interface Window {
-		Clerk: Clerk;
-	}
+function OnboardingFormSkeleton() {
+	return (
+		<Card className="w-[90vw] sm:w-full max-w-[450px] mx-auto mt-8 px-4 sm:px-0">
+			<CardHeader>
+				<Skeleton className="h-8 w-3/4" />
+				<Skeleton className="h-4 w-5/6 mt-2" />
+			</CardHeader>
+			<CardContent className="space-y-6">
+				{[...Array(5)].map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+					<div key={i} className="space-y-2">
+						<Skeleton className="h-4 w-1/4" />
+						<Skeleton className="h-10 w-full" />
+					</div>
+				))}
+				<Skeleton className="h-10 w-full" />
+			</CardContent>
+		</Card>
+	);
 }
 
 function OnboardingForm() {
+	const { user } = useUser();
+	const router = useRouter();
+
+	useEffect(() => {
+		if (user?.primaryEmailAddress?.emailAddress) {
+			checkAccountExists(user.primaryEmailAddress.emailAddress).then(
+				(exists) => {
+					if (exists) {
+						console.log("account exists, redirecting to leaderboard");
+						router.push("/leaderboard");
+					}
+				},
+			);
+		}
+	}, [user, router]);
+
+	if (!user) {
+		return <OnboardingFormSkeleton />;
+	}
+
+	return (
+		<Suspense fallback={<OnboardingFormSkeleton />}>
+			<OnboardingFormContent user={user} />
+		</Suspense>
+	);
+}
+
+function OnboardingFormContent({
+	user,
+}: { user: NonNullable<ReturnType<typeof useUser>["user"]> }) {
 	const [profileImage, setProfileImage] = useState<string | null>(null);
 	const [imageSrc, setImageSrc] = useState<string | null>(null);
 	const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
@@ -76,8 +141,10 @@ function OnboardingForm() {
 	const [isCropperOpen, setIsCropperOpen] = useState(false);
 
 	const router = useRouter();
-	const searchParams = useSearchParams();
-	const { user } = useUser();
+	const searchParams = new URLSearchParams(
+		typeof window !== "undefined" ? window.location.search : "",
+	);
+	const { getToken } = useAuth();
 	const form = useForm({
 		defaultValues: {
 			email:
@@ -100,8 +167,7 @@ function OnboardingForm() {
 				});
 				if (user?.id) {
 					try {
-						const clerk = window.Clerk;
-						const token = await clerk.session?.getToken();
+						const token = await getToken();
 						if (token) {
 							client.updateToken(token);
 							const tx = await client.http.insert("users", {
@@ -126,7 +192,7 @@ function OnboardingForm() {
 					}
 				}
 			} catch (error) {
-				console.error("Error during onboarding:", JSON.stringify(error));
+				console.error("Error during onboarding:", error);
 				// You might want to show an error message to the user here
 			}
 		},
@@ -185,28 +251,13 @@ function OnboardingForm() {
 		reader.readAsDataURL(file);
 	}
 
-	useEffect(() => {
-		if (user?.primaryEmailAddress?.emailAddress) {
-			checkAccountExists(user.primaryEmailAddress.emailAddress).then(
-				(exists) => {
-					if (exists) {
-						console.log("account exists, redirecting to leaderboard");
-						router.push("/leaderboard");
-					}
-				},
-			);
-		}
-	}, [user, router]);
-
 	// Function to update URL with form state
 	function updateUrlWithFormState(fieldName: keyof FormValues, value: string) {
-		const params = new URLSearchParams(searchParams.toString());
-		params.set(fieldName, value);
-		router.replace(`?${params.toString()}`, { scroll: false });
-	}
-
-	if (!user) {
-		return <div>Loading...</div>;
+		if (typeof window !== "undefined") {
+			const params = new URLSearchParams(window.location.search);
+			params.set(fieldName, value);
+			router.replace(`?${params.toString()}`, { scroll: false });
+		}
 	}
 
 	return (
@@ -514,7 +565,7 @@ function OnboardingForm() {
 
 export default function Onboarding() {
 	return (
-		<Suspense fallback={<div>Loading...</div>}>
+		<Suspense fallback={<OnboardingFormSkeleton />}>
 			<OnboardingForm />
 		</Suspense>
 	);

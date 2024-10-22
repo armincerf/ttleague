@@ -1,13 +1,18 @@
 import LeaderboardTable from "@/components/LeaderboardTable";
 import PageLayout from "@/components/PageLayout";
-import { client } from "@/lib/triplit";
+import { httpClient } from "@/lib/triplitServerClient";
+import { unstable_cache } from "next/cache";
 
-async function getInitialUsers() {
-	const query = client.query("users").order("rating", "DESC").limit(10).build();
+const getInitialUsers = unstable_cache(async () => {
+	const query = httpClient
+		.query("users")
+		.order("rating", "DESC")
+		.limit(10)
+		.build();
 
-	const results = await client.http.fetch(query);
+	const results = await httpClient.fetch(query);
 	return results;
-}
+}, ["leaderboard-users"]);
 
 async function LeaderboardPage() {
 	const initialUsers = await getInitialUsers();

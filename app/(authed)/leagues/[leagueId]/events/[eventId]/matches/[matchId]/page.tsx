@@ -1,24 +1,9 @@
 import { notFound } from "next/navigation";
-import { client } from "@/lib/triplit";
 import PageLayout from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RecordScoreForm from "./RecordScoreForm";
-
-async function fetchMatch(matchId: string) {
-	const match = await client.fetchOne(
-		client
-			.query("matches")
-			.where("id", "=", matchId)
-			.include("player1")
-			.include("player2")
-			.include("event")
-			.include("games")
-			.build(),
-	);
-	if (!match) notFound();
-	return match;
-}
+import { fetchMatch } from "@/lib/actions/matches";
 
 export default async function MatchPage({
 	params,
@@ -27,7 +12,13 @@ export default async function MatchPage({
 }) {
 	const { matchId } = await params;
 	const match = await fetchMatch(matchId);
-	if (!match.player1 || !match.player2 || !match.event || !match.games) {
+	if (
+		!match ||
+		!match.player1 ||
+		!match.player2 ||
+		!match.event ||
+		!match.games
+	) {
 		notFound();
 	}
 

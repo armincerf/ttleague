@@ -1,40 +1,20 @@
-import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { client } from "@/lib/triplit";
+import { notFound } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ParticipantsTable from "./ParticipantsTable";
 import RegistrationForm from "./RegistrationForm";
 import { getDivision, leagueDivisionsSchema } from "@/lib/ratingSystem";
+import { fetchEvent } from "@/lib/actions/events";
+import { fetchUser } from "@/lib/actions/users";
 
 const sortedLeagueDivisions = leagueDivisionsSchema.options.reverse();
 
-async function fetchEvent(eventId: string) {
-	const event = await client.fetchOne(
-		client
-			.query("events")
-			.where("id", "=", eventId)
-			.include("club")
-			.include("registrations")
-			.build(),
-	);
-	if (!event) notFound();
-	return event;
-}
-
-async function fetchUser(userId: string) {
-	const user = await client.fetchById("users", userId);
-	if (!user) notFound();
-	const validatedDivision = getDivision(user.current_division);
-	return {
-		...user,
-		current_division: validatedDivision,
-	};
-}
-
-function calculateLevels(user: Awaited<ReturnType<typeof fetchUser>>) {
+function calculateLevels(
+	user: NonNullable<Awaited<ReturnType<typeof fetchUser>>>,
+) {
 	const userDivisionIndex = sortedLeagueDivisions.indexOf(
-		user.current_division,
+		getDivision(user.current_division),
 	);
 	const defaultMin = user.default_min_opponent_level
 		? sortedLeagueDivisions.indexOf(user.default_min_opponent_level)
@@ -62,7 +42,7 @@ export default async function EventRegistrationPage({
 		fetchEvent(eventId),
 		fetchUser(userId),
 	]);
-
+	if (!event || !user) notFound();
 	const { defaultMinLevel, defaultMaxLevel } = calculateLevels(user);
 
 	return (

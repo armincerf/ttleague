@@ -1,9 +1,7 @@
-import { notFound } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import Link from "next/link";
-import { MapPin, Calendar, Clock, Users } from "lucide-react";
-import { format, differenceInSeconds, formatDistanceToNow } from "date-fns";
-import { client } from "@/lib/triplit";
+import { Calendar, Clock, Users } from "lucide-react";
+import { format, differenceInSeconds } from "date-fns";
 import PageLayout from "@/components/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
