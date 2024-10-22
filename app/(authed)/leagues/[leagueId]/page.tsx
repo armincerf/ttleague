@@ -188,6 +188,8 @@ async function InProgressSection({
 	);
 }
 
+export const revalidate = 3600; // Revalidate every hour
+
 export default async function LeaguePage({
 	params,
 }: {
@@ -203,6 +205,10 @@ export default async function LeaguePage({
 			fetchEvents(leagueId),
 			userId ? fetchUserForLeague(userId, leagueId) : null,
 		]);
+
+		if (!league) {
+			notFound();
+		}
 
 		const currentDate = new Date();
 		const upcomingSeasons = seasons.filter(

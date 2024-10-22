@@ -1,9 +1,12 @@
 import { unstable_cache } from "next/cache";
 import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
+import { headers } from "next/headers";
 
 export const fetchLeague = unstable_cache(
 	async (leagueId: string) => {
+		const headersList = await headers();
+		const start = performance.now();
 		try {
 			const league = await httpClient.fetchOne(
 				httpClient
@@ -16,20 +19,22 @@ export const fetchLeague = unstable_cache(
 			);
 			if (!league) {
 				logger.warn({ leagueId }, "League not found");
-				throw new Error(`League not found: ${leagueId}`);
+				return null;
 			}
 			return league;
-		} catch (error) {
-			logger.error({ leagueId, error }, "Error fetching league");
-			throw error;
+		} finally {
+			const end = performance.now();
+			headersList.append("Server-Timing", `fetchLeague;dur=${end - start}`);
 		}
 	},
 	["league"],
-	{ revalidate: 60 },
+	{ revalidate: 3600 }, // Cache for 1 hour
 );
 
 export const fetchSeasons = unstable_cache(
 	async (leagueId: string) => {
+		const headersList = await headers();
+		const start = performance.now();
 		try {
 			const seasons = await httpClient.fetch(
 				httpClient.query("seasons").where("league_id", "=", leagueId).build(),
@@ -38,8 +43,11 @@ export const fetchSeasons = unstable_cache(
 		} catch (error) {
 			logger.error({ leagueId, error }, "Error fetching seasons");
 			throw error;
+		} finally {
+			const end = performance.now();
+			headersList.append("Server-Timing", `fetchSeasons;dur=${end - start}`);
 		}
 	},
 	["seasons"],
-	{ revalidate: 60 },
+	{ revalidate: 3600 }, // Cache for 1 hour
 );

@@ -1,9 +1,12 @@
 import { unstable_cache } from "next/cache";
 import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
+import { headers } from "next/headers";
 
 export const fetchEvent = unstable_cache(
 	async (eventId: string) => {
+		const headersList = await headers();
+		const start = performance.now();
 		try {
 			const event = await httpClient.fetchOne(
 				httpClient
@@ -21,6 +24,9 @@ export const fetchEvent = unstable_cache(
 		} catch (error) {
 			logger.error({ eventId, error }, "Error fetching event");
 			throw error;
+		} finally {
+			const end = performance.now();
+			headersList.append("Server-Timing", `fetchEvent;dur=${end - start}`);
 		}
 	},
 	["event"],
@@ -29,6 +35,8 @@ export const fetchEvent = unstable_cache(
 
 export const fetchEvents = unstable_cache(
 	async (leagueId: string) => {
+		const headersList = await headers();
+		const start = performance.now();
 		try {
 			const events = await httpClient.fetch(
 				httpClient
@@ -42,8 +50,11 @@ export const fetchEvents = unstable_cache(
 		} catch (error) {
 			logger.error({ leagueId, error }, "Error fetching events");
 			throw error;
+		} finally {
+			const end = performance.now();
+			headersList.append("Server-Timing", `fetchEvents;dur=${end - start}`);
 		}
 	},
 	["events"],
-	{ revalidate: 60 },
+	{ revalidate: 3600 }, // Cache for 1 hour
 );
