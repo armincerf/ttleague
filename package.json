@@ -33,6 +33,7 @@
 		"@tanstack/zod-form-adapter": "^0.34.1",
 		"@triplit/client": "^0.5.7",
 		"@triplit/react": "^0.4.7",
+		"@vercel/speed-insights": "^1.0.13",
 		"class-variance-authority": "^0.7.0",
 		"clsx": "^2.1.1",
 		"date-fns": "^4.1.0",
