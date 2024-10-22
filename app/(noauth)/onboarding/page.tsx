@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -67,7 +67,7 @@ declare global {
 	}
 }
 
-export default function Onboarding() {
+function OnboardingForm() {
 	const [profileImage, setProfileImage] = useState<string | null>(null);
 	const [imageSrc, setImageSrc] = useState<string | null>(null);
 	const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
@@ -78,8 +78,6 @@ export default function Onboarding() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 	const { user } = useUser();
-	console.log("user", user);
-
 	const form = useForm({
 		defaultValues: {
 			email:
@@ -118,7 +116,6 @@ export default function Onboarding() {
 								losses: 0,
 								no_shows: 0,
 							});
-							console.log("tx", tx);
 
 							router.push("/leaderboard");
 						} else {
@@ -512,5 +509,13 @@ export default function Onboarding() {
 				</DialogContent>
 			</Dialog>
 		</Card>
+	);
+}
+
+export default function Onboarding() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<OnboardingForm />
+		</Suspense>
 	);
 }

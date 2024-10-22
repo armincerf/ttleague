@@ -54,7 +54,7 @@ export default async function EventRegistrationPage({
 }: {
 	params: Promise<{ leagueId: string; eventId: string }>;
 }) {
-	const { userId } = auth();
+	const { userId } = await auth();
 	if (!userId) notFound();
 
 	const { eventId, leagueId } = await params;

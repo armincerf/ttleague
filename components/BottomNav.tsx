@@ -28,7 +28,6 @@ export default function BottomNav() {
 	useEffect(() => {
 		getToken().then((token) => {
 			client.disconnect();
-			console.log("updating token", token);
 			client.updateToken(token ?? "");
 			client.connect();
 		});

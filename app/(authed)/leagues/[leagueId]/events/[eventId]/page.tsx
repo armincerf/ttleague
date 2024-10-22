@@ -20,7 +20,7 @@ export default async function EventPage({
 }: {
 	params: Promise<{ leagueId: string; eventId: string }>;
 }) {
-	const { userId } = auth();
+	const { userId } = await auth();
 	const { eventId, leagueId } = await params;
 
 	try {

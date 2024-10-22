@@ -1,12 +1,6 @@
 import { schema } from "@/triplit/schema";
 import { HttpClient, TriplitClient } from "@triplit/client";
 
-console.log(
-	"NEXT_PUBLIC_TRIPLIT_SERVER_URL",
-	process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
-	process.env.NEXT_PUBLIC_TRIPLIT_TOKEN,
-);
-
 export const client = new TriplitClient({
 	serverUrl: process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
 	token: process.env.NEXT_PUBLIC_TRIPLIT_TOKEN,

@@ -76,7 +76,7 @@ async function InProgressSection({
 }: {
 	leagueId: string;
 }) {
-	const { userId } = auth();
+	const { userId } = await auth();
 
 	const [event, season, userInLeague] = await Promise.all([
 		client.fetchOne(
@@ -125,7 +125,6 @@ async function InProgressSection({
 	const isUserRegistered = registeredPlayers?.some(
 		(reg) => reg.user_id === userId,
 	);
-	console.log(inProgressEvent, inProgressSeason, registeredPlayers);
 
 	const formatDate = (date: Date) => {
 		return date.toLocaleString("en-US", {
@@ -194,7 +193,7 @@ export default async function LeaguePage({
 }: {
 	params: Promise<{ leagueId: string }>;
 }) {
-	const { userId } = auth();
+	const { userId } = await auth();
 	const { leagueId } = await params;
 
 	try {

@@ -20,7 +20,6 @@ export default function SignUpButton() {
 	const { signIn, setActive: setActiveSignIn } = useSignIn();
 	const router = useRouter();
 	const { toast } = useToast();
-	console.log("user", user);
 
 	const handleInitialSubmit = async () => {
 		if (!email) return;

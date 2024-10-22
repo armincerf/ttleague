@@ -14,7 +14,7 @@
 		"lint": "next lint"
 	},
 	"dependencies": {
-		"@clerk/nextjs": "^5.7.5",
+		"@clerk/nextjs": "^6.0.0-canary.vee453d8",
 		"@faker-js/faker": "^9.0.3",
 		"@hookform/resolvers": "^3.9.0",
 		"@radix-ui/react-avatar": "^1.1.1",
