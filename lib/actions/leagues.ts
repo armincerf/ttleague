@@ -28,7 +28,7 @@ export async function fetchLeague(leagueId: string) {
 				}
 			},
 			["league", leagueId],
-			{ revalidate: 3600 }, // Cache for 1 hour
+			{ revalidate: 60 }, // Cache for 1 minute
 		)();
 		return league;
 	} finally {
@@ -50,7 +50,7 @@ export async function fetchLeagues() {
 				}
 			},
 			["leagues"],
-			{ revalidate: 3600 }, // Cache for 1 hour
+			{ revalidate: 60 }, // Cache for 1 minute
 		)();
 	} finally {
 		const end = performance.now();
@@ -76,7 +76,7 @@ export async function fetchSeasons(leagueId: string) {
 				}
 			},
 			["seasons", leagueId],
-			{ revalidate: 3600 }, // Cache for 1 hour
+			{ revalidate: 60 }, // Cache for 1 minute
 		)();
 		return seasons;
 	} finally {

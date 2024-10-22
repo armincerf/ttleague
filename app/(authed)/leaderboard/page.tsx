@@ -3,6 +3,9 @@ import PageLayout from "@/components/PageLayout";
 import { httpClient } from "@/lib/triplitServerClient";
 import { unstable_cache } from "next/cache";
 
+// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
+export const revalidate = 60;
+
 const getInitialUsers = unstable_cache(async () => {
 	const query = httpClient
 		.query("users")
