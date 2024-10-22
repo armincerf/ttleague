@@ -6,7 +6,7 @@ import FAQDialogButton from "./FAQDialogButton";
 import RegisteredPlayersList from "./RegisteredPlayersList";
 import LeagueRegistrationButton from "./LeagueRegistrationButton";
 import ClubLocationLink from "@/components/ClubLocationLink";
-import { fetchLeague } from "@/lib/actions/leagues";
+import { fetchLeague, fetchLeagues } from "@/lib/actions/leagues";
 import logger from "@/lib/logging";
 import LeagueSeasons from "./LeagueSeasons";
 import InProgressSection from "./InProgressSection";
@@ -52,6 +52,21 @@ function LeagueHeader({
 
 function LeagueNotFound({ leagueId }: { leagueId: string }) {
 	return <div>League not found: {leagueId}</div>;
+}
+
+// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
+export const revalidate = 60;
+
+// We'll prerender only the params from `generateStaticParams` at build time.
+// If a request comes in for a path that hasn't been generated,
+// Next.js will server-render the page on-demand.
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+	const leagues = await fetchLeagues();
+	return leagues.map((league) => ({
+		leagueId: league.id,
+	}));
 }
 
 export default async function LeaguePage({

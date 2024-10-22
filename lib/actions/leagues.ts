@@ -37,6 +37,27 @@ export async function fetchLeague(leagueId: string) {
 	}
 }
 
+export async function fetchLeagues() {
+	const start = performance.now();
+	try {
+		return await unstable_cache(
+			async () => {
+				try {
+					return await httpClient.fetch(httpClient.query("leagues").build());
+				} catch (error) {
+					logger.error({ error }, "Error fetching leagues");
+					throw error;
+				}
+			},
+			["leagues"],
+			{ revalidate: 3600 }, // Cache for 1 hour
+		)();
+	} finally {
+		const end = performance.now();
+		logger.info({ duration: end - start }, "fetchLeagues completed");
+	}
+}
+
 export async function fetchSeasons(leagueId: string) {
 	const start = performance.now();
 	try {

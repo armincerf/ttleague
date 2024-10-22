@@ -29,6 +29,31 @@ export async function fetchUser(userId: string) {
 	}
 }
 
+export async function fetchUsers() {
+	const start = performance.now();
+	try {
+		const users = await unstable_cache(
+			async () => {
+				try {
+					const users = await httpClient.fetch(
+						httpClient.query("users").build(),
+					);
+					return users;
+				} catch (error) {
+					logger.error({ error }, "Error fetching users");
+					throw error;
+				}
+			},
+			["users"],
+			{ revalidate: 3600 },
+		)();
+		return users;
+	} finally {
+		const end = performance.now();
+		logger.info({ duration: end - start }, "fetchUsers completed");
+	}
+}
+
 export async function fetchUserForLeague(userId: string, leagueId: string) {
 	const start = performance.now();
 	try {

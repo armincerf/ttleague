@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { httpClient } from "@/lib/triplitServerClient";
+import { fetchUsers } from "@/lib/actions/users";
 async function fetchUser(userId: string) {
 	const user = await httpClient.fetchById("users", userId);
 	if (!user) {
@@ -7,6 +8,16 @@ async function fetchUser(userId: string) {
 		notFound();
 	}
 	return user;
+}
+
+// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
+export const revalidate = 60;
+
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+	const users = await fetchUsers();
+	return users.map((user) => ({ userId: user.id }));
 }
 
 interface UserPageProps {

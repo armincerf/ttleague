@@ -3,7 +3,33 @@ import PageLayout from "@/components/PageLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RecordScoreForm from "./RecordScoreForm";
-import { fetchMatch } from "@/lib/actions/matches";
+import { fetchMatch, fetchMatches } from "@/lib/actions/matches";
+import { fetchLeagues } from "@/lib/actions/leagues";
+import { fetchEvents } from "@/lib/actions/events";
+
+// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
+export const revalidate = 60;
+
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+	const leagues = await fetchLeagues();
+	const ids: { leagueId: string; eventId: string; matchId: string }[] = [];
+	for (const league of leagues) {
+		const events = await fetchEvents(league.id);
+		for (const event of events) {
+			const matches = await fetchMatches(event.id);
+			for (const match of matches) {
+				ids.push({
+					leagueId: league.id,
+					eventId: event.id,
+					matchId: match.id,
+				});
+			}
+		}
+	}
+	return ids;
+}
 
 export default async function MatchPage({
 	params,
