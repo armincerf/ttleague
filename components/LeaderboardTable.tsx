@@ -38,7 +38,7 @@ import {
 	PaginationPrevious,
 } from "@/components/ui/pagination";
 import { client } from "@/lib/triplit";
-import { useQuery } from "@triplit/react";
+import { useEntity, useQuery } from "@triplit/react";
 import type { Entity } from "@triplit/client";
 import type { schema } from "@/triplit/schema";
 import {
@@ -106,6 +106,7 @@ interface LeaderboardTableProps {
 export default function LeaderboardTable({
 	initialUsers,
 }: LeaderboardTableProps) {
+	"use no memo";
 	const router = useRouter();
 	const [{ pageIndex, pageSize }, setPagination] = useState({
 		pageIndex: 0,
@@ -117,9 +118,11 @@ export default function LeaderboardTable({
 
 	const memoizedColumns = useMemo(() => columns, []);
 
-	const playersQuery = client.query("users").order("rating", "DESC");
 
-	const { results, fetching, error } = useQuery(client, playersQuery);
+	const { results, fetching, error } = useQuery(
+		client,
+		client.query("users").order("rating", "DESC"),
+	);
 
 	const tableData = useMemo(() => {
 		if (fetching) return initialUsers;
@@ -319,7 +322,7 @@ function LeaderboardSkeleton({ columns, rows }: LeaderboardSkeletonProps) {
 									key={`header-${
 										// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 										i
-									}`}
+										}`}
 								>
 									<TableHeaderSkeleton />
 								</TableHead>
@@ -332,14 +335,14 @@ function LeaderboardSkeleton({ columns, rows }: LeaderboardSkeletonProps) {
 								key={`row-${
 									// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 									rowIndex
-								}`}
+									}`}
 							>
 								{Array.from({ length: columns }).map((_, colIndex) => (
 									<TableCell
 										key={`cell-${rowIndex}-${
 											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 											colIndex
-										}`}
+											}`}
 									>
 										<TableCellSkeleton />
 									</TableCell>

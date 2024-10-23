@@ -3,8 +3,6 @@ import PageLayout from "@/components/PageLayout";
 import { httpClient } from "@/lib/triplitServerClient";
 import { unstable_cache } from "next/cache";
 
-export const revalidate = 60;
-
 const getInitialUsers = unstable_cache(
 	async () => {
 		const query = httpClient

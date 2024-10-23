@@ -253,9 +253,6 @@ function generateMatchesForEvents(
 				id: `${event.id}-match-${matchIndex + 1}`,
 				player_1: player1.id,
 				player_2: player2.id,
-				umpire:
-					faker.helpers.maybe(() => faker.helpers.arrayElement(users).id) ??
-					undefined,
 				manually_created: faker.datatype.boolean(),
 				event_id: event.id,
 				table_number: faker.number.int({ min: 1, max: 10 }),
@@ -268,10 +265,6 @@ function generateMatchesForEvents(
 						? "confirmed"
 						: faker.helpers.arrayElement(["pending", "confirmed"] as const),
 				ranking_score_delta: faker.number.int({ min: -100, max: 100 }),
-				winner:
-					event.status === "completed"
-						? faker.helpers.arrayElement([player1.id, player2.id])
-						: undefined,
 			};
 		});
 	});
