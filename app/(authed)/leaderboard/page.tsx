@@ -1,19 +1,27 @@
 import LeaderboardTable from "@/components/LeaderboardTable";
 import PageLayout from "@/components/PageLayout";
 import { httpClient } from "@/lib/triplitServerClient";
+import { unstable_cache } from "next/cache";
 
 export const revalidate = 60;
 
-const getInitialUsers = async () => {
-	const query = httpClient
-		.query("users")
-		.order("rating", "DESC")
-		.limit(10)
-		.build();
+const getInitialUsers = unstable_cache(
+	async () => {
+		const query = httpClient
+			.query("users")
+			.order("rating", "DESC")
+			.limit(10)
+			.build();
 
-	const results = await httpClient.fetch(query);
-	return results;
-};
+		const results = await httpClient.fetch(query);
+		return results;
+	},
+	["leaderboard-users"],
+	{
+		revalidate: 60,
+		tags: ["leaderboard-users"],
+	},
+);
 
 async function LeaderboardPage() {
 	const initialUsers = await getInitialUsers();

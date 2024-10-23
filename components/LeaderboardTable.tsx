@@ -100,13 +100,13 @@ const COLUMNS = 6;
 const ROWS = 10;
 
 interface LeaderboardTableProps {
-  initialUsers: User[];
+	initialUsers: User[];
 }
 
 export default function LeaderboardTable({
 	initialUsers,
 }: LeaderboardTableProps) {
-  const router = useRouter();
+	const router = useRouter();
 	const [{ pageIndex, pageSize }, setPagination] = useState({
 		pageIndex: 0,
 		pageSize: 10,
