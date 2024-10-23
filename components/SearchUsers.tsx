@@ -5,7 +5,7 @@ import {
 	removeUserFromConversation,
 } from "@/lib/triplit-mutations";
 import {
-	TEnhancedConversation,
+	type TEnhancedConversation,
 	useUsersNotInConversationList,
 } from "@/hooks/triplit-hooks";
 
@@ -40,14 +40,6 @@ export function SearchUsers({
 	return (
 		<CommandDialog open={open} onOpenChange={setOpen}>
 			<CommandInput placeholder="Search for a user" />
-			foo
-			<div
-				onClick={() => {
-					addUserToConversation(nonMembers?.[0].id!, conversation.id);
-				}}
-			>
-				add
-			</div>
 			<CommandList>
 				<CommandEmpty>No results found.</CommandEmpty>
 				{conversation ? (
