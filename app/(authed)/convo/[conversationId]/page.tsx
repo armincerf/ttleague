@@ -3,7 +3,7 @@ import { Conversation } from "@/components/Conversation";
 export default async function ConversationPage({
   params,
 }: {
-  params: { conversationId: string };
+  params: Promise<{ conversationId: string }>;
 }) {
   const { conversationId } = await params;
   return (
