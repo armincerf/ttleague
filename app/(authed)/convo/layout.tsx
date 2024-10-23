@@ -12,7 +12,7 @@ export default function ChatLayout({
   const pathname = usePathname();
   const convoHasBeenSelected = pathname !== "/convo";
   return (
-    <div className="flex items-stretch h-screen">
+    <div className="flex items-stretch h-full">
       <div
         className={`md:basis-2/12 ${
           convoHasBeenSelected ? "hidden md:block" : "w-full"
