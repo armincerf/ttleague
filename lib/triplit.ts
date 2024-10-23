@@ -9,14 +9,8 @@ export const client = new TriplitClient({
 
 setTimeout(() => {
 	client
-		.fetch(
-			client
-				.query("users")
-				.include("matches")
-				.build(),
-				{policy: "remote-only"}
-		)
+		.fetch(client.query("users").build(), { policy: "remote-only" })
 		.then((res) => {
-			console.log("sybnced");
+			console.log("synced");
 		});
 }, 1000);

@@ -17,7 +17,8 @@ import {
 	CommandInput,
 	CommandItem,
 	CommandList,
-} from "./ui/command";
+	CommandSeparator,
+} from "@/components/ui/command";
 
 export function SearchUsers({
 	open,
@@ -39,79 +40,73 @@ export function SearchUsers({
 
 	return (
 		<CommandDialog open={open} onOpenChange={setOpen}>
-			<CommandInput placeholder="Search for a user" />
+			<CommandInput placeholder="Search users..." />
 			<CommandList>
-				<CommandEmpty>No results found.</CommandEmpty>
-				{conversation ? (
+				<CommandEmpty>No users found.</CommandEmpty>
+				{conversation && (
 					<>
 						<CommandGroup heading="Members">
 							{currentUser && (
-								<CommandItem className="gap-4 justify-between">
-									<div className="flex flex-row gap-4 ml-2">
-										{currentUser.first_name} (me)
-									</div>
-
+								<CommandItem value={currentUser.first_name}>
+									<span>{currentUser.first_name} (me)</span>
 									<Button
 										size="sm"
-										className="h-auto px-2 py-1"
 										variant="destructive"
-										onClick={() => {
+										className="ml-auto"
+										onClick={() =>
 											removeUserFromConversation(
 												currentUser.id,
 												conversation.id,
-											);
-										}}
+											)
+										}
 									>
 										Leave
 									</Button>
 								</CommandItem>
 							)}
-							{membersExCurrentUser
-								?.filter(({ id }) => id !== currentUserId)
-								.map((user) => (
-									<CommandItem className="gap-4 justify-between" key={user.id}>
-										<div className="flex flex-row gap-4 ml-2">
-											{user.first_name}
-										</div>
-										<Button
-											size="sm"
-											className="h-auto px-2 py-1"
-											variant="destructive"
-											onClick={() => {
-												removeUserFromConversation(user.id, conversation.id);
-											}}
-										>
-											Remove
-										</Button>
-									</CommandItem>
-								))}
+							{membersExCurrentUser.map((user) => (
+								<CommandItem key={user.id} value={user.first_name}>
+									<span>{user.first_name}</span>
+									<Button
+										size="sm"
+										variant="destructive"
+										className="ml-auto"
+										onClick={() =>
+											removeUserFromConversation(user.id, conversation.id)
+										}
+									>
+										Remove
+									</Button>
+								</CommandItem>
+							))}
 						</CommandGroup>
 						{nonMembers && nonMembers.length > 0 && (
-							<CommandGroup heading="Invite">
-								{nonMembers.map((user) => (
-									<CommandItem
-										className="gap-4 justify-between p-2"
-										key={user.id}
-									>
-										<div className="flex flex-row gap-4 ml-2">
-											{user.first_name} {user.last_name} ({user.email})
-										</div>
-										<Button
-											size="sm"
-											className="h-auto px-2 py-1"
-											onClick={() => {
-												addUserToConversation(user.id, conversation.id);
-											}}
+							<>
+								<CommandSeparator />
+								<CommandGroup heading="Invite">
+									{nonMembers.map((user) => (
+										<CommandItem
+											key={user.id}
+											value={`${user.first_name} ${user.last_name}`}
 										>
-											Add
-										</Button>
-									</CommandItem>
-								))}
-							</CommandGroup>
+											<span>
+												{user.first_name} {user.last_name} ({user.email})
+											</span>
+											<Button
+												size="sm"
+												className="ml-auto"
+												onClick={() =>
+													addUserToConversation(user.id, conversation.id)
+												}
+											>
+												Add
+											</Button>
+										</CommandItem>
+									))}
+								</CommandGroup>
+							</>
 						)}
 					</>
-				) : (
-					<CommandEmpty>No results found.</CommandEmpty>
 				)}
 			</CommandList>
 		</CommandDialog>
