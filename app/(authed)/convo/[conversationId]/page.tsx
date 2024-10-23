@@ -1,4 +1,5 @@
-import { Conversation } from "@/components/Conversation";
+import { Conversation, UnauthChatView } from "@/components/Conversation";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function ConversationPage({
   params,
@@ -6,9 +7,10 @@ export default async function ConversationPage({
   params: Promise<{ conversationId: string }>;
 }) {
   const { conversationId } = await params;
+  const { userId } = await auth();
   return (
     <section className="h-full">
-      <Conversation id={conversationId} />
+      {userId ? <Conversation id={conversationId} /> : <UnauthChatView />}
     </section>
   );
 }

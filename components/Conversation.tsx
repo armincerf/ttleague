@@ -29,6 +29,23 @@ import {
 import { SearchUsers } from "./SearchUsers";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { useRouter } from "next/navigation";
+
+export function UnauthChatView() {
+  const router = useRouter();
+
+  return (
+    <div className="flex items-center justify-center h-full">
+      <Button
+        size="lg"
+        variant="outline"
+        onClick={() => router.push("/sign-up")}
+      >
+        Login to see your chats
+      </Button>
+    </div>
+  );
+}
 
 export function Conversation({ id }: { id: string }) {
   return (
