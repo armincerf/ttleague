@@ -80,6 +80,9 @@ export const schema = {
       created_at: S.Date({ default: S.Default.now() }),
       updated_at: S.Date({ default: S.Default.now() }),
       updated_by: S.Optional(S.Id()),
+      conversations: S.RelationMany("conversations", {
+        where: [["members", "has", "$id"]],
+      }),
     }),
     permissions: {
       admin: adminFullAccess,
@@ -309,6 +312,94 @@ export const schema = {
     }),
     permissions: defaultPermissions,
   },
+  reactions: {
+    schema: S.Schema({
+      id: S.Id(),
+      createdAt: S.Date({ default: S.Default.now() }),
+      messageId: S.String(),
+      message: S.RelationById("messages", "$messageId"),
+      userId: S.String(),
+      emoji: S.String(),
+    }),
+    permissions: {
+      user: {
+        read: {
+          // You may only read reactions to messages you are a member of
+          filter: [["message.convo.members", "=", "$role.userId"]],
+        },
+        insert: {
+          // You may only react to messages in conversations you are a member of
+          filter: [
+            ["message.convo.members", "=", "$role.userId"],
+            ["userId", "=", "$role.userId"],
+          ],
+        },
+        delete: {
+          // You may only delete your own reactions
+          filter: [
+            ["message.convo.members", "=", "$role.userId"],
+            ["userId", "=", "$role.userId"],
+          ],
+        },
+      },
+    },
+  },
+  messages: {
+    schema: S.Schema({
+      id: S.Id(),
+      conversationId: S.String(),
+      sender_id: S.String(),
+      sender: S.RelationById("users", "$sender_id"),
+      text: S.String(),
+      created_at: S.String({ default: S.Default.now() }),
+      likes: S.Optional(S.Set(S.String())),
+      convo: S.RelationById("conversations", "$conversationId"),
+      reactions: S.RelationMany("reactions", {
+        where: [["messageId", "=", "$id"]],
+      }),
+    }),
+    permissions: {
+      user: {
+        read: {
+          // You may only read messages in conversations you are a member of
+          filter: [["convo.members", "=", "$role.userId"]],
+        },
+        insert: {
+          // You may only author your own message and must be a member of the conversation
+          filter: [
+            ["convo.members", "=", "$role.userId"],
+            ["sender_id", "=", "$role.userId"],
+          ],
+        },
+      },
+    },
+  },
+  conversations: {
+    schema: S.Schema({
+      id: S.Id(),
+      name: S.String(),
+      members: S.Set(S.String()),
+      membersInfo: S.RelationMany("users", {
+        where: [["id", "in", "$members"]],
+      }),
+    }),
+    permissions: {
+      user: {
+        read: {
+          // You may only read conversations you are a member of
+          filter: [["members", "=", "$role.userId"]],
+        },
+        insert: {
+          // You may only create a conversation you are a member of it
+          filter: [["members", "=", "$role.userId"]],
+        },
+        update: {
+          // You may only update a conversation you are a member of it
+          filter: [["members", "=", "$role.userId"]],
+        },
+      },
+    },
+  },
 } satisfies ClientSchema;
 
 export type Event = Entity<typeof schema, "events">;
@@ -319,3 +410,6 @@ export type User = Entity<typeof schema, "users">;
 export type EventRegistration = Entity<typeof schema, "event_registrations">;
 export type Match = Entity<typeof schema, "matches">;
 export type Game = Entity<typeof schema, "games">;
+export type Conversation = Entity<typeof schema, "conversations">;
+export type Message = Entity<typeof schema, "messages">;
+export type Reaction = Entity<typeof schema, "reactions">;
