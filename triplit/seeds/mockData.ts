@@ -17,9 +17,6 @@ export default function seed(): BulkInsert<typeof schema> {
 
 	const clubs = generateClubs(1, users);
 	const events = generateEventsForLeague(league, clubs);
-	const matches = generateMatchesForEvents(events, users);
-	const games = generateGamesForMatches(matches, users);
-	const eventRegistrations = generateEventRegistrations(events, users);
 
 	return {
 		users: [
@@ -61,9 +58,9 @@ export default function seed(): BulkInsert<typeof schema> {
 		],
 		clubs,
 		events,
-		event_registrations: eventRegistrations,
-		matches,
-		games,
+		event_registrations: [],
+		matches: [],
+		games: [],
 		leagues: [league],
 	};
 }
@@ -175,7 +172,7 @@ function generateEventsForLeague(
 	clubs: ReturnType<typeof generateClubs>,
 ) {
 	const now = new Date();
-	const eventCount = 20;
+	const eventCount = 2;
 
 	const todayEvent = {
 		id: `${league.id}-mock-event-today`,

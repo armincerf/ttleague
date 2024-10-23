@@ -13,40 +13,20 @@ import {
 	DialogDescription,
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { client } from "@/lib/triplit";
-import type { AvatarUser } from "@/components/ui/avatar-group";
-import { useLoadingState } from "@/hooks/useLoadingState";
 import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
 } from "@/components/ui/popover";
-import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { client } from "@/lib/triplit";
+import type { AvatarUser } from "@/components/ui/avatar-group";
+import { useLoadingState } from "@/hooks/useLoadingState";
 import { AvatarGroup } from "@/components/ui/avatar-group";
+import { useUser } from "@clerk/nextjs";
+import type { fetchEvent } from "@/lib/actions/events";
 
-function PlayerAvatar({
-	player,
-}: {
-	player: AvatarUser;
-}) {
+function PlayerAvatar({ player }: { player: AvatarUser }) {
 	const [isOpen, setIsOpen] = useState(false);
-	const { leagueId } = useParams();
-
-	const parsedLeagueId = leagueId?.toString() ?? "";
-
-	const { results: registrations, fetching } = useQuery(
-		client,
-		client
-			.query("event_registrations")
-			.where([
-				["league_id", "=", parsedLeagueId],
-				["user_id", "=", player.id],
-			])
-			.build(),
-	);
-
-	const registrationCount = registrations?.length ?? 0;
 
 	return (
 		<Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -69,7 +49,6 @@ function PlayerAvatar({
 					<p>
 						{player.first_name} {player.last_name}
 					</p>
-					<p>Events Played: {registrationCount}</p>
 				</div>
 				<Link href={`/users/${player.id}`} passHref>
 					<Button variant="outline" className="mt-2 w-full">
@@ -77,67 +56,39 @@ function PlayerAvatar({
 					</Button>
 				</Link>
 			</PopoverContent>
-			<PopoverContent>
-				<Dialog open={isOpen} onOpenChange={setIsOpen}>
-					<DialogContent className="w-11/12 sm:w-full sm:max-w-3xl max-h-[90vh] overflow-auto">
-						<DialogHeader>
-							<DialogTitle>
-								{player.first_name} {player.last_name}
-							</DialogTitle>
-							<DialogDescription>
-								List of players registered for {player.first_name}{" "}
-								{player.last_name}
-							</DialogDescription>
-						</DialogHeader>
-						<ul>
-							{registrations?.map((registration) => (
-								<li key={registration.id} className="flex items-center py-2">
-									<Avatar className="mr-2">
-										<AvatarImage
-											src={player.profile_image_url ?? ""}
-											alt={`${player.first_name} ${player.last_name}`}
-										/>
-										<AvatarFallback>
-											{player.first_name[0]}
-											{player.last_name[0]}
-										</AvatarFallback>
-									</Avatar>
-									<Link
-										href={`/users/${player.id}`}
-										className="hover:underline"
-									>
-										{player.first_name} {player.last_name}
-									</Link>
-								</li>
-							))}
-						</ul>
-					</DialogContent>
-				</Dialog>
-			</PopoverContent>
 		</Popover>
 	);
 }
 
-function RegisteredPlayersList({
-	leagueId,
-	leagueName,
-}: { leagueId: string; leagueName: string }) {
+export function EventRegisteredPlayers({
+	serverEvent,
+}: {
+	serverEvent: Awaited<ReturnType<typeof fetchEvent>>;
+}) {
+	const eventId = serverEvent.id;
+	const eventName = serverEvent.name;
 	const [isOpen, setIsOpen] = useState(false);
-
-	const { result: league, fetching } = useQueryOne(
-		client,
-		client
-			.query("leagues")
-			.where(["id", "=", leagueId])
-			.include("players")
-			.build(),
-	);
 	const { user } = useUser();
 
-	const isLoading = useLoadingState(fetching, league);
-	const players = league?.players ?? [];
+	const { result: clientEvent, fetching } = useQueryOne(
+		client,
+		client
+			.query("events")
+			.where(["id", "=", eventId])
+			.include("registrations", (rel) =>
+				rel("registrations").include("user").build(),
+			),
+	);
+
+	const event = clientEvent ?? serverEvent;
+
+	const isLoading = useLoadingState(fetching, event);
+	const players =
+		event?.registrations?.map((r) => r.user).filter(Boolean) ?? [];
 	const playerCount = players.length;
-	const currentUserInLeague = players.some((player) => player.id === user?.id);
+	const currentUserRegistered = players.some(
+		(player) => player.id === user?.id,
+	);
 
 	return (
 		<Card className="mb-8">
@@ -146,12 +97,10 @@ function RegisteredPlayersList({
 					{playerCount > 0
 						? `${playerCount} ${
 								playerCount === 1 ? "Player" : "Players"
-							} in this League ${
-								currentUserInLeague ? " (including you!)" : ""
-							}`
+							} Registered ${currentUserRegistered ? "(including you!)" : ""}`
 						: isLoading
 							? "Loading Players..."
-							: "No Players in this League Yet"}
+							: "No Players Registered Yet"}
 				</CardTitle>
 			</CardHeader>
 			<CardContent>
@@ -166,9 +115,9 @@ function RegisteredPlayersList({
 				<Dialog open={isOpen} onOpenChange={setIsOpen}>
 					<DialogContent className="w-11/12 sm:w-full sm:max-w-3xl max-h-[90vh] overflow-auto">
 						<DialogHeader>
-							<DialogTitle>{leagueName} Players</DialogTitle>
+							<DialogTitle>{eventName} Players</DialogTitle>
 							<DialogDescription>
-								List of players registered for {leagueName}
+								List of players registered for {eventName}
 							</DialogDescription>
 						</DialogHeader>
 						<ul>
@@ -199,5 +148,3 @@ function RegisteredPlayersList({
 		</Card>
 	);
 }
-
-export default RegisteredPlayersList;

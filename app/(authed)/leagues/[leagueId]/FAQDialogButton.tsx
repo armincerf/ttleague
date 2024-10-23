@@ -8,9 +8,21 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { useQueryOne } from "@triplit/react";
+import { client } from "@/lib/triplit";
 
-function FAQDialogButton({ faqHtml }: { faqHtml: string }) {
+function FAQDialogButton({
+	faqHtml,
+	leagueId,
+}: { faqHtml: string; leagueId: string }) {
 	const [isOpen, setIsOpen] = useState(false);
+	const { result } = useQueryOne(
+		client,
+		client
+			.query("leagues")
+			.where([["id", "=", leagueId]])
+			.select(["faq_html"]),
+	);
 
 	return (
 		<>
@@ -22,8 +34,13 @@ function FAQDialogButton({ faqHtml }: { faqHtml: string }) {
 					<DialogHeader>
 						<DialogTitle>Frequently Asked Questions</DialogTitle>
 					</DialogHeader>
-					{/* biome-ignore lint/security/noDangerouslySetInnerHtml: meh */}
-					<div dangerouslySetInnerHTML={{ __html: faqHtml }} />
+					<div
+						className="prose max-w-full"
+						// biome-ignore lint/security/noDangerouslySetInnerHtml:
+						dangerouslySetInnerHTML={{
+							__html: result?.faq_html ?? faqHtml,
+						}}
+					/>
 				</DialogContent>
 			</Dialog>
 		</>

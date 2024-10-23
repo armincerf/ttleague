@@ -52,7 +52,8 @@ export default function MatchListContent({
 	});
 
 	if (filteredMatches.length === 0) {
-		return null;
+		console.log("No matches found", matches);
+		return <div>No matches found</div>;
 	}
 
 	return (

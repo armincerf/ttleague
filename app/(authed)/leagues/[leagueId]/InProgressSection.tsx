@@ -59,18 +59,16 @@ export default function InProgressSection({ leagueId }: { leagueId: string }) {
 	}
 
 	return (
-		<Card className="mb-8">
-			<CardHeader>
-				<CardTitle>In Progress</CardTitle>
-			</CardHeader>
-			<CardContent>
+		<section className="mb-8">
+			<h2 className="text-2xl font-bold mb-4">In Progress</h2>
+			<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
 				{inProgressEvents.map((event) => (
 					<InProgressEvent key={event.id} event={event} />
 				))}
 				{inProgressMatches.map((match) => (
 					<InProgressMatch key={match.id} leagueId={leagueId} match={match} />
 				))}
-			</CardContent>
-		</Card>
+			</div>
+		</section>
 	);
 }

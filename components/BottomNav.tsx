@@ -26,11 +26,28 @@ export default function BottomNav() {
 	const { getToken } = useAuth();
 
 	useEffect(() => {
-		getToken().then((token) => {
-			client.disconnect();
-			client.updateToken(token ?? "");
-			client.connect();
-		});
+		const updateClientToken = async () => {
+			const token = await getToken();
+
+			if (token !== client.token) {
+				client.disconnect();
+				client.updateToken(token ?? "");
+
+				if (!token) {
+					await client.reset();
+				} else {
+					client.connect();
+				}
+			}
+		};
+
+		// Initial token setup
+		updateClientToken();
+
+		// Set up interval to check for token updates
+		const tokenInterval = setInterval(updateClientToken, 1000 * 60); // Check every minute
+
+		return () => clearInterval(tokenInterval);
 	}, [getToken]);
 
 	return (

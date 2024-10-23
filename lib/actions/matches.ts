@@ -14,6 +14,8 @@ export async function fetchMatches(eventId: string) {
 							.where("event_id", "=", eventId)
 							.include("player1")
 							.include("player2")
+							.include("event")
+							.include("games")
 							.build(),
 					);
 				} catch (error) {
@@ -84,3 +86,5 @@ export async function revalidateMatches(eventId: string) {
 		throw new Error("Failed to revalidate matches");
 	}
 }
+
+export type Match = Awaited<ReturnType<typeof fetchMatch>>;

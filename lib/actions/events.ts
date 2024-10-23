@@ -1,6 +1,18 @@
 import { unstable_cache } from "next/cache";
 import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
+import type { HttpClient, TriplitClient } from "@triplit/client";
+import type { schema } from "@/triplit/schema";
+
+export function eventQuery(client: HttpClient<typeof schema>, eventId: string) {
+	return client
+		.query("events")
+		.where("id", "=", eventId)
+		.include("club")
+		.include("registrations", (rel) =>
+			rel("registrations").include("user").build(),
+		);
+}
 
 export async function fetchEvent(eventId: string) {
 	try {
@@ -8,12 +20,7 @@ export async function fetchEvent(eventId: string) {
 			async () => {
 				try {
 					const event = await httpClient.fetchOne(
-						httpClient
-							.query("events")
-							.where("id", "=", eventId)
-							.include("club")
-							.include("registrations")
-							.build(),
+						eventQuery(httpClient, eventId).build(),
 					);
 					if (!event) {
 						logger.warn({ eventId }, "Event not found");
@@ -80,3 +87,5 @@ export async function revalidateEvents(leagueId: string) {
 		throw new Error("Failed to revalidate events");
 	}
 }
+
+export type Event = Awaited<ReturnType<typeof fetchEvent>>;

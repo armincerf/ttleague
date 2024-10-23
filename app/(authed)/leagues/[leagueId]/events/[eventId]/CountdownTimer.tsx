@@ -1,13 +1,33 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import type { Event } from "@/triplit/schema";
 import { client } from "@/lib/triplit";
+import { useQueryOne } from "@triplit/react";
+import type { Event } from "@/lib/actions/events";
+
 export default function CountdownTimer({
 	seconds: initialSeconds,
 	event,
 }: { seconds: number; event: Event }) {
+	const { result } = useQueryOne(
+		client,
+		client
+			.query("events")
+			.where("id", "=", event.id)
+			.select(["status", "start_time"]),
+	);
 	const [seconds, setSeconds] = useState(initialSeconds);
+	const eventStatus = result?.status || event.status;
+
+	useEffect(() => {
+		if (event.start_time !== result?.start_time && result?.start_time) {
+			setSeconds(
+				Math.floor(
+					(result?.start_time?.getTime() - new Date().getTime()) / 1000,
+				),
+			);
+		}
+	}, [result, event.start_time]);
 
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -24,17 +44,25 @@ export default function CountdownTimer({
 	}, []);
 
 	useEffect(() => {
-		if (seconds < 0 && event?.status === "scheduled") {
+		if (seconds < 0 && eventStatus === "scheduled") {
 			client.update("events", event.id, (event) => {
 				event.status = "active";
 			});
 		}
-	}, [seconds, event?.id, event?.status]);
+	}, [seconds, eventStatus, event.id]);
 
+	return <CountdownTimerDisplay seconds={seconds} />;
+}
+
+export function CountdownTimerDisplay({ seconds }: { seconds: number }) {
 	const days = Math.floor(seconds / (3600 * 24));
 	const hours = Math.floor((seconds % (3600 * 24)) / 3600);
 	const minutes = Math.floor((seconds % 3600) / 60);
 	const remainingSeconds = seconds % 60;
+
+	if (seconds === 0) {
+		return <div className="text-2xl font-bold">--d --h --m --s</div>;
+	}
 
 	return (
 		<div className="text-2xl font-bold">

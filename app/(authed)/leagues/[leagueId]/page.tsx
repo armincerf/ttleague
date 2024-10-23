@@ -43,7 +43,7 @@ function LeagueHeader({
 							</ul>
 						</div>
 					)}
-					<FAQDialogButton faqHtml={league.faq_html} />
+					<FAQDialogButton faqHtml={league.faq_html} leagueId={league.id} />
 				</CardContent>
 			</Card>
 		</>

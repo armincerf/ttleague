@@ -9,7 +9,15 @@ const nextConfig: NextConfig = {
 			},
 		],
 	},
-
+	async redirects() {
+		return [
+			{
+				source: "/",
+				destination: "/leaderboard",
+				permanent: true,
+			},
+		];
+	},
 	async rewrites() {
 		return [
 			{

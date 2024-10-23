@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { HttpClient } from "@triplit/client";
+import { cn } from "@/lib/utils";
 
 async function checkAccountExists(email: string) {
 	if (!process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL) {
@@ -28,7 +29,6 @@ async function checkAccountExists(email: string) {
 }
 
 export default function SignUpButton() {
-	const { user } = useUser();
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [code, setCode] = useState("");
@@ -285,24 +285,26 @@ export default function SignUpButton() {
 				value={email}
 				onChange={(e) => setEmail(e.target.value)}
 				placeholder="Enter your email"
-				autoComplete="email"
+				autoComplete="username"
 				className="w-full"
 			/>
-			{userExists && !isCodeSent && (
-				<>
-					<Input
-						type="password"
-						value={password}
-						onChange={(e) => setPassword(e.target.value)}
-						autoComplete="current-password"
-						placeholder="Enter your password"
-						className="w-full"
-					/>
-					<Button type="button" onClick={handleEmailCode} className="w-full">
-						Send Code Instead
-					</Button>
-				</>
-			)}
+			<div
+				className={cn(
+					userExists && !isCodeSent ? "flex flex-col gap-2" : "hidden",
+				)}
+			>
+				<Input
+					type="password"
+					value={password}
+					onChange={(e) => setPassword(e.target.value)}
+					autoComplete="current-password"
+					placeholder="Enter your password"
+					className="w-full"
+				/>
+				<Button type="button" onClick={handleEmailCode} className="w-full">
+					Send Code Instead
+				</Button>
+			</div>
 			{isCodeSent && (
 				<Input
 					type="text"

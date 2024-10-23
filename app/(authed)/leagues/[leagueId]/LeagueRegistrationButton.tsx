@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -10,7 +10,8 @@ import { useConnectionStatus, useQueryOne } from "@triplit/react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function LeagueRegistrationButton({ leagueId }: { leagueId: string }) {
-	const { userId } = useAuth();
+	const { user } = useUser();
+	const userId = user?.id;
 	const router = useRouter();
 	const [isRegistering, setIsRegistering] = useState(false);
 	const connectionStatus = useConnectionStatus(client);
@@ -39,12 +40,23 @@ function LeagueRegistrationButton({ leagueId }: { leagueId: string }) {
 						client.query("users").select(["email", "id"]).build(),
 					),
 				);
-				throw new Error("User not found");
+				await client.insert("users", {
+					id: userId,
+					table_tennis_england_id: "",
+					email: user?.primaryEmailAddress?.emailAddress ?? "",
+					first_name: user?.firstName ?? "",
+					last_name: user?.lastName ?? "",
+					rating: 0,
+					matches_played: 0,
+					wins: 0,
+					losses: 0,
+					no_shows: 0,
+					registered_league_ids: new Set([leagueId]),
+				});
 			}
 			await client.update("users", userId, (user) => {
 				user.registered_league_ids.add(leagueId);
 			});
-			router.refresh();
 		} catch (error) {
 			console.error("Failed to register for league:", error);
 			// TODO: Add error handling, perhaps show a toast notification

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import TopBar from "@/components/TopBar";
 import BottomNav from "@/components/BottomNav";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
 	title: "MK Table Tennis League",
@@ -16,10 +17,14 @@ export default function RootLayout({
 		<ClerkProvider>
 			<div className="flex flex-col h-[100dvh]">
 				<TopBar />
-				<main className="pb-safe-area-inset-bottom flex-grow container mx-auto overflow-y-auto">
+				<main className="pb-safe-area-inset-bottom container mx-auto overflow-y-auto h-[calc(100%-128px)] relative">
 					{children}
 				</main>
-				<BottomNav />
+				<Suspense fallback={<div>Loading auth content...</div>}>
+					<ClerkProvider dynamic>
+						<BottomNav />
+					</ClerkProvider>
+				</Suspense>
 			</div>
 		</ClerkProvider>
 	);
