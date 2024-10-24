@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useState } from "react";
+import { type ChangeEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Loader2, PenBox } from "lucide-react";
@@ -9,6 +9,7 @@ import { useSession } from "@clerk/nextjs";
 import { addConversation } from "@/lib/triplit-mutations";
 import { cn } from "@/lib/utils";
 import {
+	type TEnhancedFilteredConversations,
 	useConversationSnippet,
 	useFilteredConversations,
 } from "@/hooks/triplit-hooks";
@@ -150,7 +151,7 @@ function ConvoListItem({
 	convo,
 	isSelected,
 }: {
-	convo: any;
+	convo: TEnhancedFilteredConversations[number];
 	isSelected: boolean;
 }) {
 	const messageSnippet = useConversationSnippet(convo.id);
