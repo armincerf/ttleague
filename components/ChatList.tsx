@@ -123,10 +123,6 @@ export default function ChatList() {
 				</DialogContent>
 			</Dialog>
 			<div className="bg-secondary h-full flex flex-col">
-				<div className="w-full p-2">
-					<UserDropdownMenu />
-				</div>
-
 				<div className="flex items-center justify-between px-5 py-2">
 					<h2 className="text-xl flex flex-row items-center gap-2">
 						Chats

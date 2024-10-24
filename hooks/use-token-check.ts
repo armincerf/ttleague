@@ -7,7 +7,6 @@ const TOKEN_BUFFER_MS = 60_000; // 1 minute buffer
 
 const tokenPayloadSchema = z.object({
 	exp: z.number(),
-	nbf: z.number(),
 });
 
 type TokenCleanup = () => void;
@@ -21,7 +20,6 @@ function parseJwtExpiration(token: string): number {
 		if (!result.success) {
 			return 0;
 		}
-		console.log(result.data.nbf);
 
 		return result.data.exp * 1000; // Convert to milliseconds
 	} catch {
@@ -69,11 +67,7 @@ export function useTokenCheck() {
 
 		async function refreshToken() {
 			const token = await getToken();
-			if (!token) return;
-			const jwtNbf = parseJwtExpiration(token);
-			//sleep for 20 seconds to avoid race condition
-			await new Promise((resolve) => setTimeout(resolve, 20000));
-			await updateClientToken(token);
+			await updateClientToken(token ?? process.env.NEXT_PUBLIC_TRIPLIT_TOKEN);
 
 			if (token) {
 				cleanup = setupTokenRefreshTimer(token, refreshToken);

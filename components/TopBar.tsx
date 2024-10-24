@@ -3,6 +3,7 @@ import { SignInButton, UserButton, useUser } from "@clerk/nextjs";
 import { HelpCircle } from "lucide-react";
 import Logo from "./Logo";
 import { cn } from "@/lib/utils";
+import { ConnectionStatus } from "./ConnectionStatus";
 
 export default function TopBar() {
 	const { isSignedIn } = useUser();
@@ -18,6 +19,7 @@ export default function TopBar() {
 				</div>
 
 				<div className="w-[100px] flex justify-end">
+					<ConnectionStatus showUser={false} />
 					<button className="p-2" type="button">
 						<HelpCircle className="h-6 w-6 text-gray-600" />
 					</button>

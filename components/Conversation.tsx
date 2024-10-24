@@ -114,19 +114,9 @@ function MessageInput({
 	scrollRef: RefObject<HTMLSpanElement>;
 }) {
 	const [draftMsg, setDraftMsg] = useState("");
-	const [showPreview, setShowPreview] = useState(false);
 
 	return (
 		<div className="border-t">
-			{showPreview && draftMsg && (
-				<div className="px-5 pt-3">
-					<div className="rounded-lg bg-secondary p-3 prose prose-sm max-w-none">
-						<ReactMarkdown remarkPlugins={[remarkGfm]}>
-							{draftMsg}
-						</ReactMarkdown>
-					</div>
-				</div>
-			)}
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
@@ -151,18 +141,8 @@ function MessageInput({
 						onChange={(e: ChangeEvent<HTMLInputElement>) => {
 							setDraftMsg(e.target.value);
 						}}
-						className="max-w-2xl"
-						placeholder="Type your message (Markdown supported)"
+						placeholder="Type your message"
 					/>
-					<Button
-						type="button"
-						variant="ghost"
-						size="icon"
-						onClick={() => setShowPreview((prev) => !prev)}
-						className="h-10"
-					>
-						<EyeIcon className={cn("h-5 w-5", showPreview && "text-primary")} />
-					</Button>
 					<Button
 						type="submit"
 						size="icon"

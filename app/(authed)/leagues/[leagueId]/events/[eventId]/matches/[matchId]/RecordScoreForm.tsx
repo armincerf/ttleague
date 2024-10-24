@@ -10,6 +10,8 @@ import { client } from "@/lib/triplit";
 import type { Match, User, Game } from "@/triplit/schema";
 import { ChevronUp, ChevronDown } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { useQuery, useQueryOne } from "@triplit/react";
+import { getGameNumber } from "./utils";
 
 const schema = z.object({
 	player1Score: z.number().min(0),
@@ -25,33 +27,40 @@ function RecordScoreForm({
 		games?: Game[];
 	};
 }) {
+	const [gameId, setGameId] = useState<string>();
 	const form = useForm({
 		defaultValues: {
 			player1Score: 0,
 			player2Score: 0,
 		},
 		onSubmit: async ({ value }) => {
+			if (!gameId) return;
 			try {
 				const now = new Date();
-				const id = `${match.id}-${now.getTime()}`;
-				await client.insert("games", {
-					match_id: match.id,
-					player_1_score: value.player1Score,
-					player_2_score: value.player2Score,
-					final_score: `${value.player1Score} - ${value.player2Score}`,
-					started_at: now,
-					last_edited_at: now,
-					game_number: match.games?.length ? match.games.length + 1 : 1,
+				const tx = await client.update("games", gameId, (game) => {
+					game.final_score = `${value.player1Score} - ${value.player2Score}`;
+					game.completed_at = now;
+					game.last_edited_at = now;
 				});
-				const newGame = await client.fetchById("games", id, {
-					policy: "remote-only",
-				});
-				console.log("newGame", newGame);
-				toast({
-					title: "Game recorded",
-					description: "Game recorded successfully",
-				});
-				form.reset();
+
+				if (tx.txId) {
+					client.syncEngine.onTxCommit(tx.txId, async () => {
+						toast({
+							title: "Game recorded",
+							description: "Game recorded successfully",
+						});
+						form.reset();
+						setGameId(undefined);
+					});
+					client.syncEngine.onTxFailure(tx.txId, (error) => {
+						console.error("Error submitting score:", error);
+						toast({
+							title: "Error submitting score",
+							description:
+								"You may have poor internet connection. The app will try again in the background but best to take a screenshot just in case",
+						});
+					});
+				}
 			} catch (error) {
 				console.error("Error submitting score:", error);
 			}
@@ -61,6 +70,51 @@ function RecordScoreForm({
 			onSubmit: schema,
 		},
 	});
+
+	// New function to handle score changes
+	const handleScoreChange = async (
+		fieldName: "player1Score" | "player2Score",
+		newValue: number,
+	) => {
+		const now = new Date();
+		const gameNumber = getGameNumber(match.games ?? []);
+		const id = `${match.id}-${gameNumber}`;
+		const potentialGameId = `game-${id}`;
+		if (!gameId) {
+			const existingGame = await client.fetchById("games", potentialGameId, {
+				policy: "local-only",
+			});
+			if (existingGame) {
+				setGameId(existingGame.id);
+			}
+		}
+
+		if (!gameId) {
+			// Create new game on first score
+			const newGameId = `game-${match.id}-${gameNumber + 1}`;
+
+			await client.insert("games", {
+				id: newGameId,
+				match_id: match.id,
+				player_1_score: fieldName === "player1Score" ? newValue : 0,
+				player_2_score: fieldName === "player2Score" ? newValue : 0,
+				started_at: now,
+				last_edited_at: now,
+				game_number: gameNumber,
+			});
+
+			setGameId(newGameId);
+		} else {
+			await client.update("games", gameId, (game) => {
+				if (fieldName === "player1Score") {
+					game.player_1_score = newValue;
+				} else {
+					game.player_2_score = newValue;
+				}
+				game.last_edited_at = now;
+			});
+		}
+	};
 
 	function isValidScore(score1: number, score2: number) {
 		const maxScore = Math.max(score1, score2);
@@ -122,16 +176,28 @@ function RecordScoreForm({
 						<div className="flex justify-center gap-2 relative">
 							<CustomScoreInput
 								value={field.state.value}
-								onChange={field.handleChange}
-								onIncrement={() => field.handleChange(field.state.value + 1)}
-								onDecrement={() =>
-									field.handleChange(Math.max(0, field.state.value - 1))
-								}
+								onChange={(value) => {
+									field.handleChange(value);
+									void handleScoreChange(fieldName, value);
+								}}
+								onIncrement={() => {
+									const newValue = field.state.value + 1;
+									field.handleChange(newValue);
+									void handleScoreChange(fieldName, newValue);
+								}}
+								onDecrement={() => {
+									const newValue = Math.max(0, field.state.value - 1);
+									field.handleChange(newValue);
+									void handleScoreChange(fieldName, newValue);
+								}}
 							/>
 							<Button
 								type="button"
 								variant="outline"
-								onClick={() => field.handleChange(11)}
+								onClick={() => {
+									field.handleChange(11);
+									void handleScoreChange(fieldName, 11);
+								}}
 								className="h-8 px-4 absolute right-[-1rem] top-[1.5rem]"
 							>
 								11
