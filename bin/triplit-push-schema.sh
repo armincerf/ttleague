@@ -28,13 +28,13 @@ execute_migration_command() {
 	bun run triplit schema push --token "$service_token" --remote "$db_url" --schemaPath ./triplit/schema.ts
 }
 
-if [[ -z "${TRIPLIT_SERVICE_TOKEN}" || -z "${NEXT_PUBLIC_TRIPLIT_DB_URL}" ]]; then
+if [[ -z "${TRIPLIT_SERVICE_TOKEN}" || -z "${NEXT_PUBLIC_TRIPLIT_SERVER_URL}" ]]; then
   echo "Environment variables not set, using defaults"
   TRIPLIT_SERVICE_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ4LXRyaXBsaXQtdG9rZW4tdHlwZSI6InNlY3JldCIsIngtdHJpcGxpdC1wcm9qZWN0LWlkIjoibG9jYWwtcHJvamVjdC1pZCJ9.8Z76XXPc9esdlZb2b7NDC7IVajNXKc4eVcPsO7Ve0ug"
-  NEXT_PUBLIC_TRIPLIT_DB_URL="http://localhost:6543"
+  NEXT_PUBLIC_TRIPLIT_SERVER_URL="http://localhost:6543"
 
-  execute_migration_command "$TRIPLIT_SERVICE_TOKEN" "$NEXT_PUBLIC_TRIPLIT_DB_URL"
+  execute_migration_command "$TRIPLIT_SERVICE_TOKEN" "$NEXT_PUBLIC_TRIPLIT_SERVER_URL"
 else
   echo "Environment variables are already set, using existing values..."
-  execute_migration_command "$TRIPLIT_SERVICE_TOKEN" "$NEXT_PUBLIC_TRIPLIT_DB_URL"
+  execute_migration_command "$TRIPLIT_SERVICE_TOKEN" "$NEXT_PUBLIC_TRIPLIT_SERVER_URL"
 fi

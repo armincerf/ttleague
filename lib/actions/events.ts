@@ -9,6 +9,13 @@ export function eventQuery(client: HttpClient<typeof schema>, eventId: string) {
 		.query("events")
 		.where("id", "=", eventId)
 		.include("club")
+		.include("matches", (rel) =>
+			rel("matches")
+				.include("player1")
+				.include("player2")
+				.include("games")
+				.build(),
+		)
 		.include("registrations", (rel) =>
 			rel("registrations").include("user").build(),
 		);

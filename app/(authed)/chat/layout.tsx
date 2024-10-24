@@ -2,8 +2,14 @@
 
 import { usePathname } from "next/navigation";
 
-import { ChatList } from "@/components/ChatList";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Skeleton } from "@/components/ui/skeleton";
+import dynamic from "next/dynamic";
+
+const ChatListComponent = dynamic(() => import("@/components/ChatList"), {
+	ssr: false,
+	loading: () => <Skeleton className="w-full h-full" />,
+});
 
 export default function ChatLayout({
 	children,
@@ -20,7 +26,7 @@ export default function ChatLayout({
 						convoHasBeenSelected ? "hidden md:block" : "w-full"
 					}`}
 				>
-					<ChatList />
+					<ChatListComponent />
 				</div>
 				<div className={`grow ${!convoHasBeenSelected && "hidden md:block"}`}>
 					{children}

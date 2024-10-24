@@ -51,7 +51,10 @@ export function useConversationSnippet(convoId: string) {
 		.where("conversationId", "=", convoId)
 		.order("created_at", "DESC");
 	const { result: message } = useQueryOne(client, messagesQuery);
-	return message?.text;
+	if (!message) return null;
+	return message?.text?.length > 20
+		? `${message.text.slice(0, 20)}...`
+		: message?.text;
 }
 
 type TUseMessage = ReturnType<typeof useMessages>;

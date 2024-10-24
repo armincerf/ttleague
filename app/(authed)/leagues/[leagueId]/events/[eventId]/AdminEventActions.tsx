@@ -11,11 +11,31 @@ interface AdminEventActionsProps {
 	event: Event;
 }
 
-async function addMatches(eventId: string, userId: string) {
+async function addMatches(
+	eventId: string,
+	user: NonNullable<ReturnType<typeof useUser>["user"]>,
+) {
+	const triplitUser = await client.fetchById("users", user.id, {
+		policy: "local-only",
+	});
+	if (!triplitUser) {
+		await client.insert("users", {
+			id: user.id,
+			first_name: user.firstName ?? "",
+			last_name: user.lastName ?? "",
+			email: user.emailAddresses[0].emailAddress,
+			table_tennis_england_id: "",
+			rating: 0,
+			matches_played: 0,
+			wins: 0,
+			losses: 0,
+			no_shows: 0,
+		});
+	}
 	const mockMatches: Match[] = [
 		{
 			id: "mockMatch1",
-			player_1: userId,
+			player_1: user.id,
 			player_2: Math.floor(Math.random() * 100).toString(),
 			table_number: 1,
 			event_id: eventId,
@@ -50,7 +70,7 @@ export function AdminEventActions({ event }: AdminEventActionsProps) {
 		}
 
 		if (status === "active" && user) {
-			await addMatches(event.id, user.id);
+			await addMatches(event.id, user);
 		}
 
 		await client.update("events", event.id, (e) => {

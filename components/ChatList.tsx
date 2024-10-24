@@ -18,10 +18,19 @@ import { Button } from "@/components/ui/button";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { DropdownMenu, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { Input } from "./ui/input";
-import { Modal } from "./ui/modal";
 import { Skeleton } from "./ui/skeleton";
+import type { Conversation } from "@/triplit/schema";
+import {
+	Dialog,
+	DialogContent,
+	DialogTitle,
+	DialogHeader,
+	DialogDescription,
+	DialogFooter,
+} from "./ui/dialog";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
-export function ChatList() {
+export default function ChatList() {
 	const { session } = useSession();
 	const currentUserId = session?.user?.id;
 	const selectedChat = useSelectedConvo();
@@ -41,52 +50,78 @@ export function ChatList() {
 		);
 	}
 
+	if (!currentUserId) {
+		return (
+			<div className="h-full w-full bg-secondary flex flex-col">
+				<div className="w-full p-2">
+					<div className="text-muted-foreground">
+						You must be logged in to view this page
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<>
-			<Modal open={createConvoModalOpen} onOpenChange={setCreateConvoModalOpen}>
-				<form
-					className="flex flex-col gap-3"
-					onSubmit={async (e) => {
-						e.preventDefault();
-						if (!currentUserId) {
-							console.error(
-								"Could not create conversation: no current user id",
+			<Dialog
+				open={createConvoModalOpen}
+				onOpenChange={setCreateConvoModalOpen}
+			>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Create new conversation</DialogTitle>
+						<VisuallyHidden>
+							<DialogDescription>
+								Enter a name for your new conversation.
+							</DialogDescription>
+						</VisuallyHidden>
+					</DialogHeader>
+					<form
+						className="flex flex-col gap-3"
+						onSubmit={async (e) => {
+							e.preventDefault();
+							if (!currentUserId) {
+								console.error(
+									"Could not create conversation: no current user id",
+								);
+								return;
+							}
+							const conversation = await addConversation(
+								draftName,
+								currentUserId,
 							);
-							return;
-						}
-						const conversation = await addConversation(
-							draftName,
-							currentUserId,
-						);
-						setDraftName("");
-						setCreateConvoModalOpen(false);
-						router.replace(`/chat/${conversation?.id}`);
-					}}
-				>
-					Create new conversation
-					<div className="text-sm text-muted-foreground">Conversation name</div>
-					<Input
-						value={draftName}
-						placeholder="e.g. Coding Buddies"
-						type="text"
-						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							setDraftName(e.target.value)
-						}
-					/>
-					<div className="flex flex-row gap-3 self-end">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => setCreateConvoModalOpen(false)}
-						>
-							Cancel
-						</Button>
-						<Button type="submit" disabled={!draftName}>
-							Submit
-						</Button>
-					</div>
-				</form>
-			</Modal>
+							setDraftName("");
+							setCreateConvoModalOpen(false);
+							router.replace(`/chat/${conversation?.id}`);
+						}}
+					>
+						<div className="text-sm text-muted-foreground">
+							Conversation name
+						</div>
+						<Input
+							value={draftName}
+							placeholder="e.g. Coding Buddies"
+							type="text"
+							onChange={(e: ChangeEvent<HTMLInputElement>) =>
+								setDraftName(e.target.value)
+							}
+						/>
+						<DialogFooter>
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => setCreateConvoModalOpen(false)}
+							>
+								Cancel
+							</Button>
+							<Button type="submit" disabled={!draftName}>
+								Submit
+							</Button>
+						</DialogFooter>
+					</form>
+				</DialogContent>
+			</Dialog>
 			<div className="bg-secondary h-full flex flex-col">
 				<div className="w-full p-2">
 					<UserDropdownMenu />
@@ -184,7 +219,6 @@ function ConvoSkeleton() {
 }
 
 function UserDropdownMenu() {
-	const router = useRouter();
 	return (
 		<DropdownMenu>
 			<DropdownMenuTrigger asChild>

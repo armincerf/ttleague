@@ -5,6 +5,7 @@ import {
 	Fragment,
 	type RefObject,
 	useCallback,
+	useEffect,
 	useRef,
 	useState,
 } from "react";
@@ -16,7 +17,6 @@ import {
 	SendIcon,
 	Users,
 } from "lucide-react";
-import { useSession } from "@clerk/nextjs";
 
 import { client } from "@/lib/triplit";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,15 @@ import { SearchUsers } from "./SearchUsers";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { useRouter } from "next/navigation";
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselNext,
+	CarouselPrevious,
+	type CarouselApi,
+} from "@/components/ui/carousel";
+import { Card, CardContent } from "./ui/card";
 
 export function UnauthChatView() {
 	const router = useRouter();
@@ -47,11 +56,11 @@ export function UnauthChatView() {
 	);
 }
 
-export function Conversation({ id }: { id: string }) {
+export function Conversation({ id, userId }: { id: string; userId: string }) {
 	return (
 		<div className="flex h-full flex-col items-stretch overflow-hidden">
 			<ConversationHeader convoId={id} />
-			<MessageList convoId={id} />
+			<MessageList convoId={id} userId={userId} />
 		</div>
 	);
 }
@@ -94,26 +103,25 @@ function ConversationHeader({ convoId }: { convoId: string }) {
 
 function MessageInput({
 	convoId,
+	userId,
 	scrollRef,
 }: {
 	convoId: string;
+	userId: string;
 	scrollRef: RefObject<HTMLSpanElement>;
 }) {
-	const { session } = useSession();
 	const [draftMsg, setDraftMsg] = useState("");
 
 	return (
 		<div>
 			<form
 				onSubmit={(e) => {
-					if (!session) return;
 					e.preventDefault();
 					client
 						.insert("messages", {
 							conversationId: convoId,
 							text: draftMsg,
-							// @ts-ignore
-							sender_id: session.user.id,
+							sender_id: userId,
 						})
 						.then(() => {
 							setDraftMsg("");
@@ -145,8 +153,7 @@ function MessageInput({
 	);
 }
 
-function MessageList({ convoId }: { convoId: string }) {
-	const { session } = useSession();
+function MessageList({ convoId, userId }: { convoId: string; userId: string }) {
 	const {
 		messages,
 		pendingMessages,
@@ -187,9 +194,10 @@ function MessageList({ convoId }: { convoId: string }) {
 						delivered={false}
 						isOwnMessage={true}
 						showSentIndicator={index === 0}
+						userId={userId}
 					/>
 				))}
-				{isFetchingMessages ? (
+				{isFetchingMessages && !messages ? (
 					<div>Loading...</div>
 				) : messagesError ? (
 					<div>
@@ -197,39 +205,43 @@ function MessageList({ convoId }: { convoId: string }) {
 						<p>Error: {messagesError.message}</p>
 					</div>
 				) : (
-					messages?.map((message, index) => {
-						// @ts-ignore
-						const isOwnMessage = message.sender_id === session.user.id;
-						const isFirstMessageInABlockFromThisDay =
-							index === messages.length - 1 ||
-							new Date(messages[index + 1]?.created_at).toLocaleDateString() !==
-								new Date(message.created_at).toLocaleDateString();
-						return (
-							<Fragment key={message.id}>
-								<ChatBubble
-									message={message}
-									delivered={true}
-									isOwnMessage={isOwnMessage}
-									showSentIndicator={index === 0}
-								/>
-								{isFirstMessageInABlockFromThisDay && (
-									<div
-										className="text-center text-sm text-muted-foreground"
-										key={message.created_at}
-									>
-										{new Date(message.created_at).toLocaleDateString([], {
-											weekday: "long",
-											month: "long",
-											day: "numeric",
-										})}
-									</div>
-								)}
-							</Fragment>
-						);
-					})
+					messages
+						?.filter((message) => message.sender_id !== "system")
+						.map((message, index) => {
+							const isOwnMessage = message.sender_id === userId;
+							const isFirstMessageInABlockFromThisDay =
+								index === messages.length - 1 ||
+								new Date(
+									messages[index + 1]?.created_at,
+								).toLocaleDateString() !==
+									new Date(message.created_at).toLocaleDateString();
+							return (
+								<Fragment key={message.id}>
+									<ChatBubble
+										message={message}
+										delivered={true}
+										isOwnMessage={isOwnMessage}
+										showSentIndicator={index === 0}
+										userId={userId}
+									/>
+									{isFirstMessageInABlockFromThisDay && (
+										<div
+											className="text-center text-sm text-muted-foreground"
+											key={message.created_at}
+										>
+											{new Date(message.created_at).toLocaleDateString([], {
+												weekday: "long",
+												month: "long",
+												day: "numeric",
+											})}
+										</div>
+									)}
+								</Fragment>
+							);
+						})
 				)}
 			</div>
-			<MessageInput convoId={convoId} scrollRef={scroll} />
+			<MessageInput convoId={convoId} scrollRef={scroll} userId={userId} />
 		</>
 	);
 }
@@ -254,34 +266,101 @@ function ChatBubble({
 	delivered,
 	isOwnMessage,
 	showSentIndicator,
+	userId,
 }: {
 	message: TEnhancedMessage;
 	delivered: boolean;
 	isOwnMessage: boolean;
 	showSentIndicator?: boolean;
+	userId: string;
 }) {
-	const { session } = useSession();
+	const extractImageUrls = (text: string) => {
+		const urlRegex =
+			/(https?:\/\/[^\s]+(?:\.jpeg|\.jpg|\.gif|\.png|\.webp|\.gif))/g;
+		return text.match(urlRegex) || [];
+	};
+
+	const imageUrls = extractImageUrls(message.text);
+	const textWithoutImages = message.text.replace(
+		/(https?:\/\/[^\s]+(?:\.jpeg|\.jpg|\.gif|\.png|\.webp|\.gif))/g,
+		"",
+	);
+
+	const [api, setApi] = useState<CarouselApi>();
+	const [current, setCurrent] = useState(0);
+	const [count, setCount] = useState(0);
+
+	useEffect(() => {
+		if (!api) {
+			return;
+		}
+
+		setCount(api.scrollSnapList().length);
+		setCurrent(api.selectedScrollSnap() + 1);
+
+		api.on("select", () => {
+			setCurrent(api.selectedScrollSnap() + 1);
+		});
+	}, [api]);
 
 	return (
 		<div className="flex flex-col gap-1">
 			<div className={cn(isOwnMessage && "self-end")}>
-				<button
-					type="button"
+				<div
 					className={cn(
 						"text-secondary-foreground w-max rounded-lg px-4 py-3 flex flex-col gap-1",
 						delivered ? "bg-secondary" : "border border-dashed",
 						isOwnMessage && "items-end",
 					)}
 					onDoubleClick={() => {
-						session?.user?.id && toggleReaction(message, session?.user?.id);
+						userId && toggleReaction(message, userId);
 					}}
+					style={{ cursor: "pointer" }}
 				>
 					{!isOwnMessage && (
 						<div className="text-sm font-bold">
 							{message.sender?.first_name}
 						</div>
 					)}
-					<div>{message.text}</div>
+					<div
+						className={cn(
+							"flex flex-col items-center max-w-24 sm:max-w-xs",
+							imageUrls.length > 1 && "mx-12",
+						)}
+					>
+						{imageUrls.length > 1 ? (
+							<>
+								<Carousel setApi={setApi} className="w-full">
+									<CarouselContent>
+										{imageUrls.map((url, index) => (
+											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
+											<CarouselItem key={url + index}>
+												<img
+													src={url}
+													alt={`User uploaded content ${index + 1}`}
+													className="object-contain max-w-full max-h-64"
+												/>
+											</CarouselItem>
+										))}
+									</CarouselContent>
+									<CarouselPrevious />
+									<CarouselNext />
+								</Carousel>
+								<div className="py-2 text-center text-sm text-muted-foreground">
+									Image {current} of {count}
+								</div>
+							</>
+						) : (
+							imageUrls.length === 1 && (
+								<img
+									src={imageUrls[0]}
+									alt="User uploaded content"
+									className="object-contain max-w-full max-h-64 mx-auto"
+								/>
+							)
+						)}
+					</div>
+					{textWithoutImages.trim() && <div>{textWithoutImages}</div>}
 					<div className="text-xs text-muted-foregrounopenMemberModal">
 						{new Date(message.created_at).toLocaleTimeString([], {
 							hour: "2-digit",
@@ -289,7 +368,7 @@ function ChatBubble({
 							hour12: true,
 						})}
 					</div>
-				</button>
+				</div>
 				{showSentIndicator && isOwnMessage && (
 					<SentIndicator delivered={delivered} />
 				)}

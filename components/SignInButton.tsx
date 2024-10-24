@@ -148,6 +148,9 @@ export default function SignUpButton() {
 				return;
 			}
 
+			// Clear the password when sending the code
+			setPassword("");
+
 			await signIn.create({
 				strategy: "email_code",
 				identifier: email,

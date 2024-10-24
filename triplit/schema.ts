@@ -15,6 +15,7 @@ export const roles: Roles = {
 	},
 	user: {
 		match: {
+			type: "user",
 			sub: "$userId",
 		},
 	},
@@ -322,6 +323,7 @@ export const schema = {
 			emoji: S.String(),
 		}),
 		permissions: {
+			...defaultPermissions,
 			user: {
 				read: {
 					// You may only read reactions to messages you are a member of
@@ -359,6 +361,7 @@ export const schema = {
 			}),
 		}),
 		permissions: {
+			...defaultPermissions,
 			user: {
 				read: {
 					// You may only read messages in conversations you are a member of
@@ -384,6 +387,7 @@ export const schema = {
 			}),
 		}),
 		permissions: {
+			...defaultPermissions,
 			user: {
 				read: {
 					// You may only read conversations you are a member of

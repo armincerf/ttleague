@@ -12,10 +12,8 @@ import {
 	CardContent,
 } from "@/components/ui/card";
 import { differenceInSeconds, formatDate } from "date-fns";
-import { Suspense } from "react";
 import { ClerkProvider } from "@clerk/nextjs";
 import { EventPageAuth } from "./EventPageAuth";
-import type { Match } from "@/lib/actions/matches";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import { CountdownTimerDisplay } from "./CountdownTimer";
@@ -39,10 +37,8 @@ const EventRegistrationButton = dynamic(
 
 function EventCard({
 	serverEvent,
-	matches,
 }: {
 	serverEvent: Event;
-	matches: Match[];
 }) {
 	const { result: liveEvent } = useQueryOne(
 		client,
@@ -69,7 +65,7 @@ function EventCard({
 					</CardDescription>
 					<CardContent className="p-0">
 						<ClerkProvider dynamic>
-							<EventPageAuth event={event} matches={matches} />
+							<EventPageAuth event={event} />
 						</ClerkProvider>
 					</CardContent>
 				</CardHeader>
@@ -98,7 +94,7 @@ function EventCard({
 					<CountdownTimer seconds={secondsUntilStart} event={event} />
 					<div className="flex flex-col gap-4 mt-2">
 						<ClerkProvider dynamic>
-							<EventPageAuth event={event} matches={matches} />
+							<EventPageAuth event={event} />
 						</ClerkProvider>
 					</div>
 				</CardContent>

@@ -6,11 +6,3 @@ export const client = new TriplitClient({
 	token: process.env.NEXT_PUBLIC_TRIPLIT_TOKEN,
 	schema,
 });
-
-setTimeout(() => {
-	client
-		.fetch(client.query("users").build(), { policy: "remote-only" })
-		.then((res) => {
-			console.log("synced");
-		});
-}, 1000);

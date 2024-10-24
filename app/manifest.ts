@@ -2,22 +2,25 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
 	return {
-		name: "Milton Keynes Table Tennis Singles League",
-		short_name: "MKTTSL",
-		description: "A singles table tennis league in the Milton Keynes area",
+		name: "TT Rankings",
+		short_name: "TT Rankings",
+		description:
+			"Find local Table Tennis players, play matches, and track your progress",
 		start_url: "/leaderboard",
 		display: "standalone",
 		background_color: "#ffffff",
 		theme_color: "#ffffff",
 		icons: [
 			{
-				src: "/icon-192x192.png",
-				sizes: "192x192",
+				purpose: "maskable",
+				sizes: "512x512",
+				src: "icon512_maskable.png",
 				type: "image/png",
 			},
 			{
-				src: "/icon-512x512.png",
+				purpose: "any",
 				sizes: "512x512",
+				src: "icon512_rounded.png",
 				type: "image/png",
 			},
 		],

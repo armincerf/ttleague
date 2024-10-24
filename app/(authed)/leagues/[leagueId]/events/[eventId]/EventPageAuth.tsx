@@ -1,13 +1,12 @@
 import { Button } from "@/components/ui/button";
 import type { fetchEvents } from "@/lib/actions/events";
-import type { fetchMatches } from "@/lib/actions/matches";
 import { ClerkProvider, useUser } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import MatchListSkeleton from "./MatchListSkeleton";
+import type { Event } from "@/lib/actions/events";
 
 type Props = {
-	event: Awaited<ReturnType<typeof fetchEvents>>[number];
-	matches: Awaited<ReturnType<typeof fetchMatches>>;
+	event: Event;
 };
 
 const EventRegistrationButton = dynamic(
@@ -27,9 +26,11 @@ const MatchList = dynamic(() => import("./MatchListContent"), {
 	loading: () => <MatchListSkeleton />,
 });
 
-export function EventPageAuth({ event, matches }: Props) {
+export function EventPageAuth({ event }: Props) {
 	const { user } = useUser();
 	const userId = user?.id;
+
+	const matches = event.matches;
 
 	const userMatches = matches.filter(
 		(match) => match.player_1 === userId || match.player_2 === userId,
@@ -54,7 +55,7 @@ export function EventPageAuth({ event, matches }: Props) {
 	return (
 		<>
 			{matches && matches.length > 0 ? (
-				<MatchList title={event.name} eventId={event.id} status="in_progress" />
+				<MatchList event={event} status="in_progress" />
 			) : (
 				<div>No matches found</div>
 			)}

@@ -1,35 +1,9 @@
-import { notFound } from "next/navigation";
 import PageLayout from "@/components/PageLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import RecordScoreForm from "./RecordScoreForm";
-import { fetchMatch, fetchMatches } from "@/lib/actions/matches";
-import { fetchLeagues } from "@/lib/actions/leagues";
-import { fetchEvents } from "@/lib/actions/events";
-
-// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
-export const revalidate = 60;
-
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-	const leagues = await fetchLeagues();
-	const ids: { leagueId: string; eventId: string; matchId: string }[] = [];
-	for (const league of leagues) {
-		const events = await fetchEvents(league.id);
-		for (const event of events) {
-			const matches = await fetchMatches(event.id);
-			for (const match of matches) {
-				ids.push({
-					leagueId: league.id,
-					eventId: event.id,
-					matchId: match.id,
-				});
-			}
-		}
-	}
-	return ids;
-}
+import { fetchMatch } from "@/lib/actions/matches";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default async function MatchPage({
 	params,
@@ -38,6 +12,7 @@ export default async function MatchPage({
 }) {
 	const { matchId } = await params;
 	const match = await fetchMatch(matchId);
+
 	if (
 		!match ||
 		!match.player1 ||
@@ -45,7 +20,28 @@ export default async function MatchPage({
 		!match.event ||
 		!match.games
 	) {
-		notFound();
+		console.error("Match not found", match);
+		return (
+			<PageLayout>
+				<div className="max-w-2xl mx-auto pb-24">
+					<Alert variant="destructive">
+						<AlertTitle>Match Not Found</AlertTitle>
+						<AlertDescription className="space-y-2">
+							<p>
+								We couldn't find the match you're looking for. This could be
+								because:
+							</p>
+							<ul className="list-disc pl-6">
+								<li>The match ID is incorrect</li>
+								<li>The match has been deleted</li>
+								<li>You don't have permission to view this match</li>
+							</ul>
+							<p>Please check the URL and try again.</p>
+						</AlertDescription>
+					</Alert>
+				</div>
+			</PageLayout>
+		);
 	}
 
 	const currentScore = match.games.reduce(
