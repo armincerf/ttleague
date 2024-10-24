@@ -14,6 +14,7 @@ import {
 	CheckCircle,
 	CircleIcon,
 	CloudOff,
+	EyeIcon,
 	SendIcon,
 	Users,
 } from "lucide-react";
@@ -39,6 +40,8 @@ import {
 	type CarouselApi,
 } from "@/components/ui/carousel";
 import { Card, CardContent } from "./ui/card";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export function UnauthChatView() {
 	const router = useRouter();
@@ -111,9 +114,19 @@ function MessageInput({
 	scrollRef: RefObject<HTMLSpanElement>;
 }) {
 	const [draftMsg, setDraftMsg] = useState("");
+	const [showPreview, setShowPreview] = useState(false);
 
 	return (
-		<div>
+		<div className="border-t">
+			{showPreview && draftMsg && (
+				<div className="px-5 pt-3">
+					<div className="rounded-lg bg-secondary p-3 prose prose-sm max-w-none">
+						<ReactMarkdown remarkPlugins={[remarkGfm]}>
+							{draftMsg}
+						</ReactMarkdown>
+					</div>
+				</div>
+			)}
 			<form
 				onSubmit={(e) => {
 					e.preventDefault();
@@ -130,24 +143,35 @@ function MessageInput({
 						scrollRef.current?.scrollIntoView({ behavior: "smooth" });
 					}, 0);
 				}}
-				className="flex items-center justify-center gap-4 p-5"
+				className="flex flex-col gap-2 p-5"
 			>
-				<Input
-					value={draftMsg}
-					onChange={(e: ChangeEvent<HTMLInputElement>) => {
-						setDraftMsg(e.target.value);
-					}}
-					className="max-w-2xl"
-					placeholder="Type your message"
-				/>
-				<Button
-					type="submit"
-					size="icon"
-					className="h-10"
-					disabled={draftMsg.length === 0}
-				>
-					<SendIcon className="h-5 w-5" />
-				</Button>
+				<div className="flex items-center gap-2">
+					<Input
+						value={draftMsg}
+						onChange={(e: ChangeEvent<HTMLInputElement>) => {
+							setDraftMsg(e.target.value);
+						}}
+						className="max-w-2xl"
+						placeholder="Type your message (Markdown supported)"
+					/>
+					<Button
+						type="button"
+						variant="ghost"
+						size="icon"
+						onClick={() => setShowPreview((prev) => !prev)}
+						className="h-10"
+					>
+						<EyeIcon className={cn("h-5 w-5", showPreview && "text-primary")} />
+					</Button>
+					<Button
+						type="submit"
+						size="icon"
+						className="h-10"
+						disabled={draftMsg.length === 0}
+					>
+						<SendIcon className="h-5 w-5" />
+					</Button>
+				</div>
 			</form>
 		</div>
 	);
@@ -305,10 +329,12 @@ function ChatBubble({
 
 	return (
 		<div className="flex flex-col gap-1">
-			<div className={cn(isOwnMessage && "self-end")}>
+			<div
+				className={cn("max-w-[85%] md:max-w-[65%]", isOwnMessage && "self-end")}
+			>
 				<div
 					className={cn(
-						"text-secondary-foreground w-max rounded-lg px-4 py-3 flex flex-col gap-1",
+						"text-secondary-foreground rounded-lg px-4 py-3 flex flex-col gap-1 w-full",
 						delivered ? "bg-secondary" : "border border-dashed",
 						isOwnMessage && "items-end",
 					)}
@@ -360,7 +386,13 @@ function ChatBubble({
 							)
 						)}
 					</div>
-					{textWithoutImages.trim() && <div>{textWithoutImages}</div>}
+					{textWithoutImages.trim() && (
+						<div className="prose prose-sm dark:prose-invert w-full break-words">
+							<ReactMarkdown remarkPlugins={[remarkGfm]}>
+								{textWithoutImages}
+							</ReactMarkdown>
+						</div>
+					)}
 					<div className="text-xs text-muted-foregrounopenMemberModal">
 						{new Date(message.created_at).toLocaleTimeString([], {
 							hour: "2-digit",
