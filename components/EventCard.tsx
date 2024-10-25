@@ -89,9 +89,7 @@ export function EventCard({
 			</CardContent>
 			<CardFooter>
 				<Button className="w-full" asChild>
-					<Link href={`${event.league_id}/events/${event.id}`}>
-						View Event Details
-					</Link>
+					<Link href={`/events/${event.id}`}>View Event Details</Link>
 				</Button>
 			</CardFooter>
 		</Card>

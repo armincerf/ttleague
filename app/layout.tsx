@@ -2,6 +2,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import ZoomResetButton from "@/components/ZoomResetButton";
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -38,6 +39,7 @@ function RootLayout({
 				{children}
 				<Toaster />
 				<SpeedInsights />
+				<ZoomResetButton />
 			</body>
 		</html>
 	);

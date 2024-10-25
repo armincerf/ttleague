@@ -2,22 +2,43 @@ import { unstable_cache } from "next/cache";
 import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
 
-export async function fetchMatches(eventId: string) {
+export function buildMatchesQuery(eventId: string | "recent") {
+	const query = httpClient
+		.query("matches")
+		.include("player1")
+		.include("player2")
+		.include("event")
+		.include("games");
+
+	if (eventId === "recent") {
+		query
+			.where("status", "in", ["in_progress", "completed"])
+			.order("updated_at", "DESC")
+			.limit(20);
+	} else {
+		query.where("event_id", "=", eventId);
+	}
+
+	return query;
+}
+
+function buildMatchQuery(matchId: string) {
+	return httpClient
+		.query("matches")
+		.where("id", "=", matchId)
+		.include("player1")
+		.include("player2")
+		.include("event", (rel) => rel("event").include("club").build())
+		.include("games");
+}
+
+export async function fetchMatches(eventId: string | "recent") {
 	const start = performance.now();
 	try {
 		const matches = await unstable_cache(
 			async () => {
 				try {
-					return await httpClient.fetch(
-						httpClient
-							.query("matches")
-							.where("event_id", "=", eventId)
-							.include("player1")
-							.include("player2")
-							.include("event")
-							.include("games")
-							.build(),
-					);
+					return await httpClient.fetch(buildMatchesQuery(eventId).build());
 				} catch (error) {
 					logger.error({ eventId, error }, "Error fetching matches");
 					throw error;
@@ -40,18 +61,11 @@ export async function fetchMatch(matchId: string) {
 			async () => {
 				try {
 					const match = await httpClient.fetchOne(
-						httpClient
-							.query("matches")
-							.where("id", "=", matchId)
-							.include("player1")
-							.include("player2")
-							.include("event")
-							.include("games")
-							.build(),
+						buildMatchQuery(matchId).build(),
 					);
 					if (!match) {
 						logger.warn({ matchId }, "Match not found");
-						throw new Error(`Match not found: ${matchId}`);
+						return null;
 					}
 					return match;
 				} catch (error) {
@@ -87,4 +101,5 @@ export async function revalidateMatches(eventId: string) {
 	}
 }
 
-export type Match = Awaited<ReturnType<typeof fetchMatch>>;
+export type Match = NonNullable<Awaited<ReturnType<typeof fetchMatch>>>;
+export type Matches = Awaited<ReturnType<typeof fetchMatches>>;

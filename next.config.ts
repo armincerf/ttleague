@@ -24,6 +24,14 @@ const nextConfig: NextConfig = {
 				source: "/bunseki.js",
 				destination: "https://cloud.umami.is/script.js",
 			},
+			{
+				source: "/php/ajax.php",
+				destination: "https://pingpongmap.net/php/ajax.php",
+			},
+			{
+				source: "/upload/:path*",
+				destination: "https://pingpongmap.net/upload/:path*",
+			},
 		];
 	},
 };

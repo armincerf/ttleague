@@ -1,4 +1,4 @@
-"server only";
+//"server only";
 
 import { HttpClient } from "@triplit/client";
 import { schema } from "@/triplit/schema";

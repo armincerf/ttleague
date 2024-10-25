@@ -1,52 +1,46 @@
 "use client";
-import { useQueryOne } from "@triplit/react";
-import { client } from "@/lib/triplit";
-import type { Match } from "@/lib/actions/matches";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import RecordScoreForm from "./RecordScoreForm";
-import { getGameNumber } from "./utils";
+import type { Match } from "@/lib/actions/matches";
+import { useQueryOne } from "@triplit/react";
+import { client } from "@/lib/triplit";
+import {
+	padScore,
+	getGameNumber,
+	calculateCurrentScore,
+} from "../shared/utils";
 
-export default function MatchView({ serverMatch }: { serverMatch: Match }) {
+export function PublicMatchView({ serverMatch }: { serverMatch: Match }) {
 	const clientMatch = useQueryOne(
 		client,
 		client
 			.query("matches")
-			.where([["id", "=", serverMatch.id]])
+			.where([["id", "=", serverMatch?.id ?? ""]])
 			.include("player1")
 			.include("player2")
 			.include("games"),
 	);
+
+	// Use client data if available, fall back to server data
 	const match = clientMatch.result ?? serverMatch;
-	if (!match.player1 || !match.player2) return null;
+	if (!match) return <div>Match not found</div>;
 
-	const currentScore = match.games.reduce(
-		(acc, game) => {
-			const isGameOver = !!game.final_score;
-			if (isGameOver) {
-				const isP1Win = game.player_1_score > game.player_2_score;
-				return isP1Win ? [acc[0] + 1, acc[1]] : [acc[0], acc[1] + 1];
-			}
-			return acc;
-		},
-		[0, 0],
-	);
+	if (!match.player1 || !match.player2) return <div>Player not found</div>;
 
-	function padScore(score: string | null): string {
-		if (!score) return "\u00A0\u00A0\u00A0-\u00A0\u00A0\u00A0";
-		const [score1, score2] = score.split("-").map((s) => s.trim());
-		return `${score1.padStart(2, "\u00A0")} - ${score2.padStart(2, "\u00A0")}`;
-	}
+	const currentScore = calculateCurrentScore(match.games);
+
 	return (
 		<div className="max-w-2xl mx-auto pb-24">
-			<h1 className="text-3xl font-bold mb-6">Table {match.table_number}</h1>
+			<h1 className="text-3xl font-bold mb-6">
+				Match Location: {serverMatch?.event?.club?.name}
+			</h1>
 			<h3 className="text-lg font-semibold mb-4">
 				Games played - {getGameNumber(match.games)}
 			</h3>
 
 			<Card>
 				<CardContent>
-					<div className="flex flex-col  justify-between items-center mb-4 pt-2">
+					<div className="flex flex-col justify-between items-center mb-4 pt-2">
 						<div className="flex items-center gap-2">
 							<Avatar>
 								<AvatarImage src={match.player1.profile_image_url} />
@@ -77,12 +71,21 @@ export default function MatchView({ serverMatch }: { serverMatch: Match }) {
 					</div>
 					<ul>
 						{match.games.map((game, idx) => {
-							if (!game.final_score) return null;
+							// Show both final and in-progress scores
+							const score =
+								game.final_score ||
+								(game.player_1_score !== undefined &&
+								game.player_2_score !== undefined
+									? `${game.player_1_score} - ${game.player_2_score}`
+									: null);
+							if (!score) return null;
+
 							return (
 								<li key={game.id}>
 									<span className="font-semibold pr-2">Game {idx + 1}:</span>{" "}
 									<span className="font-mono">
-										{padScore(game.final_score)}
+										{padScore(score)}
+										{!game.final_score && " (in progress)"}
 									</span>
 								</li>
 							);
@@ -90,7 +93,6 @@ export default function MatchView({ serverMatch }: { serverMatch: Match }) {
 					</ul>
 				</CardContent>
 			</Card>
-			<RecordScoreForm match={match} />
 		</div>
 	);
 }

@@ -64,6 +64,9 @@ export function useTokenCheck() {
 
 	useEffect(() => {
 		let cleanup: TokenCleanup;
+		if (process.env.NODE_ENV !== "development") {
+			return;
+		}
 
 		async function refreshToken() {
 			const token = await getToken();

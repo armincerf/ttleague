@@ -25,9 +25,9 @@ const navItems = [
 export default function BottomNav() {
 	const pathname = usePathname();
 
-	useTokenCheck();
+	//useTokenCheck();
 	return (
-		<div className="fixed bottom-0 left-0 z-50 w-full bg-white border-t border-gray-200 dark:bg-gray-700 dark:border-gray-600 pb-safe-area-inset-bottom">
+		<div className="fixed bottom-0 left-0 z-40 w-full bg-white border-t border-gray-200 dark:bg-gray-700 dark:border-gray-600 pb-safe-area-inset-bottom">
 			<div className="grid h-16 max-w-lg grid-cols-5 mx-auto font-medium">
 				{navItems.map((item) => (
 					<Link

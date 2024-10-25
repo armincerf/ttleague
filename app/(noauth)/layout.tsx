@@ -11,5 +11,11 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
-	return <ClerkProvider>{children}</ClerkProvider>;
+	return (
+		<ClerkProvider>
+			<main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center p-4">
+				{children}
+			</main>
+		</ClerkProvider>
+	);
 }

@@ -1,5 +1,5 @@
 import PageLayout from "@/components/PageLayout";
-import { EventCard, type TEventCardEvent } from "@/components/EventCard";
+import { EventCard } from "@/components/EventCard";
 import { fetchLeague, fetchLeagues } from "@/lib/actions/leagues";
 import { fetchEvents } from "@/lib/actions/events";
 import { notFound } from "next/navigation";

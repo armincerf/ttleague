@@ -10,6 +10,8 @@ import { fetchLeague, fetchLeagues } from "@/lib/actions/leagues";
 import logger from "@/lib/logging";
 import LeagueSeasons from "./LeagueSeasons";
 import InProgressSection from "./InProgressSection";
+import { AdminButton } from "@/components/AdminButton";
+import { AdminLeagueActions } from "./AdminLeagueActions";
 
 function LeagueHeader({
 	league,
@@ -104,6 +106,9 @@ export default async function LeaguePage({
 					<Suspense fallback={<div>Loading seasons and events...</div>}>
 						<LeagueSeasons leagueId={leagueId} />
 					</Suspense>
+					<AdminButton>
+						<AdminLeagueActions leagueId={leagueId} />
+					</AdminButton>
 				</div>
 			</PageLayout>
 		);

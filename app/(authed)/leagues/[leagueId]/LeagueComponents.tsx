@@ -1,8 +1,12 @@
+"use client";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import type { Season, Event } from "@/triplit/schema";
 import { EventCard } from "@/components/EventCard";
+import { useQuery } from "@triplit/react";
+import { client } from "@/lib/triplit";
+import { useMemo } from "react";
 
 export function SeasonList({
 	title,
@@ -32,6 +36,7 @@ export function SeasonList({
 }
 
 export function EventList({
+	past,
 	title,
 	events,
 	showSeeAll = false,
@@ -41,7 +46,19 @@ export function EventList({
 	events: Event[];
 	showSeeAll?: boolean;
 	leagueId?: string;
+	past?: boolean;
 }) {
+	const query = useMemo(() => {
+		return client
+			.query("events")
+			.where(
+				past
+					? ["end_time", "<", new Date().toISOString()]
+					: ["start_time", ">", new Date().toISOString()],
+			);
+	}, [past]);
+	const { results: clientEvents } = useQuery(client, query);
+	const leagueEvents = clientEvents ?? events;
 	return (
 		<div className="mt-8">
 			<div className="flex justify-between items-center mb-4">
@@ -53,7 +70,7 @@ export function EventList({
 				)}
 			</div>
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
-				{events.map((event) => (
+				{leagueEvents.map((event) => (
 					<EventCard key={event.id} event={event} />
 				))}
 			</div>

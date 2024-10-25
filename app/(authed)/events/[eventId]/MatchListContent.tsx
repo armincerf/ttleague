@@ -32,6 +32,7 @@ export default function MatchListContent({ event, status }: MatchListProps) {
 						<TableHead>Player 2</TableHead>
 						{status === "in_progress" && <TableHead>Current Score</TableHead>}
 						{status === "completed" && <TableHead>Final Score</TableHead>}
+						<TableHead>Table</TableHead>
 						<TableHead>Action</TableHead>
 					</TableRow>
 				</TableHeader>
@@ -65,9 +66,10 @@ export default function MatchListContent({ event, status }: MatchListProps) {
 										.join("-")}
 								</TableCell>
 							)}
+							<TableCell>{match.table_number}</TableCell>
 							<TableCell>
 								<Link
-									href={`./${event.id}/matches/${match.id}`}
+									href={`/matches/${match.id}`}
 									className="text-blue-500 underline sm:no-underline sm:hover:underline"
 								>
 									View Match

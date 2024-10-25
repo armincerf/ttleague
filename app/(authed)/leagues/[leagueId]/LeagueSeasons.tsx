@@ -37,8 +37,9 @@ function EventsContent({ leagueId }: { leagueId: string }) {
 
 	return (
 		<>
-			<EventList title="Upcoming Event" events={upcomingEvents} />
+			<EventList past={false} title="Upcoming Event" events={upcomingEvents} />
 			<EventList
+				past={true}
 				title="Past Events"
 				events={pastEvents}
 				showSeeAll={true}

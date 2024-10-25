@@ -83,9 +83,9 @@ export default function RegistrationForm({
 			console.log("User already registered for event", {
 				existingRegistration,
 			});
-			router.push(`/leagues/${leagueId}/events/${eventId}`);
+			router.push(`/events/${eventId}`);
 		}
-	}, [existingRegistration, router, eventId, leagueId]);
+	}, [existingRegistration, router, eventId]);
 
 	const form = useForm({
 		defaultValues: {
@@ -125,7 +125,7 @@ export default function RegistrationForm({
 					value,
 				});
 
-				router.push(`/leagues/${leagueId}/events/${eventId}`);
+				router.push(`/events/${eventId}`);
 			} catch (error) {
 				console.error("Error registering for event:", error);
 				// Handle error (e.g., show error message to user)

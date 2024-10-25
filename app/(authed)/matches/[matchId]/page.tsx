@@ -1,10 +1,9 @@
 import PageLayout from "@/components/PageLayout";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import RecordScoreForm from "./RecordScoreForm";
 import { fetchMatch } from "@/lib/actions/matches";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import MatchView from "./MatchView";
+import { PublicMatchView } from "./PublicMatchView";
+import { auth } from "@clerk/nextjs/server";
 
 export default async function MatchPage({
 	params,
@@ -14,13 +13,7 @@ export default async function MatchPage({
 	const { matchId } = await params;
 	const match = await fetchMatch(matchId);
 
-	if (
-		!match ||
-		!match.player1 ||
-		!match.player2 ||
-		!match.event ||
-		!match.games
-	) {
+	if (!match || !match.player1 || !match.player2 || !match.games) {
 		console.error("Match not found", match);
 		return (
 			<PageLayout>
@@ -47,7 +40,7 @@ export default async function MatchPage({
 
 	return (
 		<PageLayout>
-			<MatchView serverMatch={match} />
+			<PublicMatchView serverMatch={match} />
 		</PageLayout>
 	);
 }

@@ -17,6 +17,8 @@ import { EventPageAuth } from "./EventPageAuth";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import { CountdownTimerDisplay } from "./CountdownTimer";
+import { getPossibleInstrumentationHookFilenames } from "next/dist/build/utils";
+import MatchListContent from "./MatchListContent";
 
 const CountdownTimer = dynamic(() => import("./CountdownTimer"), {
 	ssr: false,
@@ -112,9 +114,13 @@ function EventCard({
 					</CardDescription>
 					<CardContent>
 						<h2>Results</h2>
-						{/* {matches.map((match) => (
-                            <MatchCard key={match.id} match={match} />
-                        ))} */}
+						{event.matches.map((match) => (
+							<MatchListContent
+								key={match.id}
+								event={event}
+								status="completed"
+							/>
+						))}
 					</CardContent>
 				</CardHeader>
 			</Card>
