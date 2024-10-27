@@ -146,79 +146,76 @@ function ScoreCard({
 }: {
 	score: number;
 	correction: boolean;
-	setServeTurn: () => void;
-	handleScoreChange: (score: number) => unknown;
 	serveTurn: boolean;
+	setServeTurn: () => void;
+	handleScoreChange: (score: number) => void;
 	player: string;
 }) {
+	const [displayScore, setDisplayScore] = useState(score);
+	const [flipTrigger, setFlipTrigger] = useState(0);
 	const [isFlipping, setIsFlipping] = useState(false);
 
-	const handleClick = () => {
-		console.log("in on lcikc", score);
+	function handleClick() {
+		if (correction || isFlipping) return;
 		setIsFlipping(true);
 		handleScoreChange(score + 1);
-		setTimeout(() => setIsFlipping(false), 500);
-	};
+		setTimeout(() => {
+			setIsFlipping(false);
+			setDisplayScore(score + 1);
+		}, 1000);
+	}
+
+	useEffect(() => {
+		setIsFlipping(true);
+		setTimeout(() => {
+			setIsFlipping(false);
+			setDisplayScore(score);
+		}, 1000);
+	}, [score]);
 
 	return (
 		<div className="flex flex-col gap-2">
-			<div className="relative bg-white">
-				<p className="absolute top-0 pt-2 flex justify-center w-full text-5xl uppercase">
-					{player}
-				</p>
-				<button
-					type="button"
-					className="w-full  overflow-hidden relative cursor-pointer"
-					onClick={handleClick}
+			<button
+				type="button"
+				onClick={handleClick}
+				className="w-full h-[290px] relative cursor-pointer"
+				style={{ perspective: "1000px" }}
+			>
+				{/* Bottom (next) number */}
+				<div className="absolute inset-0 flex flex-col items-center bg-white">
+					<div className="w-full flex items-center justify-center text-5xl uppercase">
+						{player}
+					</div>
+					<div className="flex-1 flex items-center justify-center text-[12rem] h-full font-bold">
+						{displayScore + 1}
+					</div>
+				</div>
+
+				{/* Top (current) number */}
+				<motion.div
+					key={`${displayScore}-${flipTrigger}`}
+					initial={{ rotateX: 0 }}
+					animate={{ rotateX: isFlipping ? 180 : 0 }}
+					transition={{
+						duration: 1,
+						ease: "easeInOut",
+					}}
+					className="absolute inset-0 bg-white origin-top"
+					style={{
+						transformStyle: "preserve-3d",
+						backfaceVisibility: "hidden",
+					}}
 				>
-					<AnimatePresence initial={false} mode="popLayout">
-						<motion.div
-							key={score}
-							initial={{ rotateX: isFlipping ? -90 : 0, opacity: 0 }}
-							animate={{ rotateX: 0, opacity: 1 }}
-							exit={{ rotateX: 90, opacity: 0 }}
-							transition={{
-								type: "spring",
-								stiffness: 300,
-								damping: 30,
-								mass: 1,
-								duration: 0.5,
-							}}
-							className="w-full h-full flex items-center justify-center text-[12rem] font-bold"
-						>
-							{score}
-						</motion.div>
-					</AnimatePresence>
-				</button>
-				{(serveTurn || correction) && (
-					<button
-						type="button"
-						className="absolute left-0 bottom-0 flex justify-center p-2"
-						onClick={setServeTurn}
-					>
-						<svg
-							className={
-								correction && !serveTurn
-									? "stroke-red-500 fill-none"
-									: "fill-red-500"
-							}
-							width="60"
-							height="30"
-							viewBox="0 0 60 30"
-							aria-hidden="true"
-						>
-							<title>Serve indicator</title>
-							<path
-								d="M1 29L30 1L59 29H1Z"
-								strokeWidth="2"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-								strokeDasharray={correction && !serveTurn ? "4 4" : "0"}
-							/>
-						</svg>
-					</button>
-				)}
-			</div>
+					<div className="absolute inset-0 flex flex-col items-center bg-white">
+						<div className=" w-full flex items-center justify-center text-5xl uppercase">
+							{player}
+						</div>
+						<div className="flex-1 flex items-center justify-center text-[12rem] font-bold">
+							{displayScore}
+						</div>
+					</div>
+				</motion.div>
+			</button>
 			{correction && (
 				<div className="flex flex-col gap-2">
 					<button
@@ -314,6 +311,8 @@ export function Scoreboard2({ serverMatch }: { serverMatch: Match }) {
 	const match = clientMatch.result ?? serverMatch;
 	if (!match.player1 || !match.player2) return null;
 
+	const game = match.games[match.games.length - 1];
+
 	const currentScore = match.games.reduce(
 		(acc, game) => {
 			const isGameOver = !!game.final_score;
@@ -325,8 +324,6 @@ export function Scoreboard2({ serverMatch }: { serverMatch: Match }) {
 		},
 		[0, 0],
 	);
-
-	console.log("score", currentScore);
 
 	function setPlayerServingTurn(playerNumber: 0 | 1) {
 		return () => setServeTurn(playerNumber);
@@ -369,7 +366,7 @@ export function Scoreboard2({ serverMatch }: { serverMatch: Match }) {
 						<div className="w-[35%]">
 							<ScoreCard
 								player={`${match.player1.first_name[0]}${match.player1.last_name[0]}`}
-								score={currentScore[0]}
+								score={game.player_1_score}
 								handleScoreChange={(score: number) =>
 									handleScoreChange("player1Score", score)
 								}
@@ -381,9 +378,9 @@ export function Scoreboard2({ serverMatch }: { serverMatch: Match }) {
 						<div className="w-[35%]">
 							<ScoreCard
 								player={`${match.player1.first_name[1]}${match.player1.last_name[1]}`}
-								score={currentScore[1]}
+								score={game.player_2_score}
 								handleScoreChange={(score: number) =>
-									handleScoreChange("player1Score", score)
+									handleScoreChange("player2Score", score)
 								}
 								correction={correction}
 								serveTurn={serveTurn === 1}
@@ -394,25 +391,17 @@ export function Scoreboard2({ serverMatch }: { serverMatch: Match }) {
 							<SetCounter count={rightSets} />
 						</div>
 					</div>
-
-					<div className="flex justify-between items-end">
-						<TimeOutLabel />
-						<div className="text-white text-center text-9xl">DONIC</div>
-						<TimeOutLabel />
+					<div className="flex justify-center items-end ">
+						<button
+							type="button"
+							onClick={() => setCorrectionMode((prev) => !prev)}
+							className={`${correction ? "bg-red-500" : "bg-black"} text-white px-4 py-3 text-lg rounded-none hover:bg-red-500 uppercase`}
+						>
+							{correction ? "resume game" : "correction"}
+						</button>
 					</div>
 				</div>
 			</div>
-			{!isLandscape && (
-				<div className="flex justify-center items-end py-10">
-					<button
-						type="button"
-						onClick={() => setCorrectionMode((prev) => !prev)}
-						className={`${correction ? "bg-red-500" : "bg-black"} text-white px-4 py-3 text-lg rounded-none hover:bg-red-500 uppercase`}
-					>
-						{correction ? "resume game" : "correction"}
-					</button>
-				</div>
-			)}
 		</div>
 	);
 }
