@@ -1,6 +1,6 @@
 "use client";
 import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, Loader2 } from "lucide-react";
 import Logo from "./Logo";
 import { cn } from "@/lib/utils";
 import { ConnectionStatus } from "./ConnectionStatus";
@@ -14,14 +14,14 @@ import {
 } from "@/components/ui/dialog";
 
 export default function TopBar() {
-	const { isSignedIn } = useUser();
+	const { isSignedIn, isLoaded } = useUser();
 	return (
 		<header className="bg-white shadow-sm sticky top-0 z-50">
 			<div className="container mx-auto px-4 h-16 flex items-center">
 				<div className="w-[100px] flex items-center">
-					{isSignedIn ? (
+					{isLoaded && isSignedIn ? (
 						<UserButton />
-					) : (
+					) : isLoaded && !isSignedIn ? (
 						<Dialog>
 							<DialogTrigger asChild>
 								<button
@@ -58,6 +58,10 @@ export default function TopBar() {
 								</div>
 							</DialogContent>
 						</Dialog>
+					) : (
+						<div className="w-full h-full flex">
+							<Loader2 className="h-6 w-6 animate-spin" />
+						</div>
 					)}
 				</div>
 
