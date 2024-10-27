@@ -15,6 +15,12 @@ const geistMono = localFont({
 	weight: "100 900",
 });
 
+const heoric = localFont({
+	src: "./fonts/heroic-condensed-medium.woff",
+	variable: "--font-heoric",
+	weight: "100 900",
+});
+
 function RootLayout({
 	children,
 }: {
@@ -34,7 +40,7 @@ function RootLayout({
 				/>
 			</head>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				className={`${geistSans.variable} ${geistMono.variable} ${heoric.variable} antialiased`}
 			>
 				{children}
 				<Toaster />
