@@ -1,5 +1,6 @@
 import { setup, assign } from "xstate";
 import { getWinner, shouldAlternateEveryPoint } from "./utils";
+import { DEFAULT_GAME_STATE } from "./constants";
 
 export interface Player {
 	id: string;
@@ -12,7 +13,7 @@ export interface ScoreboardContext {
 	player2Score: number;
 	player1GamesWon: number;
 	player2GamesWon: number;
-	currentServer: 0 | 1;
+	playerOneStarts: boolean;
 	correctionsMode: boolean;
 	pointsToWin: number;
 	bestOf: number;
@@ -23,7 +24,7 @@ export interface ScoreboardContext {
 
 export interface ScoreboardCallbacks {
 	onScoreChange?: (player: 1 | 2, newScore: number) => void;
-	onServerChange?: (newServer: 0 | 1) => void;
+	onPlayerOneStartsChange?: (playerOneStarts: boolean) => void;
 	onGameComplete?: (winner: 1 | 2) => void;
 }
 
@@ -43,7 +44,7 @@ export const createScoreboardMachine = (
 			events: {} as
 				| { type: "INCREMENT_SCORE"; player: 1 | 2 }
 				| { type: "SET_SCORE"; player: 1 | 2; score: number }
-				| { type: "SET_SERVER"; player: 0 | 1 }
+				| { type: "SET_PLAYER_ONE_STARTS"; starts: boolean }
 				| { type: "TOGGLE_CORRECTIONS_MODE" }
 				| { type: "EXTERNAL_UPDATE"; state: Partial<ScoreboardContext> }
 				| { type: "CONFIRM_GAME_OVER"; confirmed: boolean }
@@ -61,9 +62,9 @@ export const createScoreboardMachine = (
 					callbacks.onScoreChange?.(event.player, event.score);
 				}
 			},
-			notifyServerChange: ({ context, event }) => {
-				if (event.type === "SET_SERVER") {
-					callbacks.onServerChange?.(event.player);
+			notifyPlayerOneStartsChange: ({ context, event }) => {
+				if (event.type === "SET_PLAYER_ONE_STARTS") {
+					callbacks.onPlayerOneStartsChange?.(event.starts);
 				}
 			},
 			notifyGameComplete: ({ context }) => {
@@ -72,11 +73,7 @@ export const createScoreboardMachine = (
 					callbacks.onGameComplete?.(winner);
 				}
 			},
-			updateServer: assign(({ context, event }) => {
-				if (event.type === "SET_SERVER") {
-					return { currentServer: event.player };
-				}
-
+			updateCurrentServer: assign(({ context, event }) => {
 				const totalPoints = context.player1Score + context.player2Score;
 				const isDeuce = shouldAlternateEveryPoint(
 					context.player1Score,
@@ -84,17 +81,22 @@ export const createScoreboardMachine = (
 					context.pointsToWin,
 				);
 
-				// At deuce, server changes every point
-				if (isDeuce) {
-					return { currentServer: (totalPoints % 2) as 0 | 1 };
+				if (event.type === "SET_PLAYER_ONE_STARTS") {
+					return { playerOneStarts: event.starts };
 				}
 
-				// Before deuce, server changes every 2 points
-				return { currentServer: (Math.floor(totalPoints / 2) % 2) as 0 | 1 };
+				if (isDeuce) {
+					// Alternate server every point at deuce
+					return { playerOneStarts: totalPoints % 2 === 0 };
+				}
+
+				// Alternate server every two points
+				const pairIndex = Math.floor(totalPoints / 2);
+				return { playerOneStarts: pairIndex % 2 === 0 };
 			}),
 			checkMidGameSwap: assign(({ context }) => {
 				const totalGamesWon = context.player1GamesWon + context.player2GamesWon;
-				const isLastGame = totalGamesWon === context.bestOf - 1; // Changed from bestOf - 2
+				const isLastGame = totalGamesWon === context.bestOf - 1;
 				const reachedMidPoint =
 					Math.max(context.player1Score, context.player2Score) === 5;
 				const otherPlayerScore = Math.min(
@@ -122,25 +124,7 @@ export const createScoreboardMachine = (
 	}).createMachine({
 		id: "scoreboard",
 		context: {
-			player1Score: 0,
-			player2Score: 0,
-			player1GamesWon: 0,
-			player2GamesWon: 0,
-			currentServer: 0,
-			correctionsMode: false,
-			pointsToWin: 11,
-			bestOf: 5,
-			sidesSwapped: false,
-			player1: {
-				id: "",
-				firstName: "",
-				lastName: "",
-			},
-			player2: {
-				id: "",
-				firstName: "",
-				lastName: "",
-			},
+			...DEFAULT_GAME_STATE,
 			...callbacks.initialContext,
 		},
 		initial: "playing",
@@ -164,7 +148,7 @@ export const createScoreboardMachine = (
 								const player = `player${event.player}Score` as const;
 								return { [player]: context[player] + 1 };
 							}),
-							"updateServer",
+							"updateCurrentServer",
 							"notifyScoreChange",
 							"checkMidGameSwap",
 						],
@@ -176,17 +160,18 @@ export const createScoreboardMachine = (
 									event.player === 1 ? "player1Score" : "player2Score";
 								return { [player]: event.score };
 							}),
-							"updateServer",
+							"updateCurrentServer",
 							"notifyScoreChange",
 							"checkMidGameSwap",
 						],
 					},
-					SET_SERVER: {
+					SET_PLAYER_ONE_STARTS: {
 						actions: [
 							assign(({ event }) => ({
-								currentServer: event.player,
+								playerOneStarts: event.starts,
 							})),
-							"notifyServerChange",
+							"updateCurrentServer",
+							"notifyPlayerOneStartsChange",
 						],
 					},
 					TOGGLE_CORRECTIONS_MODE: {
@@ -229,7 +214,7 @@ export const createScoreboardMachine = (
 									event.player === 1 ? "player1Score" : "player2Score";
 								return { [player]: event.score };
 							}),
-							"updateServer",
+							"updateCurrentServer",
 							"notifyScoreChange",
 						],
 					},
@@ -252,6 +237,7 @@ export const createScoreboardMachine = (
 										player1Score: 0,
 										player2Score: 0,
 										sidesSwapped: !context.sidesSwapped,
+										currentServer: context.playerOneStarts ? 1 : 2,
 									};
 								}),
 							],
@@ -283,7 +269,7 @@ export const createScoreboardMachine = (
 									event.player === 1 ? "player1Score" : "player2Score";
 								return { [player]: event.score };
 							}),
-							"updateServer",
+							"updateCurrentServer",
 							"notifyScoreChange",
 						],
 					},
@@ -304,7 +290,6 @@ export const createScoreboardMachine = (
 					},
 					{
 						target: "playing",
-						// Remove the side swapping logic here since we're handling it in gameOverConfirmation
 						actions: [],
 					},
 				],
@@ -313,15 +298,7 @@ export const createScoreboardMachine = (
 				on: {
 					RESET_MATCH: {
 						target: "playing",
-						actions: assign({
-							player1Score: 0,
-							player2Score: 0,
-							player1GamesWon: 0,
-							player2GamesWon: 0,
-							currentServer: 0,
-							correctionsMode: false,
-							sidesSwapped: false,
-						}),
+						actions: assign(DEFAULT_GAME_STATE),
 					},
 				},
 			},

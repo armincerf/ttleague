@@ -4,8 +4,8 @@ export interface ScoreCard {
 	player: string;
 	score: number;
 	handleScoreChange: (score: number) => void;
-	serveTurn: boolean;
-	setServeTurn: () => void;
+	isPlayerOneStarting: boolean;
+	setPlayerOneStarting: () => void;
 	indicatorColor: string;
 }
 
@@ -14,5 +14,6 @@ export interface BaseScoreboardProps {
 	send: TUseScoreboardMachine["send"];
 	orderedScoreCards: ScoreCard[];
 	SetCounter: React.FC<{ count: number }>;
+	showStartingPlayer?: boolean;
 	winner?: boolean;
 }

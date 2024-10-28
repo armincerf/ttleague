@@ -57,7 +57,7 @@ export function PortraitScoreboard({
 								<ScoreCard
 									{...card}
 									correction={state.context.correctionsMode}
-									showServer={!winner}
+									showStartingPlayer={!winner}
 								/>
 							</motion.div>
 						))}

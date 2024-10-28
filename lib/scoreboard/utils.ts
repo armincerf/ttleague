@@ -12,15 +12,14 @@ export function getWinner(context: ScoreboardContext): 1 | 2 | null {
 	return null;
 }
 
-export function splitName(fullName: string): Player {
+export function splitName(fullName: string) {
 	const parts = fullName.trim().split(/\s+/);
-	if (parts.length === 1) {
-		return { firstName: parts[0], lastName: "" };
+	if (parts.length === 0 || (parts.length === 1 && !parts[0])) {
+		return { firstName: "", lastName: "" };
 	}
-	return {
-		firstName: parts.slice(0, -1).join(" "),
-		lastName: parts[parts.length - 1],
-	};
+	const firstName = parts[0];
+	const lastName = parts.slice(1).join(" ");
+	return { firstName, lastName: lastName || "" };
 }
 
 export function formatPlayerName(player: Player): string {

@@ -139,15 +139,15 @@ export default function MatchView({ serverMatch }: { serverMatch: Match }) {
 function ScoreCard({
 	score,
 	correction,
-	serveTurn,
-	setServeTurn,
+	isPlayerOneStarting,
+	setPlayerOneStarting,
 	handleScoreChange,
 	player,
 }: {
 	score: number;
 	correction: boolean;
-	serveTurn: boolean;
-	setServeTurn: () => void;
+	isPlayerOneStarting: boolean;
+	setPlayerOneStarting: () => void;
 	handleScoreChange: (score: number) => void;
 	player: string;
 }) {
@@ -371,8 +371,8 @@ export function Scoreboard2({ serverMatch }: { serverMatch: Match }) {
 									handleScoreChange("player1Score", score)
 								}
 								correction={correction}
-								serveTurn={serveTurn === 0}
-								setServeTurn={setPlayerServingTurn(0)}
+								isPlayerOneStarting={serveTurn === 0}
+								setPlayerOneStarting={setPlayerServingTurn(0)}
 							/>
 						</div>
 						<div className="w-[35%]">
@@ -383,8 +383,8 @@ export function Scoreboard2({ serverMatch }: { serverMatch: Match }) {
 									handleScoreChange("player2Score", score)
 								}
 								correction={correction}
-								serveTurn={serveTurn === 1}
-								setServeTurn={setPlayerServingTurn(1)}
+								isPlayerOneStarting={serveTurn === 1}
+								setPlayerOneStarting={setPlayerServingTurn(1)}
 							/>
 						</div>
 						<div className="w-[15%]">

@@ -17,6 +17,8 @@ import TopBar from "../TopBar";
 import { cn } from "@/lib/utils";
 import { LandscapeScoreboard } from "./LandscapeScoreboard";
 import { PortraitScoreboard } from "./PortraitScoreboard";
+import { useStateProvider } from "@/lib/hooks/useStateProvider";
+import { DEFAULT_GAME_STATE } from "@/lib/scoreboard/constants";
 
 interface Player {
 	firstName: string;
@@ -36,7 +38,7 @@ const STORAGE_KEY = "scoreboardSettings";
 const storedSettingsSchema = z.object({
 	bestOf: z.number().optional(),
 	pointsToWin: z.number().optional(),
-	currentServer: z.union([z.literal(0), z.literal(1)]).optional(),
+	playerOneStarts: z.boolean().optional(),
 	sidesSwapped: z.boolean().optional(),
 	player1Name: z.string().optional(),
 	player2Name: z.string().optional(),
@@ -80,6 +82,7 @@ export default function Scoreboard({
 	stateProvider,
 	loading = false, // Add default value
 }: ScoreboardProps) {
+	const { updateGameState } = useStateProvider(stateProvider);
 	const storedSettings = getStoredSettings();
 	const [player1, setPlayer1] = useState(() => {
 		if (initialPlayer1) return initialPlayer1;
@@ -97,17 +100,19 @@ export default function Scoreboard({
 	const machine = useMemo(
 		() =>
 			createScoreboardMachine({
+				initialContext: {
+					// Default to true if not found in storage
+					playerOneStarts: storedSettings.playerOneStarts ?? true,
+					sidesSwapped: storedSettings.sidesSwapped ?? false,
+				},
 				onScoreChange: (player, score) => {
 					console.log("score change", player, score);
-				},
-				onServerChange: (server) => {
-					console.log("server change", server);
 				},
 				onGameComplete: (winner) => {
 					console.log("game complete", winner);
 				},
 			}),
-		[],
+		[storedSettings.playerOneStarts, storedSettings.sidesSwapped],
 	);
 
 	const { state, send } = useScoreboardMachine(machine);
@@ -145,16 +150,20 @@ export default function Scoreboard({
 			player: loading ? "-" : formatPlayerName(player1),
 			score: loading ? 0 : state.context.player1Score,
 			handleScoreChange: (score: number) => handleScoreChange(1, score),
-			serveTurn: state.context.currentServer === 0,
-			setServeTurn: () => send({ type: "SET_SERVER", player: 0 }),
+			isPlayerOneStarting:
+				!state.context.sidesSwapped === state.context.playerOneStarts,
+			setPlayerOneStarting: () =>
+				send({ type: "SET_PLAYER_ONE_STARTS", starts: true }),
 			indicatorColor: "bg-primary",
 		},
 		{
 			player: loading ? "-" : formatPlayerName(player2),
 			score: loading ? 0 : state.context.player2Score,
 			handleScoreChange: (score: number) => handleScoreChange(2, score),
-			serveTurn: state.context.currentServer === 1,
-			setServeTurn: () => send({ type: "SET_SERVER", player: 1 }),
+			isPlayerOneStarting:
+				state.context.sidesSwapped === state.context.playerOneStarts,
+			setPlayerOneStarting: () =>
+				send({ type: "SET_PLAYER_ONE_STARTS", starts: false }),
 			indicatorColor: "bg-tt-blue",
 		},
 	];
@@ -166,25 +175,44 @@ export default function Scoreboard({
 	const [showSettings, setShowSettings] = useState(false);
 
 	function handleSettingsUpdate(newSettings: Partial<ScoreboardContext>) {
-		send({ type: "EXTERNAL_UPDATE", state: newSettings });
-		stateProvider?.updateGame(newSettings);
+		const updatedSettings = {
+			...DEFAULT_GAME_STATE,
+			...newSettings,
+			playerOneStarts: newSettings.playerOneStarts ?? true,
+		};
 
-		if (!initialPlayer1 && !initialPlayer2) {
-			localStorage.setItem(
-				STORAGE_KEY,
-				JSON.stringify({
-					bestOf: newSettings.bestOf,
-					pointsToWin: newSettings.pointsToWin,
-					currentServer: newSettings.currentServer,
-					sidesSwapped: newSettings.sidesSwapped,
-					player1Name: `${player1.firstName} ${player1.lastName}`.trim(),
-					player2Name: `${player2.firstName} ${player2.lastName}`.trim(),
-				}),
-			);
-		}
+		send({
+			type: "EXTERNAL_UPDATE",
+			state: updatedSettings,
+		});
+
+		stateProvider?.updateGame(updatedSettings);
+
+		localStorage.setItem(
+			STORAGE_KEY,
+			JSON.stringify({
+				bestOf: newSettings.bestOf,
+				pointsToWin: newSettings.pointsToWin,
+				playerOneStarts: newSettings.playerOneStarts,
+				sidesSwapped: newSettings.sidesSwapped,
+				player1Name: `${player1.firstName} ${player1.lastName}`.trim(),
+				player2Name: `${player2.firstName} ${player2.lastName}`.trim(),
+			}),
+		);
 	}
 
 	function handlePlayersSubmit(newPlayer1: Player, newPlayer2: Player) {
+		// Only save to localStorage if we don't have initial players
+		if (!initialPlayer1 && !initialPlayer2) {
+			const currentSettings = getStoredSettings();
+			const newSettings = {
+				...currentSettings,
+				player1Name: `${newPlayer1.firstName} ${newPlayer1.lastName}`.trim(),
+				player2Name: `${newPlayer2.firstName} ${newPlayer2.lastName}`.trim(),
+			};
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+		}
+
 		setPlayer1(newPlayer1);
 		setPlayer2(newPlayer2);
 		send({
@@ -192,19 +220,6 @@ export default function Scoreboard({
 			player1: { ...newPlayer1, id: crypto.randomUUID() },
 			player2: { ...newPlayer2, id: crypto.randomUUID() },
 		});
-
-		// Only save to localStorage if we don't have initial players
-		if (!initialPlayer1 && !initialPlayer2) {
-			const currentSettings = getStoredSettings();
-			localStorage.setItem(
-				STORAGE_KEY,
-				JSON.stringify({
-					...currentSettings,
-					player1Name: `${newPlayer1.firstName} ${newPlayer1.lastName}`.trim(),
-					player2Name: `${newPlayer2.firstName} ${newPlayer2.lastName}`.trim(),
-				}),
-			);
-		}
 
 		setShowSettings(false);
 	}
@@ -240,14 +255,7 @@ export default function Scoreboard({
 							player2GamesWon={state.context.player2GamesWon}
 							onClose={() => {
 								send({ type: "RESET_MATCH" });
-								stateProvider?.updateGame({
-									player1Score: 0,
-									player2Score: 0,
-									player1GamesWon: 0,
-									player2GamesWon: 0,
-									currentServer: 0,
-									sidesSwapped: false,
-								});
+								stateProvider?.updateGame(DEFAULT_GAME_STATE);
 							}}
 						/>
 					</div>
@@ -287,7 +295,7 @@ export default function Scoreboard({
 					settings={{
 						bestOf: state.context.bestOf,
 						pointsToWin: state.context.pointsToWin,
-						currentServer: state.context.currentServer,
+						playerOneStarts: state.context.playerOneStarts,
 						sidesSwapped: state.context.sidesSwapped,
 					}}
 					onUpdate={handleSettingsUpdate}
@@ -295,9 +303,7 @@ export default function Scoreboard({
 						player1,
 						player2,
 					}}
-					onPlayersSubmit={
-						!state.matches("playing") ? handlePlayersSubmit : undefined
-					}
+					onPlayersSubmit={handlePlayersSubmit}
 				/>
 			</div>
 		</div>

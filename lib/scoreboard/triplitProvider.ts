@@ -15,9 +15,9 @@ export function createTriplitProvider(gameId: string): StateProvider {
 			});
 		},
 
-		async updateServer(server: 0 | 1) {
+		async updatePlayerOneStarts(starts: boolean) {
 			await client.update("games", gameId, (game) => {
-				game.current_server = server;
+				game.current_server = starts ? 0 : 1;
 				game.last_edited_at = new Date();
 			});
 		},
@@ -29,9 +29,6 @@ export function createTriplitProvider(gameId: string): StateProvider {
 				}
 				if ("player2Score" in gameState) {
 					game.player_2_score = gameState.player2Score ?? 0;
-				}
-				if ("currentServer" in gameState) {
-					game.current_server = gameState.currentServer;
 				}
 				game.last_edited_at = new Date();
 			});

@@ -2,6 +2,7 @@ import { type Updater, useForm } from "@tanstack/react-form";
 import {
 	Dialog,
 	DialogContent,
+	DialogDescription,
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
@@ -21,7 +22,7 @@ import { splitName } from "@/lib/scoreboard/utils";
 
 type SettingsFormValues = Pick<
 	ScoreboardContext,
-	"bestOf" | "pointsToWin" | "currentServer" | "sidesSwapped"
+	"bestOf" | "pointsToWin" | "playerOneStarts" | "sidesSwapped"
 >;
 
 interface SettingsModalProps {
@@ -50,6 +51,7 @@ export function SettingsModal({
 	const form = useForm({
 		defaultValues: {
 			...settings,
+			playerOneStarts: settings.playerOneStarts,
 			player1Name: players?.player1
 				? `${players.player1.firstName} ${players.player1.lastName}`.trim()
 				: "",
@@ -59,12 +61,16 @@ export function SettingsModal({
 		},
 		onSubmit: async ({ value }) => {
 			if (onPlayersSubmit) {
-				onPlayersSubmit(
-					splitName(value.player1Name || ""),
-					splitName(value.player2Name || ""),
-				);
+				const player1 = splitName(value.player1Name || "");
+				const player2 = splitName(value.player2Name || "");
+				onPlayersSubmit(player1, player2);
 			} else {
-				onUpdate(value);
+				onUpdate({
+					bestOf: value.bestOf,
+					pointsToWin: value.pointsToWin,
+					playerOneStarts: value.playerOneStarts,
+					sidesSwapped: value.sidesSwapped,
+				});
 			}
 			onClose();
 		},
@@ -75,6 +81,9 @@ export function SettingsModal({
 			<DialogContent className="max-h-[90vh] overflow-y-auto">
 				<DialogHeader>
 					<DialogTitle>Game Settings</DialogTitle>
+					<DialogDescription>
+						These settings will be used for all future matches.
+					</DialogDescription>
 				</DialogHeader>
 
 				<form
@@ -161,47 +170,18 @@ export function SettingsModal({
 						)}
 					</form.Field>
 
-					<form.Field
-						name="currentServer"
-						validators={{
-							onChange: ({ value }) => {
-								const parsed = z
-									.union([z.literal(0), z.literal(1)])
-									.safeParse(value);
-								return parsed.success ? undefined : "Invalid server selection";
-							},
-						}}
-					>
+					<form.Field name="playerOneStarts">
 						{(field) => (
-							<FormItem className="space-y-3">
-								<FormLabel>Initial Server</FormLabel>
+							<FormItem className="flex items-center space-x-2">
 								<FormControl>
-									<RadioGroup
-										value={field.state.value.toString()}
-										onValueChange={(value) =>
-											field.handleChange(Number(value) as Updater<0 | 1>)
-										}
-										className="flex gap-4"
-									>
-										<FormItem className="flex items-center space-x-2">
-											<FormControl>
-												<RadioGroupItem value="0" />
-											</FormControl>
-											<FormLabel className="font-normal">Player 1</FormLabel>
-										</FormItem>
-										<FormItem className="flex items-center space-x-2">
-											<FormControl>
-												<RadioGroupItem value="1" />
-											</FormControl>
-											<FormLabel className="font-normal">Player 2</FormLabel>
-										</FormItem>
-									</RadioGroup>
+									<Checkbox
+										checked={field.state.value}
+										onCheckedChange={(checked) => field.handleChange(!!checked)}
+									/>
 								</FormControl>
-								{field.state.meta.errors && (
-									<FormMessage>
-										{field.state.meta.errors.join(", ")}
-									</FormMessage>
-								)}
+								<FormLabel className="text-sm font-medium">
+									Player 1 Starts
+								</FormLabel>
 							</FormItem>
 						)}
 					</form.Field>

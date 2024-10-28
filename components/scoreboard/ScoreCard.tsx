@@ -7,23 +7,23 @@ const FLIP_COMPLETE_DELAY = FLIP_ANIMATION_DURATION * 700;
 type ScoreCardProps = {
 	score: number;
 	correction: boolean;
-	serveTurn: boolean;
-	setServeTurn: () => void;
+	isPlayerOneStarting: boolean;
+	setPlayerOneStarting: () => void;
 	handleScoreChange: (score: number) => void;
 	player: string;
 	indicatorColor: string;
-	showServer: boolean;
+	showStartingPlayer: boolean;
 };
 
 export function ScoreCard({
 	score,
 	correction,
-	serveTurn,
-	setServeTurn,
+	isPlayerOneStarting,
+	setPlayerOneStarting,
 	handleScoreChange,
 	player,
 	indicatorColor,
-	showServer,
+	showStartingPlayer,
 }: ScoreCardProps) {
 	const [displayScore, setDisplayScore] = useState(score);
 	const [isFlipping, setIsFlipping] = useState(false);
@@ -95,7 +95,7 @@ export function ScoreCard({
 				className="w-full h-[290px] relative cursor-pointer"
 				style={{ perspective: "1000px" }}
 			>
-				{showServer && serveTurn && (
+				{showStartingPlayer && isPlayerOneStarting && (
 					<div
 						className={`absolute -bottom-2 left-0 right-0 h-2 ${indicatorColor}`}
 					/>
