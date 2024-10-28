@@ -13,10 +13,14 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 
-export default function TopBar() {
+export default function TopBar({
+	logoType,
+}: {
+	logoType?: "scoreboard" | "rankings" | "matches" | "coaches";
+}) {
 	const { isSignedIn, isLoaded } = useUser();
 	return (
-		<header className="bg-white shadow-sm sticky top-0 z-50">
+		<header className="bg-white shadow-sm sticky top-0 z-50 w-full">
 			<div className="container mx-auto px-4 h-16 flex items-center">
 				<div className="w-[100px] flex items-center">
 					{isLoaded && isSignedIn ? (
@@ -66,7 +70,7 @@ export default function TopBar() {
 				</div>
 
 				<div className="flex-grow flex justify-center">
-					<Logo className="h-8 w-[100px]" />
+					<Logo className="h-8 w-[140px]" type={logoType} />
 				</div>
 
 				<div className="w-[100px] flex justify-end">

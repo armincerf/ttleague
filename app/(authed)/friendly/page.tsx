@@ -35,6 +35,9 @@ export default async function FriendlyPage() {
 					<Link href="/find-a-table">Find a Table</Link>
 				</Button>
 			</div>
+			<Button>
+				<Link href="/scoreboard">Create a Quick Match</Link>
+			</Button>
 			<UsersList users={users} />
 		</PageLayout>
 	);

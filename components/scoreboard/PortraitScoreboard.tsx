@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { BaseScoreboardProps } from "./types";
 import { CorrectionButton } from "./CorrectionButton";
 import { ScoreCard } from "./ScoreCard";
+import TopBar from "../TopBar";
 
 export function PortraitScoreboard({
 	state,
@@ -11,15 +12,17 @@ export function PortraitScoreboard({
 	winner = false,
 }: BaseScoreboardProps) {
 	return (
-		<div className="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center p-4">
+		<div className="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center w-screen h-screen">
+			<TopBar logoType="scoreboard" />
+
 			<motion.div
-				className="bg-black shadow-2xl w-full max-w-md"
-				animate={{ scale: state.context.correctionsMode ? 0.8 : 1 }}
+				className="bg-black shadow-2xl w-full max-w-md px-6"
+				animate={{ scale: state.context.correctionsMode ? 0.8 : 0.96 }}
 				transition={{ duration: 0.2 }}
 			>
 				<div className="flex flex-col gap-4">
 					{!state.context.correctionsMode && (
-						<div className="relative flex justify-between gap-2 px-4">
+						<div className="relative flex justify-between gap-2 px-8">
 							<div className="text-black text-lg absolute top-0 left-0 text-center w-1/2">
 								{orderedScoreCards[0].player}
 							</div>
@@ -62,7 +65,7 @@ export function PortraitScoreboard({
 					</AnimatePresence>
 				</div>
 
-				<div className="flex justify-center mt-4">
+				<div className="flex justify-center mt-2">
 					<CorrectionButton
 						correctionsMode={state.context.correctionsMode}
 						onToggle={() => send({ type: "TOGGLE_CORRECTIONS_MODE" })}
