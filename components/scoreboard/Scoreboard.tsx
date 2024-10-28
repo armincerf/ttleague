@@ -13,6 +13,10 @@ import { SettingsModal } from "./SettingsModal";
 import { SettingsIcon } from "lucide-react";
 import { z } from "zod";
 import { splitName, formatPlayerName } from "@/lib/scoreboard/utils";
+import TopBar from "../TopBar";
+import { cn } from "@/lib/utils";
+import { LandscapeScoreboard } from "./LandscapeScoreboard";
+import { PortraitScoreboard } from "./PortraitScoreboard";
 
 interface Player {
 	firstName: string;
@@ -60,6 +64,15 @@ function SetCounter({ count }: { count: number }) {
 	);
 }
 
+const useScoreboardMachine = (
+	machine: ReturnType<typeof createScoreboardMachine>,
+) => {
+	const [state, send] = useMachine(machine);
+	return { state, send };
+};
+
+export type TUseScoreboardMachine = ReturnType<typeof useScoreboardMachine>;
+
 export default function Scoreboard({
 	player1: initialPlayer1,
 	player2: initialPlayer2,
@@ -97,7 +110,7 @@ export default function Scoreboard({
 		[],
 	);
 
-	const [state, send] = useMachine(machine);
+	const { state, send } = useScoreboardMachine(machine);
 
 	const [isLandscape, setIsLandscape] = useState(false);
 
@@ -203,124 +216,90 @@ export default function Scoreboard({
 	}, [state.context.player1.id, state.context.player2.id]);
 
 	return (
-		<div className="relative flex flex-col font-['heoric'] justify-between w-screen h-screen">
-			{isGameOver && (
-				<div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center">
-					<GameConfirmationModal
-						player1Score={state.context.player1Score}
-						player2Score={state.context.player2Score}
-						onConfirm={() =>
-							send({ type: "CONFIRM_GAME_OVER", confirmed: true })
-						}
-						onCancel={() =>
-							send({ type: "CONFIRM_GAME_OVER", confirmed: false })
-						}
-					/>
-				</div>
-			)}
-			{isMatchOver && (
-				<div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center">
-					<MatchOverModal
-						player1GamesWon={state.context.player1GamesWon}
-						player2GamesWon={state.context.player2GamesWon}
-						onClose={() => {
-							send({ type: "RESET_MATCH" });
-							stateProvider?.updateGame({
-								player1Score: 0,
-								player2Score: 0,
-								player1GamesWon: 0,
-								player2GamesWon: 0,
-								currentServer: 0,
-								sidesSwapped: false,
-							});
-						}}
-					/>
-				</div>
-			)}
-			<div
-				className={
-					isLandscape
-						? "fixed inset-0 p-12 bg-black z-50 flex flex-col justify-center items-center"
-						: "p-0"
-				}
-			>
-				<div className="bg-black p-2 shadow-2xl w-full">
-					<div className="flex justify-between items-start mb-4 gap-2">
-						<div className="w-[15%]">
-							<SetCounter
-								count={
-									state.context.sidesSwapped
-										? state.context.player2GamesWon
-										: state.context.player1GamesWon
-								}
-							/>
-						</div>
-						<AnimatePresence mode="popLayout">
-							{orderedScoreCards.map((card, index) => (
-								<motion.div
-									key={card.indicatorColor}
-									className="w-[35%]"
-									layout
-									transition={{ duration: 0.5 }}
-								>
-									<ScoreCard
-										{...card}
-										correction={state.context.correctionsMode}
-										showServer={!winner}
-									/>
-								</motion.div>
-							))}
-						</AnimatePresence>
-						<div className="w-[15%]">
-							<SetCounter
-								count={
-									state.context.sidesSwapped
-										? state.context.player1GamesWon
-										: state.context.player2GamesWon
-								}
-							/>
-						</div>
+		<div className="relative p-0 m-0">
+			{!isLandscape && <TopBar />}
+			<div className="relative flex flex-col font-['heoric'] justify-between w-screen h-screen">
+				{isGameOver && (
+					<div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center">
+						<GameConfirmationModal
+							player1Score={state.context.player1Score}
+							player2Score={state.context.player2Score}
+							onConfirm={() =>
+								send({ type: "CONFIRM_GAME_OVER", confirmed: true })
+							}
+							onCancel={() =>
+								send({ type: "CONFIRM_GAME_OVER", confirmed: false })
+							}
+						/>
 					</div>
-					<div className="flex justify-center items-end">
-						<button
-							type="button"
-							onClick={() => send({ type: "TOGGLE_CORRECTIONS_MODE" })}
-							className={`${
-								state.context.correctionsMode ? "bg-red-500" : "bg-black"
-							} text-white px-4 py-3 text-lg rounded-none hover:bg-red-500 uppercase`}
-						>
-							{state.context.correctionsMode ? "resume game" : "correction"}
-						</button>
+				)}
+				{isMatchOver && (
+					<div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center">
+						<MatchOverModal
+							player1GamesWon={state.context.player1GamesWon}
+							player2GamesWon={state.context.player2GamesWon}
+							onClose={() => {
+								send({ type: "RESET_MATCH" });
+								stateProvider?.updateGame({
+									player1Score: 0,
+									player2Score: 0,
+									player1GamesWon: 0,
+									player2GamesWon: 0,
+									currentServer: 0,
+									sidesSwapped: false,
+								});
+							}}
+						/>
 					</div>
-				</div>
+				)}
+				{isLandscape ? (
+					<LandscapeScoreboard
+						state={state}
+						send={send}
+						orderedScoreCards={orderedScoreCards}
+						SetCounter={SetCounter}
+						winner={!!winner}
+					/>
+				) : (
+					<PortraitScoreboard
+						state={state}
+						send={send}
+						orderedScoreCards={orderedScoreCards}
+						SetCounter={SetCounter}
+						winner={!!winner}
+					/>
+				)}
+
+				<button
+					type="button"
+					onClick={() => setShowSettings(true)}
+					className={cn(
+						"absolute right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 z-[100]",
+						isLandscape ? "bottom-8" : "bottom-20",
+					)}
+				>
+					<SettingsIcon className="w-6 h-6" />
+				</button>
+
+				<SettingsModal
+					isOpen={false}
+					onClose={() => setShowSettings(false)}
+					settings={{
+						bestOf: state.context.bestOf,
+						pointsToWin: state.context.pointsToWin,
+						currentServer: state.context.currentServer,
+						sidesSwapped: state.context.sidesSwapped,
+					}}
+					onUpdate={handleSettingsUpdate}
+					players={{
+						player1,
+						player2,
+					}}
+					onPlayersSubmit={
+						!state.matches("playing") ? handlePlayersSubmit : undefined
+					}
+				/>
 			</div>
-
-			<button
-				type="button"
-				onClick={() => setShowSettings(true)}
-				className="absolute bottom-8 right-8 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 z-[100]"
-			>
-				<SettingsIcon className="w-6 h-6" />
-			</button>
-
-			<SettingsModal
-				isOpen={false}
-				onClose={() => setShowSettings(false)}
-				settings={{
-					bestOf: state.context.bestOf,
-					pointsToWin: state.context.pointsToWin,
-					currentServer: state.context.currentServer,
-					sidesSwapped: state.context.sidesSwapped,
-				}}
-				onUpdate={handleSettingsUpdate}
-				players={{
-					player1,
-					player2,
-				}}
-				onPlayersSubmit={
-					!state.matches("playing") ? handlePlayersSubmit : undefined
-				}
-			/>
 		</div>
 	);
 }

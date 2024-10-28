@@ -1,19 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type TouchEvent } from "react";
 import { motion } from "framer-motion";
 
-interface ScoreCardProps {
+const FLIP_ANIMATION_DURATION = 0.7;
+const FLIP_COMPLETE_DELAY = FLIP_ANIMATION_DURATION * 700;
+
+type ScoreCardProps = {
 	score: number;
 	correction: boolean;
 	serveTurn: boolean;
 	setServeTurn: () => void;
 	handleScoreChange: (score: number) => void;
 	player: string;
-	indicatorColor: string; // Add this new prop
+	indicatorColor: string;
 	showServer: boolean;
-}
-
-const FLIP_ANIMATION_DURATION = 0.7;
-const FLIP_COMPLETE_DELAY = FLIP_ANIMATION_DURATION * 700;
+};
 
 export function ScoreCard({
 	score,
@@ -28,6 +28,7 @@ export function ScoreCard({
 	const [displayScore, setDisplayScore] = useState(score);
 	const [isFlipping, setIsFlipping] = useState(false);
 	const [isResetting, setIsResetting] = useState(false);
+	const [touchStart, setTouchStart] = useState<number>(0);
 
 	useEffect(() => {
 		if (score !== displayScore) {
@@ -54,11 +55,43 @@ export function ScoreCard({
 		handleScoreChange(score + 1);
 	}
 
+	function handleTouchStart(e: TouchEvent) {
+		setTouchStart(e.touches[0].clientY);
+	}
+
+	function handleTouchEnd(e: TouchEvent) {
+		const touchEnd = e.changedTouches[0].clientY;
+		const swipeDistance = touchStart - touchEnd;
+
+		// If it's a small movement, treat it as a tap
+		if (Math.abs(swipeDistance) < 50) {
+			handleClick();
+			return;
+		}
+
+		// Swipe up increases score, swipe down decreases
+		if (swipeDistance > 50) {
+			handleClick();
+		} else if (swipeDistance < -50 && correction) {
+			handleScoreChange(Math.max(0, score - 1));
+		}
+	}
+
+	function handleSubtractPoint() {
+		handleScoreChange(Math.max(0, score - 1));
+	}
+
+	function handleAddPoint() {
+		handleScoreChange(score + 1);
+	}
+
 	return (
 		<div className="flex flex-col gap-2">
 			<button
 				type="button"
 				onClick={handleClick}
+				onTouchStart={handleTouchStart}
+				onTouchEnd={handleTouchEnd}
 				className="w-full h-[290px] relative cursor-pointer"
 				style={{ perspective: "1000px" }}
 			>
@@ -103,14 +136,14 @@ export function ScoreCard({
 			{correction && (
 				<div className="flex flex-col gap-2">
 					<button
-						onClick={() => handleScoreChange(score + 1)}
+						onClick={handleAddPoint}
 						className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
 						type="button"
 					>
 						add point
 					</button>
 					<button
-						onClick={() => handleScoreChange(Math.max(0, score - 1))}
+						onClick={handleSubtractPoint}
 						className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
 						type="button"
 					>
