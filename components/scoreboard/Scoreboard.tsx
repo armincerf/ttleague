@@ -282,7 +282,7 @@ export default function Scoreboard({
 				</button>
 
 				<SettingsModal
-					isOpen={false}
+					isOpen={showSettings}
 					onClose={() => setShowSettings(false)}
 					settings={{
 						bestOf: state.context.bestOf,

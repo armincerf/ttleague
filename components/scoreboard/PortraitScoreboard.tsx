@@ -14,10 +14,9 @@ export function PortraitScoreboard({
 	return (
 		<div className="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center w-screen h-screen">
 			<TopBar logoType="scoreboard" />
-
 			<motion.div
 				className="bg-black shadow-2xl w-full max-w-md px-6"
-				animate={{ scale: state.context.correctionsMode ? 0.8 : 0.96 }}
+				animate={{ scale: state.context.correctionsMode ? 0.8 : 0.9 }}
 				transition={{ duration: 0.2 }}
 			>
 				<div className="flex flex-col gap-4">
