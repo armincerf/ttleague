@@ -1,46 +1,27 @@
-import PageLayout from "@/components/PageLayout";
-import { fetchMatch } from "@/lib/actions/matches";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import MatchView from "./MatchView";
-import { PublicMatchView } from "./PublicMatchView";
-import { auth } from "@clerk/nextjs/server";
+"use client";
+import ScoreboardWrapper from "@/app/(noauth)/scoreboard/ScoreboardWrapper";
+import { createTriplitProvider } from "@/lib/scoreboard/triplitProvider";
+import { useTriplitMatch } from "@/lib/scoreboard/useTriplitMatch";
+import { useParams } from "next/navigation";
 
-export default async function MatchPage({
-	params,
-}: {
-	params: Promise<{ matchId: string; leagueId: string; eventId: string }>;
-}) {
-	const { matchId } = await params;
-	const match = await fetchMatch(matchId);
+export default function MatchPage() {
+	const { matchId } = useParams();
+	const match = useTriplitMatch(matchId?.toString() ?? "");
 
-	if (!match || !match.player1 || !match.player2 || !match.games) {
-		console.error("Match not found", match);
-		return (
-			<PageLayout>
-				<div className="max-w-2xl mx-auto pb-24">
-					<Alert variant="destructive">
-						<AlertTitle>Match Not Found</AlertTitle>
-						<AlertDescription className="space-y-2">
-							<p>
-								We couldn't find the match you're looking for. This could be
-								because:
-							</p>
-							<ul className="list-disc pl-6">
-								<li>The match ID is incorrect</li>
-								<li>The match has been deleted</li>
-								<li>You don't have permission to view this match</li>
-							</ul>
-							<p>Please check the URL and try again.</p>
-						</AlertDescription>
-					</Alert>
-				</div>
-			</PageLayout>
-		);
+	if (!match || !match.player1 || !match.player2) {
+		return <div>Match not found</div>;
 	}
 
 	return (
-		<PageLayout>
-			<PublicMatchView serverMatch={match} />
-		</PageLayout>
+		<ScoreboardWrapper
+			player1={{
+				firstName: match.player1.first_name,
+				lastName: match.player1.last_name,
+			}}
+			player2={{
+				firstName: match.player2.first_name,
+				lastName: match.player2.last_name,
+			}}
+		/>
 	);
 }

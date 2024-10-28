@@ -252,6 +252,7 @@ export const schema = {
 			completed_at: S.Optional(S.Date()),
 			last_edited_at: S.Date(),
 			game_number: S.Number(),
+			current_server: S.Optional(S.Number()),
 			match: S.RelationById("matches", "$match_id"),
 			editor: S.RelationById("users", "$edited_by"),
 			created_at: S.Date({ default: S.Default.now() }),
