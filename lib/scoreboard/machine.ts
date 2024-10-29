@@ -1,23 +1,35 @@
 import { setup, assign } from "xstate";
 import { getWinner } from "./utils";
+import { z } from "zod";
 
-export interface Player {
-	id: string;
-	firstName?: string;
-	lastName?: string;
-	gamesWon: number;
-	currentScore: number;
-}
+// Define the schema first
+export const PlayerSchema = z.object({
+	id: z.string(),
+	firstName: z.string().optional(),
+	lastName: z.string().optional(),
+	gamesWon: z.number(),
+	currentScore: z.number(),
+});
 
-export interface ScoreboardContext {
-	playerOne: Player;
-	playerTwo: Player;
-	pointsToWin: number;
-	bestOf: number;
-	playerOneStarts: boolean;
-	correctionsMode: boolean;
-	sidesSwapped: boolean;
-}
+export const ScoreboardContextSchema = z.object({
+	playerOne: PlayerSchema,
+	playerTwo: PlayerSchema,
+	pointsToWin: z.number(),
+	bestOf: z.number(),
+	playerOneStarts: z.boolean(),
+	correctionsMode: z.boolean(),
+	sidesSwapped: z.boolean(),
+});
+
+// Derive types from the schema
+export type Player = z.infer<typeof PlayerSchema>;
+export type ScoreboardContext = z.infer<typeof ScoreboardContextSchema>;
+
+// Schema for the persisted state snapshot
+export const ScoreboardStateSchema = z.object({
+	context: ScoreboardContextSchema,
+	value: z.string().or(z.record(z.string(), z.any())),
+});
 
 export interface ScoreboardCallbacks {
 	onScoreChange?: (playerId: string, newScore: number) => void;

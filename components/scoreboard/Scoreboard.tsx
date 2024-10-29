@@ -261,6 +261,11 @@ function ScoreboardContent({
 					}}
 					onPlayersSubmit={onPlayersSubmit}
 				/>
+				{process.env.NODE_ENV === "development" && (
+					<div className="absolute top-0 left-0  bg-red-500 z-[100]">
+						{JSON.stringify(state.context, null, 2)}
+					</div>
+				)}
 			</div>
 		</div>
 	);

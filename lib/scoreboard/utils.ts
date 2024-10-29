@@ -35,7 +35,7 @@ export function formatPlayerName(player: {
 		}
 		return "-";
 	}
-	return `${player.firstName} ${player.lastName}`.trim();
+	return `${player.firstName} ${player.lastName?.slice(0, 1)}`.trim();
 }
 
 export function shouldAlternateEveryPoint(context: ScoreboardContext): boolean {

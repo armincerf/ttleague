@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { CorrectionButton } from "./CorrectionButton";
 import { ScoreCard, SetCounter } from "./ScoreCard";
 import type { LandscapeOrPortraitScoreboardProps } from "@/lib/scoreboard/types";
+import { cn } from "@/lib/utils";
 
 export function LandscapeScoreboard({
 	state,
@@ -69,7 +70,13 @@ export function LandscapeScoreboard({
 					/>
 				</div>
 
-				<div className="flex justify-center items-end pt-3">
+				<div
+					className={cn(
+						state.context.correctionsMode
+							? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pt-3"
+							: "flex justify-center items-end pt-3",
+					)}
+				>
 					<CorrectionButton
 						correctionsMode={state.context.correctionsMode}
 						onToggle={() => send({ type: "TOGGLE_CORRECTIONS_MODE" })}
