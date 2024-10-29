@@ -23,26 +23,34 @@ export function useScoreboard(
 ) {
 	const [state, send] = useMachine(
 		createScoreboardMachine({
-			initialContext: {
-				...DEFAULT_GAME_STATE,
-				...initialState,
-			},
-			onScoreChange: (player, score) => {
-				stateProvider?.updateScore(player, score);
+			onScoreChange: (playerId, score) => {
+				stateProvider?.updateScore(playerId === "player1" ? 1 : 2, score);
 			},
 			onPlayerOneStartsChange: (starts) => {
 				stateProvider?.updatePlayerOneStarts(starts);
 			},
-			onGameComplete: (winner) => {
-				const gameWinner = winner ? 1 : 2;
+			onGameComplete: (winnerIsPlayerOne) => {
+				const gameWinner = winnerIsPlayerOne ? 1 : 2;
 				stateProvider?.updateGame({
-					player1Score: 0,
-					player2Score: 0,
-					[`player${gameWinner}GamesWon`]:
-						state.context[`player${gameWinner}GamesWon`] + 1,
+					playerOne: { ...state.context.playerOne, currentScore: 0 },
+					playerTwo: { ...state.context.playerTwo, currentScore: 0 },
+					[`player${gameWinner}`]: {
+						...state.context[`player${gameWinner === 1 ? "One" : "Two"}`],
+						gamesWon:
+							state.context[`player${gameWinner === 1 ? "One" : "Two"}`]
+								.gamesWon + 1,
+					},
 				});
 			},
 		}),
+		{
+			input: {
+				initialContext: {
+					...DEFAULT_GAME_STATE,
+					...initialState,
+				},
+			},
+		},
 	);
 
 	useEffect(() => {
@@ -58,9 +66,16 @@ export function useScoreboard(
 		isGameOver: state.matches("gameOverConfirmation"),
 		isMatchOver: state.matches("matchOver"),
 		incrementScore: (player: 1 | 2) =>
-			send({ type: "INCREMENT_SCORE", player }),
+			send({
+				type: "INCREMENT_SCORE",
+				playerId: player === 1 ? "player1" : "player2",
+			}),
 		setScore: (player: 1 | 2, score: number) =>
-			send({ type: "SET_SCORE", player, score }),
+			send({
+				type: "SET_SCORE",
+				playerId: player === 1 ? "player1" : "player2",
+				score,
+			}),
 		setPlayerOneStarts: (starts: boolean) =>
 			send({ type: "SET_PLAYER_ONE_STARTS", starts }),
 		toggleCorrectionsMode: () => send({ type: "TOGGLE_CORRECTIONS_MODE" }),

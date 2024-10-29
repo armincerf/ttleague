@@ -1,4 +1,4 @@
-import type { Player } from "@/lib/scoreboard/types";
+import type { Player } from "@/lib/scoreboard/machine";
 import type { TUseScoreboardMachine } from "./Scoreboard";
 
 export type ScoreCard = {

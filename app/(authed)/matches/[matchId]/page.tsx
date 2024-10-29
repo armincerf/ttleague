@@ -15,12 +15,14 @@ export default function MatchPage() {
 	return (
 		<ScoreboardWrapper
 			player1={{
-				firstName: match.player1.first_name,
-				lastName: match.player1.last_name,
+				...match.player1,
+				gamesWon: 0,
+				currentScore: 0,
 			}}
 			player2={{
-				firstName: match.player2.first_name,
-				lastName: match.player2.last_name,
+				...match.player2,
+				gamesWon: 0,
+				currentScore: 0,
 			}}
 		/>
 	);

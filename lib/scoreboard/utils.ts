@@ -1,13 +1,15 @@
 import type { ScoreboardContext } from "./machine";
-import type { Player } from "./types";
+import type { Player } from "./machine";
 
 export function getWinner(context: ScoreboardContext): boolean | null {
-	const { player1Score, player2Score, pointsToWin } = context;
-	const twoPointLead = Math.abs(player1Score - player2Score) >= 2;
-	const reachedMinPoints = Math.max(player1Score, player2Score) >= pointsToWin;
+	const { playerOne, playerTwo, pointsToWin } = context;
+	const twoPointLead =
+		Math.abs(playerOne.currentScore - playerTwo.currentScore) >= 2;
+	const reachedMinPoints =
+		Math.max(playerOne.currentScore, playerTwo.currentScore) >= pointsToWin;
 
 	if (reachedMinPoints && twoPointLead) {
-		return player1Score > player2Score;
+		return playerOne.currentScore > playerTwo.currentScore;
 	}
 	return null;
 }
@@ -22,53 +24,49 @@ export function splitName(fullName: string) {
 	return { firstName, lastName: lastName || "" };
 }
 
-export function formatPlayerName(player: Player): string {
-	return `${player.firstName}${player.lastName ? ` ${player.lastName[0]}` : ""}`;
+export function formatPlayerName(player: {
+	firstName?: string;
+	lastName?: string;
+	name?: string;
+}) {
+	if (!player.firstName) {
+		if (player.name) {
+			return player.name;
+		}
+		return "-";
+	}
+	return `${player.firstName} ${player.lastName}`.trim();
 }
 
-export function shouldAlternateEveryPoint(
-	player1Score: number,
-	player2Score: number,
-	pointsToWin: number,
-): boolean {
-	return player1Score >= pointsToWin - 1 && player2Score >= pointsToWin - 1;
+export function shouldAlternateEveryPoint(context: ScoreboardContext): boolean {
+	const { playerOne, playerTwo, pointsToWin } = context;
+	return (
+		playerOne.currentScore >= pointsToWin - 1 &&
+		playerTwo.currentScore >= pointsToWin - 1
+	);
 }
 
 export function calculateCurrentServer(context: ScoreboardContext): string {
-	const {
-		player1Score,
-		player2Score,
-		pointsToWin,
-		playerOneStarts,
-		player1Name,
-		player2Name,
-		player1GamesWon,
-		player2GamesWon,
-	} = context;
-
-	const totalScore = player1Score + player2Score;
-	const totalGames = player1GamesWon + player2GamesWon;
+	const { playerOne, playerTwo, pointsToWin, playerOneStarts } = context;
+	const totalScore = playerOne.currentScore + playerTwo.currentScore;
+	const totalGames = playerOne.gamesWon + playerTwo.gamesWon;
 	const isOddGame = totalGames % 2 === 1;
 	const effectivePlayerOneStarts = isOddGame
 		? !playerOneStarts
 		: playerOneStarts;
 
-	function getCurrentServer(isPlayerOneServing: boolean) {
-		return isPlayerOneServing ? player1Name : player2Name;
-	}
-
 	// Handle deuce scenario
-	if (shouldAlternateEveryPoint(player1Score, player2Score, pointsToWin)) {
-		return getCurrentServer(
-			(totalScore % 2 === 0) === effectivePlayerOneStarts,
-		);
+	if (shouldAlternateEveryPoint(context)) {
+		return (totalScore % 2 === 0) === effectivePlayerOneStarts
+			? formatPlayerName(playerOne) || "Player 1"
+			: formatPlayerName(playerTwo) || "Player 2";
 	}
 
 	// Determine points per serve based on pointsToWin
 	const pointsPerServe = pointsToWin <= 11 ? 2 : 5;
 	const serviceBlock = Math.floor(totalScore / pointsPerServe);
 
-	return getCurrentServer(
-		(serviceBlock % 2 === 0) === effectivePlayerOneStarts,
-	);
+	return (serviceBlock % 2 === 0) === effectivePlayerOneStarts
+		? formatPlayerName(playerOne) || "Player 1"
+		: formatPlayerName(playerTwo) || "Player 2";
 }

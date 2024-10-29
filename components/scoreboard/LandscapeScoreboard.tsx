@@ -1,27 +1,18 @@
-import { AnimatePresence, motion } from "framer-motion";
-import type { BaseScoreboardProps, ScoreDisplayProps } from "./types";
+import { motion } from "framer-motion";
 import { CorrectionButton } from "./CorrectionButton";
 import { ScoreCard, SetCounter } from "./ScoreCard";
+import type { LandscapeOrPortraitScoreboardProps } from "@/lib/scoreboard/types";
 
 export function LandscapeScoreboard({
 	state,
 	send,
-	orderedScoreCards,
-	winner = false,
-}: BaseScoreboardProps) {
-	function getSetCounterProps(index: 0 | 1) {
-		const isSwapped = state.context.sidesSwapped;
-		const playerIndex = isSwapped ? 1 - index : index;
-		return {
-			containerClasses: "w-[12%]",
-			scoreClasses: "text-[6.5rem] leading-none",
-			player: orderedScoreCards[playerIndex].player,
-			score:
-				playerIndex === 0
-					? state.context.player1GamesWon
-					: state.context.player2GamesWon,
-		} satisfies ScoreDisplayProps;
-	}
+	player1,
+	player2,
+}: LandscapeOrPortraitScoreboardProps) {
+	const { sidesSwapped } = state.context;
+	const [leftPlayer, leftScore, rightPlayer, rightScore] = sidesSwapped
+		? [player2, state.context.playerTwo, player1, state.context.playerOne]
+		: [player1, state.context.playerOne, player2, state.context.playerTwo];
 
 	return (
 		<div className="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center w-full h-full">
@@ -31,25 +22,53 @@ export function LandscapeScoreboard({
 				transition={{ duration: 0.2 }}
 			>
 				<div className="flex justify-between items-start mb-4 gap-2 h-[75%]">
-					<SetCounter {...getSetCounterProps(0)} />
-					<AnimatePresence mode="popLayout">
-						{orderedScoreCards.map((card) => (
-							<motion.div
-								key={card.indicatorColor}
-								className="w-[35%]"
-								layout
-								transition={{ duration: 0.5 }}
-							>
-								<ScoreCard
-									{...card}
-									scoreClasses="text-[20vw]"
-									correction={state.context.correctionsMode}
-								/>
-							</motion.div>
-						))}
-					</AnimatePresence>
-					<SetCounter {...getSetCounterProps(1)} />
+					<SetCounter
+						player={leftPlayer}
+						score={leftScore.gamesWon}
+						containerClasses="w-[12%]"
+						scoreClasses="text-[6.5rem] leading-none"
+					/>
+
+					<div className="w-[35%]">
+						<ScoreCard
+							player={leftPlayer}
+							score={leftScore.currentScore}
+							handleScoreChange={(score) =>
+								send({
+									type: "SET_SCORE",
+									playerId: sidesSwapped ? "player2" : "player1",
+									score,
+								})
+							}
+							scoreClasses="text-[20vw]"
+							correction={state.context.correctionsMode}
+						/>
+					</div>
+
+					<div className="w-[35%]">
+						<ScoreCard
+							player={rightPlayer}
+							score={rightScore.currentScore}
+							handleScoreChange={(score) =>
+								send({
+									type: "SET_SCORE",
+									playerId: sidesSwapped ? "player1" : "player2",
+									score,
+								})
+							}
+							scoreClasses="text-[20vw]"
+							correction={state.context.correctionsMode}
+						/>
+					</div>
+
+					<SetCounter
+						player={rightPlayer}
+						score={rightScore.gamesWon}
+						containerClasses="w-[12%]"
+						scoreClasses="text-[6.5rem] leading-none"
+					/>
 				</div>
+
 				<div className="flex justify-center items-end pt-3">
 					<CorrectionButton
 						correctionsMode={state.context.correctionsMode}

@@ -1,7 +1,7 @@
 "use client";
 import ScoreboardSkeleton from "@/components/scoreboard/ScoreboardSkeleton";
 import type { StateProvider } from "@/lib/hooks/useScoreboard";
-import type { Player } from "@/lib/scoreboard/types";
+import type { Player } from "@/lib/scoreboard/machine";
 import dynamic from "next/dynamic";
 
 const Scoreboard = dynamic(() => import("@/components/scoreboard/Scoreboard"), {

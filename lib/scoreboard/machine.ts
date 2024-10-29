@@ -1,93 +1,174 @@
 import { setup, assign } from "xstate";
-import { getWinner, shouldAlternateEveryPoint, splitName } from "./utils";
-import { DEFAULT_GAME_STATE } from "./constants";
+import { getWinner } from "./utils";
+
+export interface Player {
+	id: string;
+	firstName?: string;
+	lastName?: string;
+	gamesWon: number;
+	currentScore: number;
+}
 
 export interface ScoreboardContext {
-	player1Score: number;
-	player2Score: number;
-	player1GamesWon: number;
-	player2GamesWon: number;
-	playerOneStarts: boolean;
-	correctionsMode: boolean;
+	playerOne: Player;
+	playerTwo: Player;
 	pointsToWin: number;
 	bestOf: number;
+	playerOneStarts: boolean;
+	correctionsMode: boolean;
 	sidesSwapped: boolean;
-	player1Name: string;
-	player2Name: string;
 }
 
 export interface ScoreboardCallbacks {
-	onScoreChange?: (player: 1 | 2, newScore: number) => void;
+	onScoreChange?: (playerId: string, newScore: number) => void;
 	onPlayerOneStartsChange?: (playerOneStarts: boolean) => void;
 	onGameComplete?: (winnerIsPlayerOne: boolean) => void;
 }
 
-// Define shared delays at the top level
 export const DELAYS = {
-	GAME_OVER_DELAY: 100, // Using a shorter delay for tests
+	GAME_OVER_DELAY: 100,
 } as const;
 
+export const DEFAULT_GAME_STATE: ScoreboardContext = {
+	playerOne: {
+		id: "player1",
+		gamesWon: 0,
+		currentScore: 0,
+	},
+	playerTwo: {
+		id: "player2",
+		gamesWon: 0,
+		currentScore: 0,
+	},
+	pointsToWin: 11,
+	bestOf: 5,
+	playerOneStarts: true,
+	correctionsMode: false,
+	sidesSwapped: false,
+};
+
+const isWinningScore = ({ context }: { context: ScoreboardContext }) =>
+	getWinner(context) !== null;
+
+const hasWonMatch = ({ context }: { context: ScoreboardContext }) => {
+	const gamesNeeded = Math.ceil(context.bestOf / 2);
+	return (
+		context.playerOne.gamesWon >= gamesNeeded ||
+		context.playerTwo.gamesWon >= gamesNeeded
+	);
+};
+
+export type ScoreboardEvent =
+	| { type: "INCREMENT_SCORE"; playerId: string }
+	| { type: "SET_SCORE"; playerId: string; score: number }
+	| { type: "SET_PLAYER_ONE_STARTS"; starts: boolean }
+	| { type: "TOGGLE_CORRECTIONS_MODE" }
+	| { type: "EXTERNAL_UPDATE"; state: Partial<ScoreboardContext> }
+	| { type: "CONFIRM_GAME_OVER"; confirmed: boolean }
+	| {
+			type: "SETTINGS_UPDATE";
+			settings: Pick<
+				ScoreboardContext,
+				"playerOneStarts" | "sidesSwapped" | "bestOf" | "pointsToWin"
+			>;
+	  }
+	| { type: "RESET_MATCH" }
+	| { type: "SET_BEST_OF"; bestOf: number }
+	| {
+			type: "UPDATE_PLAYER_NAME";
+			firstName: string;
+			lastName: string;
+			isPlayerOne: boolean;
+	  };
+
+const updatePlayerScore = ({
+	context,
+	event,
+}: {
+	context: ScoreboardContext;
+	event: Extract<ScoreboardEvent, { type: "INCREMENT_SCORE" | "SET_SCORE" }>;
+}) => {
+	const player =
+		event.playerId === context.playerOne.id ? "playerOne" : "playerTwo";
+	const newScore =
+		event.type === "SET_SCORE" ? event.score : context[player].currentScore + 1;
+
+	return {
+		[player]: {
+			...context[player],
+			currentScore: newScore,
+		},
+	};
+};
+
 export const createScoreboardMachine = (
-	callbacks: Partial<ScoreboardCallbacks> & {
-		initialContext?: Partial<ScoreboardContext>;
-	} = {},
+	callbacks: Partial<ScoreboardCallbacks> = {},
 ) => {
 	return setup({
 		types: {
+			input: {} as { initialContext?: Partial<ScoreboardContext> },
 			context: {} as ScoreboardContext,
-			events: {} as
-				| { type: "INCREMENT_SCORE"; player: 1 | 2 }
-				| { type: "SET_SCORE"; player: 1 | 2; score: number }
-				| { type: "SET_PLAYER_ONE_STARTS"; starts: boolean }
-				| { type: "TOGGLE_CORRECTIONS_MODE" }
-				| { type: "EXTERNAL_UPDATE"; state: Partial<ScoreboardContext> }
-				| { type: "CONFIRM_GAME_OVER"; confirmed: boolean }
-				| { type: "CONFIRM_MATCH_OVER"; confirmed: boolean }
-				| { type: "RESET_MATCH" }
-				| { type: "SET_PLAYERS"; player1_name: string; player2_name: string },
+			events: {} as ScoreboardEvent,
+		},
+		guards: {
+			isWinningScore,
+			hasWonMatch,
 		},
 		actions: {
 			notifyScoreChange: ({ context, event }) => {
 				if (event.type === "INCREMENT_SCORE") {
-					const score =
-						context[event.player === 1 ? "player1Score" : "player2Score"];
-					callbacks.onScoreChange?.(event.player, score);
+					const player =
+						event.playerId === context.playerOne.id
+							? context.playerOne
+							: context.playerTwo;
+					callbacks.onScoreChange?.(event.playerId, player.currentScore);
 				} else if (event.type === "SET_SCORE") {
-					callbacks.onScoreChange?.(event.player, event.score);
+					callbacks.onScoreChange?.(event.playerId, event.score);
 				}
 			},
-			notifyPlayerOneStartsChange: ({ context, event }) => {
+			notifyPlayerOneStartsChange: ({ event }) => {
 				if (event.type === "SET_PLAYER_ONE_STARTS") {
 					callbacks.onPlayerOneStartsChange?.(event.starts);
 				}
 			},
 			notifyGameComplete: ({ context }) => {
 				const winner = getWinner(context);
-				if (winner) {
+				if (winner !== null) {
 					callbacks.onGameComplete?.(winner);
 				}
 			},
 			checkMidGameSwap: assign(({ context }) => {
-				const totalGamesWon = context.player1GamesWon + context.player2GamesWon;
-				const isLastGame = totalGamesWon === context.bestOf - 1;
+				const totalGamesWon =
+					context.playerOne.gamesWon + context.playerTwo.gamesWon;
+				const currentGameNumber = totalGamesWon + 1;
+				const isFinalGame = currentGameNumber === context.bestOf;
 				const reachedMidPoint =
-					Math.max(context.player1Score, context.player2Score) === 5;
+					Math.max(
+						context.playerOne.currentScore,
+						context.playerTwo.currentScore,
+					) === 5;
 				const otherPlayerScore = Math.min(
-					context.player1Score,
-					context.player2Score,
+					context.playerOne.currentScore,
+					context.playerTwo.currentScore,
 				);
 
-				// Only swap if:
-				// 1. It's the last game
-				// 2. One player has reached 5 points
-				// 3. We haven't swapped yet
-				// 4. The other player hasn't reached 5 points (to avoid multiple swaps)
+				console.log("Mid-game swap check:", {
+					totalGamesWon,
+					currentGameNumber,
+					bestOf: context.bestOf,
+					isFinalGame,
+					reachedMidPoint,
+					otherPlayerScore,
+					currentSidesSwapped: context.sidesSwapped,
+				});
+
 				if (
-					isLastGame &&
+					isFinalGame &&
 					reachedMidPoint &&
 					!context.sidesSwapped &&
 					otherPlayerScore < 5
 				) {
+					console.log("Swapping sides mid-game!");
 					return { sidesSwapped: true };
 				}
 				return {};
@@ -96,94 +177,91 @@ export const createScoreboardMachine = (
 		delays: DELAYS,
 	}).createMachine({
 		id: "scoreboard",
-		context: {
+		description: "A state machine to manage a scoreboard for a game.",
+		context: ({ input }) => ({
 			...DEFAULT_GAME_STATE,
-			...callbacks.initialContext,
-		},
+			...input?.initialContext,
+		}),
 		initial: "playing",
 		states: {
-			waitingForPlayers: {
-				on: {
-					SET_PLAYERS: {
-						target: "playing",
-						actions: assign(({ event }) => ({
-							player1Name: event.player1_name,
-							player2Name: event.player2_name,
-						})),
-					},
-				},
-			},
 			playing: {
+				id: "playing",
+				description: "The game is in progress.",
 				on: {
 					INCREMENT_SCORE: {
 						actions: [
-							assign(({ context, event }) => {
-								const player = `player${event.player}Score` as const;
-								return { [player]: context[player] + 1 };
-							}),
+							assign(updatePlayerScore),
 							"notifyScoreChange",
 							"checkMidGameSwap",
 						],
 					},
 					SET_SCORE: {
 						actions: [
-							assign(({ context, event }) => {
-								const player =
-									event.player === 1 ? "player1Score" : "player2Score";
-								return { [player]: event.score };
-							}),
+							assign(updatePlayerScore),
 							"notifyScoreChange",
 							"checkMidGameSwap",
 						],
 					},
 					SET_PLAYER_ONE_STARTS: {
 						actions: [
-							assign(({ event }) => ({
-								playerOneStarts: event.starts,
-							})),
+							assign({ playerOneStarts: ({ event }) => event.starts }),
 							"notifyPlayerOneStartsChange",
 						],
 					},
 					TOGGLE_CORRECTIONS_MODE: {
-						actions: assign(({ context }) => ({
-							correctionsMode: !context.correctionsMode,
-						})),
+						actions: assign({
+							correctionsMode: ({ context }) => !context.correctionsMode,
+						}),
 					},
 					EXTERNAL_UPDATE: {
-						actions: assign(({ event }) => ({
-							...event.state,
+						actions: assign(({ event }) => event.state),
+					},
+					SET_BEST_OF: {
+						actions: assign({
+							bestOf: ({ event }) => event.bestOf,
+						}),
+					},
+					UPDATE_PLAYER_NAME: {
+						actions: assign(({ context, event }) => ({
+							[event.isPlayerOne ? "playerOne" : "playerTwo"]: {
+								...context[event.isPlayerOne ? "playerOne" : "playerTwo"],
+								firstName: event.firstName,
+								lastName: event.lastName,
+							},
 						})),
+					},
+					SETTINGS_UPDATE: {
+						actions: assign(({ context, event }) => {
+							const newContext = { ...context, ...event.settings };
+							return newContext;
+						}),
 					},
 				},
 				always: [
 					{
-						guard: ({ context }) => getWinner(context) !== null,
+						guard: "isWinningScore",
 						target: "waitingForGameOverConfirmation",
 					},
 				],
 			},
 			waitingForGameOverConfirmation: {
+				id: "waitingForGameOverConfirmation",
+				description:
+					"Waiting for a short delay before confirming game over to allow for corrections.",
 				after: {
-					GAME_OVER_DELAY: {
-						target: "gameOverConfirmation",
-					},
+					GAME_OVER_DELAY: "gameOverConfirmation",
 				},
 				on: {
-					// Allow score changes while waiting for confirmation
 					SET_SCORE: {
 						target: "playing",
-						actions: [
-							assign(({ context, event }) => {
-								const player =
-									event.player === 1 ? "player1Score" : "player2Score";
-								return { [player]: event.score };
-							}),
-							"notifyScoreChange",
-						],
+						actions: [assign(updatePlayerScore), "notifyScoreChange"],
 					},
 				},
 			},
 			gameOverConfirmation: {
+				id: "gameOverConfirmation",
+				description:
+					"Confirming whether the game is over or if corrections are needed.",
 				on: {
 					CONFIRM_GAME_OVER: [
 						{
@@ -192,73 +270,90 @@ export const createScoreboardMachine = (
 							actions: [
 								"notifyGameComplete",
 								assign(({ context }) => {
-									const winner =
-										context.player1Score > context.player2Score ? 1 : 2;
+									const winner = getWinner(context);
+									if (winner === null) return {};
+
+									const winningPlayer = winner ? "playerOne" : "playerTwo";
+									const updatedWinningPlayer = {
+										...context[winningPlayer],
+										gamesWon: context[winningPlayer].gamesWon + 1,
+										currentScore: 0,
+									};
+
 									return {
-										[`player${winner}GamesWon`]:
-											context[`player${winner}GamesWon`] + 1,
-										player1Score: 0,
-										player2Score: 0,
-										sidesSwapped: !context.sidesSwapped,
+										playerOne: {
+											...context.playerOne,
+											currentScore: 0,
+											...(winner ? updatedWinningPlayer : {}),
+										},
+										playerTwo: {
+											...context.playerTwo,
+											currentScore: 0,
+											...(winner ? {} : updatedWinningPlayer),
+										},
 									};
 								}),
 							],
 						},
 						{
-							// When not confirmed, return to playing state with adjusted score
 							target: "playing",
 							actions: assign(({ context }) => {
-								const player1Score = context.player1Score;
-								const player2Score = context.player2Score;
+								const winner = getWinner(context);
+								if (winner === null) return {};
 
-								// If player 1 has winning score, decrement it by 1
-								if (player1Score > player2Score) {
-									return { player1Score: player1Score - 1 };
-								}
-								// If player 2 has winning score, decrement it by 1
-								if (player2Score > player1Score) {
-									return { player2Score: player2Score - 1 };
-								}
-								return {};
+								const winningPlayer = winner ? "playerOne" : "playerTwo";
+								return {
+									[winningPlayer]: {
+										...context[winningPlayer],
+										currentScore: context[winningPlayer].currentScore - 1,
+									},
+								};
 							}),
 						},
 					],
 					SET_SCORE: {
 						target: "playing",
-						actions: [
-							assign(({ context, event }) => {
-								const player =
-									event.player === 1 ? "player1Score" : "player2Score";
-								return { [player]: event.score };
-							}),
-							"notifyScoreChange",
-						],
+						actions: [assign(updatePlayerScore), "notifyScoreChange"],
 					},
 				},
 			},
 			checkMatchOver: {
+				id: "checkMatchOver",
+				description: "Checking if the match is over after a game concludes.",
 				always: [
 					{
-						guard: ({ context }) => {
-							const gamesNeeded = Math.ceil(context.bestOf / 2);
-							return (
-								context.player1GamesWon >= gamesNeeded ||
-								context.player2GamesWon >= gamesNeeded
-							);
-						},
+						guard: "hasWonMatch",
 						target: "matchOver",
 						actions: assign({ sidesSwapped: false }),
 					},
 					{
 						target: "playing",
+						actions: assign({
+							sidesSwapped: ({ context }) => !context.sidesSwapped,
+						}),
 					},
 				],
 			},
 			matchOver: {
+				id: "matchOver",
+				description: "The match is over.",
 				on: {
 					RESET_MATCH: {
 						target: "playing",
-						actions: assign(DEFAULT_GAME_STATE),
+						actions: assign(({ context }) => ({
+							...DEFAULT_GAME_STATE,
+							playerOne: {
+								...context.playerOne,
+								gamesWon: 0,
+								currentScore: 0,
+							},
+							playerTwo: {
+								...context.playerTwo,
+								gamesWon: 0,
+								currentScore: 0,
+							},
+							playerOneStarts: !context.playerOneStarts,
+						})),
 					},
 				},
 			},

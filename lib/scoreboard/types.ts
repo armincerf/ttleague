@@ -1,6 +1,19 @@
-export interface Player {
-	firstName: string;
-	lastName: string;
+import type { TUseScoreboardMachine } from "@/components/scoreboard/Scoreboard";
+import type { Player } from "./machine";
+
+export interface ScoreDisplayProps {
+	player: Player;
+	score: number;
+	containerClasses?: string;
+	scoreClasses?: string;
+}
+
+export interface LandscapeOrPortraitScoreboardProps {
+	state: TUseScoreboardMachine["state"];
+	send: TUseScoreboardMachine["send"];
+	player1: Player;
+	player2: Player;
+	winner: boolean;
 }
 
 export interface Game {

@@ -1,20 +1,19 @@
 import { AnimatePresence, motion } from "framer-motion";
-import type { BaseScoreboardProps } from "./types";
 import { CorrectionButton } from "./CorrectionButton";
 import { ScoreCard, SetCounter } from "./ScoreCard";
-import {
-	calculateCurrentServer,
-	formatPlayerName,
-} from "@/lib/scoreboard/utils";
-import { useState } from "react";
+import type { LandscapeOrPortraitScoreboardProps } from "@/lib/scoreboard/types";
 
 export function PortraitScoreboard({
 	state,
 	send,
-	orderedScoreCards,
-	winner = false,
-}: BaseScoreboardProps) {
-	const [showSettings, setShowSettings] = useState(false);
+	player1,
+	player2,
+}: LandscapeOrPortraitScoreboardProps) {
+	const { sidesSwapped } = state.context;
+	const [topPlayer, topScore, bottomPlayer, bottomScore] = sidesSwapped
+		? [player2, state.context.playerTwo, player1, state.context.playerOne]
+		: [player1, state.context.playerOne, player2, state.context.playerTwo];
+
 	return (
 		<div className="bg-black z-50 flex flex-col items-center w-screen h-screen pt-4">
 			<motion.div
@@ -26,46 +25,58 @@ export function PortraitScoreboard({
 					{!state.context.correctionsMode && (
 						<div className="flex justify-between gap-2 px-8">
 							<SetCounter
-								player={
-									state.context.sidesSwapped
-										? orderedScoreCards[1].player
-										: orderedScoreCards[0].player
-								}
-								score={
-									state.context.sidesSwapped
-										? state.context.player2GamesWon
-										: state.context.player1GamesWon
-								}
+								player={topPlayer}
+								score={topScore.gamesWon}
+								containerClasses="w-24"
 							/>
 							<SetCounter
-								player={
-									state.context.sidesSwapped
-										? orderedScoreCards[0].player
-										: orderedScoreCards[1].player
-								}
-								score={
-									state.context.sidesSwapped
-										? state.context.player1GamesWon
-										: state.context.player2GamesWon
-								}
+								player={bottomPlayer}
+								score={bottomScore.gamesWon}
+								containerClasses="w-24"
 							/>
 						</div>
 					)}
 
 					<AnimatePresence mode="popLayout">
-						{orderedScoreCards.map((card) => (
-							<motion.div
-								key={card.indicatorColor}
-								layout
-								transition={{ duration: 0.5 }}
-								className="w-full"
-							>
-								<ScoreCard
-									{...card}
-									correction={state.context.correctionsMode}
-								/>
-							</motion.div>
-						))}
+						<motion.div
+							key="top-player"
+							layout
+							transition={{ duration: 0.5 }}
+							className="w-full"
+						>
+							<ScoreCard
+								player={topPlayer}
+								score={topScore.currentScore}
+								handleScoreChange={(score) =>
+									send({
+										type: "SET_SCORE",
+										playerId: sidesSwapped ? "player2" : "player1",
+										score,
+									})
+								}
+								correction={state.context.correctionsMode}
+							/>
+						</motion.div>
+
+						<motion.div
+							key="bottom-player"
+							layout
+							transition={{ duration: 0.5 }}
+							className="w-full"
+						>
+							<ScoreCard
+								player={bottomPlayer}
+								score={bottomScore.currentScore}
+								handleScoreChange={(score) =>
+									send({
+										type: "SET_SCORE",
+										playerId: sidesSwapped ? "player1" : "player2",
+										score,
+									})
+								}
+								correction={state.context.correctionsMode}
+							/>
+						</motion.div>
 					</AnimatePresence>
 				</div>
 

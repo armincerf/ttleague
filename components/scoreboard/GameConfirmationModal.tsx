@@ -1,24 +1,33 @@
+import type { Player } from "@/lib/scoreboard/machine";
+import { formatPlayerName } from "@/lib/scoreboard/utils";
+
 interface GameConfirmationModalProps {
-	player1Score: number;
-	player2Score: number;
+	player1: Player;
+	player2: Player;
 	onConfirm: () => void;
 	onCancel: () => void;
 }
 
 export function GameConfirmationModal({
-	player1Score,
-	player2Score,
+	player1,
+	player2,
 	onConfirm,
 	onCancel,
 }: GameConfirmationModalProps) {
-	const winner = player1Score > player2Score ? 1 : 2;
+	const player1Score = player1.currentScore;
+	const player2Score = player2.currentScore;
+	const winner = player1Score > player2Score ? player1 : player2;
+	const winnerScore = winner.currentScore;
+	const loser = winner === player1 ? player2 : player1;
+	const loserScore = loser.currentScore;
+	const winnerName = formatPlayerName(winner);
 
 	return (
 		<div className="fixed inset-0 bg-black/50 flex items-center justify-center">
 			<div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
 				<h2 className="text-2xl font-bold mb-4">Confirm Game Winner</h2>
 				<p className="mb-6">
-					Player {winner} wins {player1Score}-{player2Score}. Is this correct?
+					{winnerName} wins {winnerScore}-{loserScore}. Is this correct?
 				</p>
 				<div className="flex gap-4 justify-end">
 					<button

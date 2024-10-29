@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { Player } from "./types";
+import type { Player } from "./machine";
 
 export const STORAGE_KEY = "scoreboardSettings";
 
@@ -26,17 +26,7 @@ export function getStoredSettings(): Partial<StoredSettings> {
 	}
 }
 
-export function saveSettings(
-	settings: Partial<StoredSettings>,
-	player1: Player,
-	player2: Player,
-) {
-	localStorage.setItem(
-		STORAGE_KEY,
-		JSON.stringify({
-			...settings,
-			player1Name: `${player1.firstName} ${player1.lastName}`.trim(),
-			player2Name: `${player2.firstName} ${player2.lastName}`.trim(),
-		}),
-	);
+export function saveSettings(settings: Partial<StoredSettings>) {
+	console.log("saving settings", settings);
+	localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 }

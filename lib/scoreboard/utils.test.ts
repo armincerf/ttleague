@@ -7,12 +7,20 @@ describe("calculateCurrentServer", () => {
 		overrides: Partial<ScoreboardContext> = {},
 	): ScoreboardContext => ({
 		bestOf: 5,
-		player1Name: "Player 1",
-		player2Name: "Player 2",
-		player1Score: 0,
-		player2Score: 0,
-		player1GamesWon: 0,
-		player2GamesWon: 0,
+		playerOne: {
+			id: "player1",
+			firstName: "Player",
+			lastName: "1",
+			currentScore: 0,
+			gamesWon: 0,
+		},
+		playerTwo: {
+			id: "player2",
+			firstName: "Player",
+			lastName: "2",
+			currentScore: 0,
+			gamesWon: 0,
+		},
 		pointsToWin: 11,
 		playerOneStarts: true,
 		correctionsMode: false,
@@ -22,12 +30,10 @@ describe("calculateCurrentServer", () => {
 
 	function assertServer(
 		context: ScoreboardContext,
-		expectedServer: 1 | 2,
+		expectedServer: string,
 		message?: string,
 	) {
-		const { player1Score: p1, player2Score: p2 } = context;
 		const actualServer = calculateCurrentServer(context);
-
 		expect(actualServer).toBe(expectedServer);
 	}
 
@@ -40,42 +46,92 @@ describe("calculateCurrentServer", () => {
 
 			it("should have player 1 serve first two points", () => {
 				assertServer(
-					{ ...baseContext, player1Score: 0, player2Score: 0 },
-					1,
+					{
+						...baseContext,
+						playerOne: {
+							...baseContext.playerOne,
+							currentScore: 0,
+						},
+						playerTwo: {
+							...baseContext.playerTwo,
+							currentScore: 0,
+						},
+					},
+					"Player 1",
 					"First serve",
 				);
 				assertServer(
-					{ ...baseContext, player1Score: 1, player2Score: 0 },
-					1,
+					{
+						...baseContext,
+						playerOne: {
+							...baseContext.playerOne,
+							currentScore: 1,
+						},
+						playerTwo: {
+							...baseContext.playerTwo,
+							currentScore: 0,
+						},
+					},
+					"Player 1",
 					"Second serve",
 				);
 			});
 
 			it("should have player 2 serve next two points", () => {
 				assertServer(
-					{ ...baseContext, player1Score: 1, player2Score: 1 },
-					2,
+					{
+						...baseContext,
+						playerOne: {
+							...baseContext.playerOne,
+							currentScore: 1,
+						},
+						playerTwo: {
+							...baseContext.playerTwo,
+							currentScore: 1,
+						},
+					},
+					"Player 2",
 					"Third serve",
 				);
 				assertServer(
-					{ ...baseContext, player1Score: 2, player2Score: 1 },
-					2,
+					{
+						...baseContext,
+						playerOne: {
+							...baseContext.playerOne,
+							currentScore: 2,
+						},
+						playerTwo: {
+							...baseContext.playerTwo,
+							currentScore: 1,
+						},
+					},
+					"Player 2",
 					"Fourth serve",
 				);
 			});
 
 			it("should alternate every 2 serves until deuce", () => {
 				const scenarios = [
-					{ p1: 4, p2: 0, server: 1, desc: "Start of P1 serve block" },
-					{ p1: 4, p2: 1, server: 1, desc: "End of P1 serve block" },
-					{ p1: 4, p2: 2, server: 2, desc: "Start of P2 serve block" },
-					{ p1: 4, p2: 3, server: 2, desc: "End of P2 serve block" },
-				];
+					{ p1: 4, p2: 0, server: "Player 1", desc: "Start of P1 serve block" },
+					{ p1: 4, p2: 1, server: "Player 1", desc: "End of P1 serve block" },
+					{ p1: 4, p2: 2, server: "Player 2", desc: "Start of P2 serve block" },
+					{ p1: 4, p2: 3, server: "Player 2", desc: "End of P2 serve block" },
+				] as const;
 
 				for (const { p1, p2, server, desc } of scenarios) {
 					assertServer(
-						{ ...baseContext, player1Score: p1, player2Score: p2 },
-						server as 1 | 2,
+						{
+							...baseContext,
+							playerOne: {
+								...baseContext.playerOne,
+								currentScore: p1,
+							},
+							playerTwo: {
+								...baseContext.playerTwo,
+								currentScore: p2,
+							},
+						},
+						server,
 						`${desc} at ${p1}-${p2}`,
 					);
 				}
@@ -83,17 +139,37 @@ describe("calculateCurrentServer", () => {
 
 			describe("at deuce (10-10)", () => {
 				const deuceScenarios = [
-					{ p1: 10, p2: 10, server: 1, desc: "Initial deuce" },
-					{ p1: 11, p2: 10, server: 2, desc: "After first deuce point" },
-					{ p1: 11, p2: 11, server: 1, desc: "Second deuce" },
-					{ p1: 12, p2: 11, server: 2, desc: "After second deuce point" },
-				];
+					{ p1: 10, p2: 10, server: "Player 1", desc: "Initial deuce" },
+					{
+						p1: 11,
+						p2: 10,
+						server: "Player 2",
+						desc: "After first deuce point",
+					},
+					{ p1: 11, p2: 11, server: "Player 1", desc: "Second deuce" },
+					{
+						p1: 12,
+						p2: 11,
+						server: "Player 2",
+						desc: "After second deuce point",
+					},
+				] as const;
 
 				it("should alternate every point", () => {
 					for (const { p1, p2, server, desc } of deuceScenarios) {
 						assertServer(
-							{ ...baseContext, player1Score: p1, player2Score: p2 },
-							server as 1 | 2,
+							{
+								...baseContext,
+								playerOne: {
+									...baseContext.playerOne,
+									currentScore: p1,
+								},
+								playerTwo: {
+									...baseContext.playerTwo,
+									currentScore: p2,
+								},
+							},
+							server,
 							`${desc} at ${p1}-${p2}`,
 						);
 					}
@@ -111,20 +187,30 @@ describe("calculateCurrentServer", () => {
 				expect(
 					calculateCurrentServer({
 						...baseContext,
-						player1Score: 0,
-						player2Score: 0,
+						playerOne: {
+							...baseContext.playerOne,
+							currentScore: 0,
+						},
+						playerTwo: {
+							...baseContext.playerTwo,
+							currentScore: 0,
+						},
 					}),
-				).toBe(2);
+				).toBe("Player 2");
 				expect(
 					calculateCurrentServer({
 						...baseContext,
-						player1Score: 0,
-						player2Score: 1,
+						playerOne: {
+							...baseContext.playerOne,
+							currentScore: 0,
+						},
+						playerTwo: {
+							...baseContext.playerTwo,
+							currentScore: 1,
+						},
 					}),
-				).toBe(2);
+				).toBe("Player 2");
 			});
-
-			// Similar pattern tests for player 2 starting...
 		});
 	});
 
@@ -142,12 +228,22 @@ describe("calculateCurrentServer", () => {
 					{ p1: 2, p2: 0, desc: "Third serve" },
 					{ p1: 2, p2: 1, desc: "Fourth serve" },
 					{ p1: 3, p2: 1, desc: "Fifth serve" },
-				];
+				] as const;
 
 				for (const { p1, p2, desc } of scenarios) {
 					assertServer(
-						{ ...baseContext, player1Score: p1, player2Score: p2 },
-						1,
+						{
+							...baseContext,
+							playerOne: {
+								...baseContext.playerOne,
+								currentScore: p1,
+							},
+							playerTwo: {
+								...baseContext.playerTwo,
+								currentScore: p2,
+							},
+						},
+						"Player 1",
 						`${desc} at ${p1}-${p2}`,
 					);
 				}
@@ -160,31 +256,52 @@ describe("calculateCurrentServer", () => {
 					[4, 3],
 					[4, 4],
 					[5, 4],
-				];
+				] as const;
 
 				for (const [p1Score, p2Score] of nextFivePoints) {
 					expect(
 						calculateCurrentServer({
 							...baseContext,
-							player1Score: p1Score,
-							player2Score: p2Score,
+							playerOne: {
+								...baseContext.playerOne,
+								currentScore: p1Score,
+							},
+							playerTwo: {
+								...baseContext.playerTwo,
+								currentScore: p2Score,
+							},
 						}),
-					).toBe(2);
+					).toBe("Player 2");
 				}
 			});
 
 			describe("at deuce (14-14)", () => {
 				it("should alternate every point", () => {
 					const deuceScenarios = [
-						{ p1: 14, p2: 14, server: 1, desc: "Initial deuce" },
-						{ p1: 15, p2: 14, server: 2, desc: "After first deuce point" },
-						{ p1: 15, p2: 15, server: 1, desc: "Second deuce" },
-					];
+						{ p1: 14, p2: 14, server: "Player 1", desc: "Initial deuce" },
+						{
+							p1: 15,
+							p2: 14,
+							server: "Player 2",
+							desc: "After first deuce point",
+						},
+						{ p1: 15, p2: 15, server: "Player 1", desc: "Second deuce" },
+					] as const;
 
 					for (const { p1, p2, server, desc } of deuceScenarios) {
 						assertServer(
-							{ ...baseContext, player1Score: p1, player2Score: p2 },
-							server as 1 | 2,
+							{
+								...baseContext,
+								playerOne: {
+									...baseContext.playerOne,
+									currentScore: p1,
+								},
+								playerTwo: {
+									...baseContext.playerTwo,
+									currentScore: p2,
+								},
+							},
+							server,
 							`${desc} at ${p1}-${p2}`,
 						);
 					}
@@ -203,25 +320,25 @@ describe("calculateCurrentServer", () => {
 			it("should maintain 5-point serving blocks until deuce", () => {
 				const servingSequence = [
 					// First block - Player 1 serves (points 0-4)
-					{ score: [0, 0], server: 1, desc: "Start of first block" },
-					{ score: [2, 1], server: 1, desc: "Middle of first block" },
-					{ score: [3, 1], server: 1, desc: "Still in first block" },
+					{ score: [0, 0], server: "Player 1", desc: "Start of first block" },
+					{ score: [2, 1], server: "Player 1", desc: "Middle of first block" },
+					{ score: [3, 1], server: "Player 1", desc: "Still in first block" },
 
 					// Second block - Player 2 serves (points 5-9)
-					{ score: [3, 2], server: 2, desc: "Start of second block" },
-					{ score: [3, 4], server: 2, desc: "Middle of second block" },
-					{ score: [4, 5], server: 2, desc: "End of second block" },
+					{ score: [3, 2], server: "Player 2", desc: "Start of second block" },
+					{ score: [3, 4], server: "Player 2", desc: "Middle of second block" },
+					{ score: [4, 5], server: "Player 2", desc: "End of second block" },
 
 					// Third block - Back to Player 1 (points 10-14)
-					{ score: [6, 5], server: 1, desc: "Start of third block" },
-					{ score: [8, 5], server: 1, desc: "Middle of third block" },
-					{ score: [8, 6], server: 1, desc: "End of third block" },
+					{ score: [6, 5], server: "Player 1", desc: "Start of third block" },
+					{ score: [8, 5], server: "Player 1", desc: "Middle of third block" },
+					{ score: [8, 6], server: "Player 1", desc: "End of third block" },
 
 					// Fourth block - Player 2 serves (points 15-19)
-					{ score: [8, 7], server: 2, desc: "Start of fourth block" },
-					{ score: [9, 8], server: 2, desc: "Middle of fourth block" },
-					{ score: [10, 9], server: 2, desc: "End of fourth block" },
-				];
+					{ score: [8, 7], server: "Player 2", desc: "Start of fourth block" },
+					{ score: [9, 8], server: "Player 2", desc: "Middle of fourth block" },
+					{ score: [10, 9], server: "Player 2", desc: "End of fourth block" },
+				] as const;
 
 				for (const {
 					score: [p1Score, p2Score],
@@ -231,10 +348,16 @@ describe("calculateCurrentServer", () => {
 					expect(
 						calculateCurrentServer({
 							...baseContext,
-							player1Score: p1Score,
-							player2Score: p2Score,
+							playerOne: {
+								...baseContext.playerOne,
+								currentScore: p1Score,
+							},
+							playerTwo: {
+								...baseContext.playerTwo,
+								currentScore: p2Score,
+							},
 						}),
-						`At ${p1Score}-${p2Score} (${desc}): Expected Player ${server} to be serving`,
+						`At ${p1Score}-${p2Score} (${desc}): Expected ${server} to be serving`,
 					).toBe(server);
 				}
 			});

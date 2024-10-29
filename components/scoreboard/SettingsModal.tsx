@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
-import type { ScoreboardContext } from "@/lib/scoreboard/machine";
-import { z } from "zod";
+import type { ScoreboardContext, Player } from "@/lib/scoreboard/machine";
 import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
-import { splitName } from "@/lib/scoreboard/utils";
+import { splitName, formatPlayerName } from "@/lib/scoreboard/utils";
+import { ScoreboardMachineContext } from "@/lib/contexts/ScoreboardContext";
+import { getStoredSettings, saveSettings } from "@/lib/scoreboard/storage";
 
 type SettingsFormValues = Pick<
 	ScoreboardContext,
@@ -29,15 +30,12 @@ interface SettingsModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	settings: SettingsFormValues;
-	onUpdate: (settings: Partial<SettingsFormValues>) => void;
+	onUpdate?: (settings: Partial<SettingsFormValues>) => void;
 	players?: {
-		player1: { firstName: string; lastName: string };
-		player2: { firstName: string; lastName: string };
+		player1: Player;
+		player2: Player;
 	};
-	onPlayersSubmit?: (
-		player1: { firstName: string; lastName: string },
-		player2: { firstName: string; lastName: string },
-	) => void;
+	onPlayersSubmit?: (player1: Player, player2: Player) => void;
 }
 
 export function SettingsModal({
@@ -45,33 +43,70 @@ export function SettingsModal({
 	onClose,
 	settings,
 	onUpdate,
-	players,
-	onPlayersSubmit,
 }: SettingsModalProps) {
+	const send = ScoreboardMachineContext.useActorRef().send;
+	const context = ScoreboardMachineContext.useSelector(
+		(state) => state.context,
+	);
+
+	console.log("Current context:", context);
+	console.log("Initial settings:", settings);
+	console.log("Stored settings:", getStoredSettings());
+
 	const form = useForm({
 		defaultValues: {
 			...settings,
 			playerOneStarts: settings.playerOneStarts,
-			player1Name: players?.player1
-				? `${players.player1.firstName} ${players.player1.lastName}`.trim()
-				: "",
-			player2Name: players?.player2
-				? `${players.player2.firstName} ${players.player2.lastName}`.trim()
-				: "",
+			player1Name: formatPlayerName(context.playerOne),
+			player2Name: formatPlayerName(context.playerTwo),
 		},
 		onSubmit: async ({ value }) => {
-			if (onPlayersSubmit) {
-				const player1 = splitName(value.player1Name || "");
-				const player2 = splitName(value.player2Name || "");
-				onPlayersSubmit(player1, player2);
-			} else {
-				onUpdate({
-					bestOf: value.bestOf,
-					pointsToWin: value.pointsToWin,
+			saveSettings(value);
+			send({
+				type: "SETTINGS_UPDATE",
+				settings: {
 					playerOneStarts: value.playerOneStarts,
 					sidesSwapped: value.sidesSwapped,
-				});
+					bestOf: value.bestOf,
+					pointsToWin: value.pointsToWin,
+				},
+			});
+			const currentPlayer1Name = formatPlayerName(context.playerOne);
+			const currentPlayer2Name = formatPlayerName(context.playerTwo);
+
+			const player1NameChanged = value.player1Name !== currentPlayer1Name;
+			const player2NameChanged = value.player2Name !== currentPlayer2Name;
+
+			if (player1NameChanged || player2NameChanged) {
+				const player1Split = splitName(value.player1Name);
+				const player2Split = splitName(value.player2Name);
+
+				if (player1NameChanged) {
+					send({
+						type: "UPDATE_PLAYER_NAME",
+						isPlayerOne: true,
+						firstName: player1Split.firstName,
+						lastName: player1Split.lastName,
+					});
+				}
+
+				if (player2NameChanged) {
+					send({
+						type: "UPDATE_PLAYER_NAME",
+						isPlayerOne: false,
+						firstName: player2Split.firstName,
+						lastName: player2Split.lastName,
+					});
+				}
 			}
+
+			onUpdate?.({
+				bestOf: value.bestOf,
+				pointsToWin: value.pointsToWin,
+				playerOneStarts: value.playerOneStarts,
+				sidesSwapped: value.sidesSwapped,
+			});
+
 			onClose();
 		},
 	});

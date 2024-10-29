@@ -6,9 +6,9 @@ import {
 	calculateCurrentServer,
 	formatPlayerName,
 } from "@/lib/scoreboard/utils";
-import type { Player } from "@/lib/scoreboard/types";
 import { Triangle } from "lucide-react";
 import { ScoreboardMachineContext } from "@/lib/contexts/ScoreboardContext";
+import type { Player } from "@/lib/scoreboard/machine";
 
 export function SetCounter({
 	score,
@@ -19,7 +19,7 @@ export function SetCounter({
 	return (
 		<div
 			className={cn(
-				"bg-white w-full flex flex-col items-center",
+				"bg-white w-full min-w-[80px] flex flex-col items-center",
 				containerClasses,
 			)}
 		>
@@ -37,9 +37,9 @@ export function ScoreDisplay({
 	scoreClasses,
 	containerClasses,
 }: ScoreDisplayProps) {
-	const servingPlayer = ScoreboardMachineContext.useSelector((state) =>
-		calculateCurrentServer(state.context),
-	);
+	const servingPlayer = ScoreboardMachineContext.useSelector((state) => {
+		return calculateCurrentServer(state.context);
+	});
 	const isServingPlayer = servingPlayer === formatPlayerName(player);
 
 	return (
@@ -87,14 +87,14 @@ export function CorrectionButtons({
 		<div className="flex flex-col gap-2">
 			<button
 				onClick={onAdd}
-				className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
+				className="w-full bg-red-500 py-1 uppercase text-2xl text-white z-50"
 				type="button"
 			>
 				add point
 			</button>
 			<button
 				onClick={onSubtract}
-				className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
+				className="w-full bg-red-500 py-1 uppercase text-2xl text-white z-50"
 				type="button"
 			>
 				subtract point
@@ -132,13 +132,11 @@ export function ScoreCard({
 
 	useEffect(() => {
 		if (score !== displayScore) {
-			// If it's a score reset (score is lower than display)
 			if (isCorrectionsMode || score < displayScore) {
 				setDisplayScore(score);
 				setIsFlipping(false);
 				setIsResetting(true);
 			} else {
-				// For normal increments, let the animation complete
 				const timer = setTimeout(() => {
 					setDisplayScore(score);
 					setIsFlipping(false);
@@ -163,26 +161,16 @@ export function ScoreCard({
 		const touchEnd = e.changedTouches[0].clientY;
 		const swipeDistance = touchStart - touchEnd;
 
-		// If it's a small movement, treat it as a tap
 		if (Math.abs(swipeDistance) < 50) {
 			handleClick();
 			return;
 		}
 
-		// Swipe up increases score, swipe down decreases
 		if (swipeDistance > 50) {
 			handleClick();
 		} else if (swipeDistance < -50 && isCorrectionsMode) {
 			handleScoreChange(Math.max(0, score - 1));
 		}
-	}
-
-	function handleSubtractPoint() {
-		handleScoreChange(score - 1);
-	}
-
-	function handleAddPoint() {
-		handleScoreChange(score + 1);
 	}
 
 	return (
@@ -226,8 +214,8 @@ export function ScoreCard({
 
 			{isCorrectionsMode && (
 				<CorrectionButtons
-					onAdd={handleAddPoint}
-					onSubtract={handleSubtractPoint}
+					onAdd={() => handleScoreChange(score + 1)}
+					onSubtract={() => handleScoreChange(Math.max(0, score - 1))}
 				/>
 			)}
 		</div>

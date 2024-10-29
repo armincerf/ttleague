@@ -24,11 +24,11 @@ export function createTriplitProvider(gameId: string): StateProvider {
 
 		async updateGame(gameState: Partial<ScoreboardContext>) {
 			await client.update("games", gameId, (game) => {
-				if ("player1Score" in gameState) {
-					game.player_1_score = gameState.player1Score ?? 0;
+				if ("playerOne.currentScore" in gameState) {
+					game.player_1_score = gameState?.playerOne?.currentScore ?? 0;
 				}
-				if ("player2Score" in gameState) {
-					game.player_2_score = gameState.player2Score ?? 0;
+				if ("playerTwo.currentScore" in gameState) {
+					game.player_2_score = gameState?.playerTwo?.currentScore ?? 0;
 				}
 				game.last_edited_at = new Date();
 			});

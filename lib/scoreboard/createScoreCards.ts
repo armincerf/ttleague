@@ -1,5 +1,5 @@
 import type { ScoreboardContext } from "./machine";
-import type { Player } from "./types";
+import type { Player } from "./machine";
 import { formatPlayerName } from "./utils";
 
 export function createScoreCards(
@@ -12,7 +12,7 @@ export function createScoreCards(
 	return [
 		{
 			player: loading ? "-" : formatPlayerName(player1),
-			score: loading ? 0 : state.player1Score,
+			score: loading ? 0 : state.playerOne.currentScore,
 			handleScoreChange: (score: number) =>
 				send({
 					type: state.correctionsMode ? "SET_SCORE" : "INCREMENT_SCORE",
@@ -26,7 +26,7 @@ export function createScoreCards(
 		},
 		{
 			player: loading ? "-" : formatPlayerName(player2),
-			score: loading ? 0 : state.player2Score,
+			score: loading ? 0 : state.playerTwo.currentScore,
 			handleScoreChange: (score: number) =>
 				send({
 					type: state.correctionsMode ? "SET_SCORE" : "INCREMENT_SCORE",

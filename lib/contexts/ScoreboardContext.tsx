@@ -38,23 +38,29 @@ export function ScoreboardProvider({
 	const machine = useMemo(
 		() =>
 			createScoreboardMachine({
-				initialContext: {
-					playerOneStarts: true,
-					sidesSwapped: false,
-					...initialContext,
+				onScoreChange: (playerId, score) => {
+					stateProvider?.updateScore(playerId === "player1" ? 1 : 2, score);
 				},
-				onScoreChange: (player, score) => {
-					stateProvider?.updateScore(player, score);
-				},
-				onGameComplete: (winner) => {
-					console.log("game complete", winner);
+				onGameComplete: (winnerIsPlayerOne) => {
+					console.log("game complete", winnerIsPlayerOne);
 				},
 			}),
-		[initialContext, stateProvider],
+		[stateProvider],
 	);
 
 	return (
-		<ScoreboardMachineContext.Provider logic={machine}>
+		<ScoreboardMachineContext.Provider
+			logic={machine}
+			options={{
+				input: {
+					initialContext: {
+						playerOneStarts: true,
+						sidesSwapped: false,
+						...initialContext,
+					},
+				},
+			}}
+		>
 			{children}
 		</ScoreboardMachineContext.Provider>
 	);
