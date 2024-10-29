@@ -13,7 +13,7 @@ export default function RootLayout({
 }>) {
 	return (
 		<ClerkProvider>
-			<main className="min-h-screen bg-gray-100 flex flex-col items-center justify-center">
+			<main className="h-[100dvh] bg-gray-100 flex flex-col items-center justify-center">
 				{children}
 			</main>
 		</ClerkProvider>

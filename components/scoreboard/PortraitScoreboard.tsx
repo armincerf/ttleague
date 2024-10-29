@@ -1,43 +1,49 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { BaseScoreboardProps } from "./types";
 import { CorrectionButton } from "./CorrectionButton";
-import { ScoreCard } from "./ScoreCard";
-import TopBar from "../TopBar";
+import { ScoreCard, SetCounter } from "./ScoreCard";
+import {
+	calculateCurrentServer,
+	formatPlayerName,
+} from "@/lib/scoreboard/utils";
+import { useState } from "react";
 
 export function PortraitScoreboard({
 	state,
 	send,
 	orderedScoreCards,
-	SetCounter,
 	winner = false,
 }: BaseScoreboardProps) {
+	const [showSettings, setShowSettings] = useState(false);
 	return (
-		<div className="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center w-screen h-screen">
-			<TopBar logoType="scoreboard" />
+		<div className="bg-black z-50 flex flex-col items-center w-screen h-screen pt-4">
 			<motion.div
 				className="bg-black shadow-2xl w-full max-w-md px-6"
-				animate={{ scale: state.context.correctionsMode ? 0.8 : 0.9 }}
+				animate={{ scale: state.context.correctionsMode ? 0.9 : 1 }}
 				transition={{ duration: 0.2 }}
 			>
 				<div className="flex flex-col gap-4">
 					{!state.context.correctionsMode && (
-						<div className="relative flex justify-between gap-2 px-8">
-							<div className="text-black text-lg absolute top-0 left-0 text-center w-1/2">
-								{orderedScoreCards[0].player}
-							</div>
-							<div className="text-black text-lg absolute top-0 right-0 text-center w-1/2">
-								{orderedScoreCards[1].player}
-							</div>
-
+						<div className="flex justify-between gap-2 px-8">
 							<SetCounter
-								count={
+								player={
+									state.context.sidesSwapped
+										? orderedScoreCards[1].player
+										: orderedScoreCards[0].player
+								}
+								score={
 									state.context.sidesSwapped
 										? state.context.player2GamesWon
 										: state.context.player1GamesWon
 								}
 							/>
 							<SetCounter
-								count={
+								player={
+									state.context.sidesSwapped
+										? orderedScoreCards[0].player
+										: orderedScoreCards[1].player
+								}
+								score={
 									state.context.sidesSwapped
 										? state.context.player1GamesWon
 										: state.context.player2GamesWon
@@ -57,7 +63,6 @@ export function PortraitScoreboard({
 								<ScoreCard
 									{...card}
 									correction={state.context.correctionsMode}
-									showStartingPlayer={!winner}
 								/>
 							</motion.div>
 						))}

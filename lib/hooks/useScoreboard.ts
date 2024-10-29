@@ -34,15 +34,13 @@ export function useScoreboard(
 				stateProvider?.updatePlayerOneStarts(starts);
 			},
 			onGameComplete: (winner) => {
-				const gameWinner = getWinner(state.context);
-				if (gameWinner) {
-					stateProvider?.updateGame({
-						player1Score: 0,
-						player2Score: 0,
-						[`player${gameWinner}GamesWon`]:
-							state.context[`player${gameWinner}GamesWon`] + 1,
-					});
-				}
+				const gameWinner = winner ? 1 : 2;
+				stateProvider?.updateGame({
+					player1Score: 0,
+					player2Score: 0,
+					[`player${gameWinner}GamesWon`]:
+						state.context[`player${gameWinner}GamesWon`] + 1,
+				});
 			},
 		}),
 	);

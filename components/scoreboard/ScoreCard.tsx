@@ -1,5 +1,107 @@
 import { useState, useEffect, type TouchEvent } from "react";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import type { ScoreDisplayProps } from "./types";
+import {
+	calculateCurrentServer,
+	formatPlayerName,
+} from "@/lib/scoreboard/utils";
+import type { Player } from "@/lib/scoreboard/types";
+import { Triangle } from "lucide-react";
+import { ScoreboardMachineContext } from "@/lib/contexts/ScoreboardContext";
+
+export function SetCounter({
+	score,
+	player,
+	scoreClasses,
+	containerClasses,
+}: ScoreDisplayProps) {
+	return (
+		<div
+			className={cn(
+				"bg-white w-full flex flex-col items-center",
+				containerClasses,
+			)}
+		>
+			<div className="text-black text-sm">{formatPlayerName(player)}</div>
+			<div className={cn("text-red-500 font-[impact]", scoreClasses)}>
+				{score}
+			</div>
+		</div>
+	);
+}
+
+export function ScoreDisplay({
+	player,
+	score,
+	scoreClasses,
+	containerClasses,
+}: ScoreDisplayProps) {
+	const servingPlayer = ScoreboardMachineContext.useSelector((state) =>
+		calculateCurrentServer(state.context),
+	);
+	const isServingPlayer = servingPlayer === formatPlayerName(player);
+
+	return (
+		<div
+			className={cn(
+				"flex flex-col items-center bg-white relative",
+				containerClasses,
+			)}
+		>
+			{isServingPlayer && (
+				<motion.div
+					initial={{ x: -30, opacity: 0 }}
+					animate={{ x: 0, opacity: 1 }}
+					transition={{ duration: 0.3, ease: "easeInOut", delay: 0.4 }}
+					className="absolute top-1 left-2 z-50 flex justify-center w-8"
+				>
+					<Triangle className="w-8 h-8 rotate-90 text-red-500 fill-red-500" />
+				</motion.div>
+			)}
+			<div className="w-full flex items-center justify-center text-4xl uppercase">
+				{formatPlayerName(player)}
+			</div>
+			<div
+				className={cn(
+					"flex-1 flex items-center justify-center h-full font-[impact] text-9xl",
+					scoreClasses,
+				)}
+			>
+				{score}
+			</div>
+		</div>
+	);
+}
+
+type CorrectionButtonsProps = {
+	onAdd: () => void;
+	onSubtract: () => void;
+};
+
+export function CorrectionButtons({
+	onAdd,
+	onSubtract,
+}: CorrectionButtonsProps) {
+	return (
+		<div className="flex flex-col gap-2">
+			<button
+				onClick={onAdd}
+				className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
+				type="button"
+			>
+				add point
+			</button>
+			<button
+				onClick={onSubtract}
+				className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
+				type="button"
+			>
+				subtract point
+			</button>
+		</div>
+	);
+}
 
 const FLIP_ANIMATION_DURATION = 0.7;
 const FLIP_COMPLETE_DELAY = FLIP_ANIMATION_DURATION * 700;
@@ -7,33 +109,31 @@ const FLIP_COMPLETE_DELAY = FLIP_ANIMATION_DURATION * 700;
 type ScoreCardProps = {
 	score: number;
 	correction: boolean;
-	isPlayerOneStarting: boolean;
-	setPlayerOneStarting: () => void;
 	handleScoreChange: (score: number) => void;
-	player: string;
-	indicatorColor: string;
-	showStartingPlayer: boolean;
+	player: Player;
+	containerClasses?: string;
+	scoreClasses?: string;
 };
 
 export function ScoreCard({
 	score,
-	correction,
-	isPlayerOneStarting,
-	setPlayerOneStarting,
 	handleScoreChange,
 	player,
-	indicatorColor,
-	showStartingPlayer,
+	containerClasses,
+	scoreClasses,
 }: ScoreCardProps) {
 	const [displayScore, setDisplayScore] = useState(score);
 	const [isFlipping, setIsFlipping] = useState(false);
 	const [isResetting, setIsResetting] = useState(false);
 	const [touchStart, setTouchStart] = useState<number>(0);
+	const isCorrectionsMode = ScoreboardMachineContext.useSelector(
+		(state) => state.context.correctionsMode,
+	);
 
 	useEffect(() => {
 		if (score !== displayScore) {
 			// If it's a score reset (score is lower than display)
-			if (score < displayScore) {
+			if (isCorrectionsMode || score < displayScore) {
 				setDisplayScore(score);
 				setIsFlipping(false);
 				setIsResetting(true);
@@ -47,10 +147,10 @@ export function ScoreCard({
 				return () => clearTimeout(timer);
 			}
 		}
-	}, [score, displayScore]);
+	}, [score, displayScore, isCorrectionsMode]);
 
 	function handleClick() {
-		if (correction || isFlipping) return;
+		if (isCorrectionsMode || isFlipping) return;
 		setIsFlipping(true);
 		handleScoreChange(score + 1);
 	}
@@ -72,13 +172,13 @@ export function ScoreCard({
 		// Swipe up increases score, swipe down decreases
 		if (swipeDistance > 50) {
 			handleClick();
-		} else if (swipeDistance < -50 && correction) {
+		} else if (swipeDistance < -50 && isCorrectionsMode) {
 			handleScoreChange(Math.max(0, score - 1));
 		}
 	}
 
 	function handleSubtractPoint() {
-		handleScoreChange(Math.max(0, score - 1));
+		handleScoreChange(score - 1);
 	}
 
 	function handleAddPoint() {
@@ -92,23 +192,15 @@ export function ScoreCard({
 				onClick={handleClick}
 				onTouchStart={handleTouchStart}
 				onTouchEnd={handleTouchEnd}
-				className="w-full h-[290px] relative cursor-pointer"
+				className="w-full h-full relative cursor-pointer"
 				style={{ perspective: "1000px" }}
 			>
-				{showStartingPlayer && isPlayerOneStarting && (
-					<div
-						className={`absolute -bottom-2 left-0 right-0 h-2 ${indicatorColor}`}
-					/>
-				)}
-
-				<div className="absolute inset-0 flex flex-col items-center bg-white">
-					<div className="w-full flex items-center justify-center text-5xl uppercase">
-						{player}
-					</div>
-					<div className="flex-1 flex items-center justify-center text-[12rem] h-full font-bold">
-						{displayScore + 1}
-					</div>
-				</div>
+				<ScoreDisplay
+					player={player}
+					score={displayScore + 1}
+					containerClasses={containerClasses}
+					scoreClasses={scoreClasses}
+				/>
 
 				<motion.div
 					initial={{ rotateX: 0 }}
@@ -123,33 +215,20 @@ export function ScoreCard({
 						transition: isResetting ? "none" : undefined,
 					}}
 				>
-					<div className="absolute inset-0 flex flex-col items-center bg-white">
-						<div className="w-full flex items-center justify-center text-5xl uppercase">
-							{player}
-						</div>
-						<div className="flex-1 flex items-center justify-center text-[12rem] font-bold">
-							{displayScore}
-						</div>
-					</div>
+					<ScoreDisplay
+						player={player}
+						score={displayScore}
+						containerClasses={containerClasses}
+						scoreClasses={scoreClasses}
+					/>
 				</motion.div>
 			</button>
-			{correction && (
-				<div className="flex flex-col gap-2">
-					<button
-						onClick={handleAddPoint}
-						className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
-						type="button"
-					>
-						add point
-					</button>
-					<button
-						onClick={handleSubtractPoint}
-						className="w-full bg-red-500 py-1 uppercase text-2xl text-white"
-						type="button"
-					>
-						subtract point
-					</button>
-				</div>
+
+			{isCorrectionsMode && (
+				<CorrectionButtons
+					onAdd={handleAddPoint}
+					onSubtract={handleSubtractPoint}
+				/>
 			)}
 		</div>
 	);

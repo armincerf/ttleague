@@ -1,12 +1,6 @@
 import { setup, assign } from "xstate";
-import { getWinner, shouldAlternateEveryPoint } from "./utils";
+import { getWinner, shouldAlternateEveryPoint, splitName } from "./utils";
 import { DEFAULT_GAME_STATE } from "./constants";
-
-export interface Player {
-	id: string;
-	firstName: string;
-	lastName: string;
-}
 
 export interface ScoreboardContext {
 	player1Score: number;
@@ -18,14 +12,14 @@ export interface ScoreboardContext {
 	pointsToWin: number;
 	bestOf: number;
 	sidesSwapped: boolean;
-	player1: Player;
-	player2: Player;
+	player1Name: string;
+	player2Name: string;
 }
 
 export interface ScoreboardCallbacks {
 	onScoreChange?: (player: 1 | 2, newScore: number) => void;
 	onPlayerOneStartsChange?: (playerOneStarts: boolean) => void;
-	onGameComplete?: (winner: 1 | 2) => void;
+	onGameComplete?: (winnerIsPlayerOne: boolean) => void;
 }
 
 // Define shared delays at the top level
@@ -50,7 +44,7 @@ export const createScoreboardMachine = (
 				| { type: "CONFIRM_GAME_OVER"; confirmed: boolean }
 				| { type: "CONFIRM_MATCH_OVER"; confirmed: boolean }
 				| { type: "RESET_MATCH" }
-				| { type: "SET_PLAYERS"; player1: Player; player2: Player },
+				| { type: "SET_PLAYERS"; player1_name: string; player2_name: string },
 		},
 		actions: {
 			notifyScoreChange: ({ context, event }) => {
@@ -73,27 +67,6 @@ export const createScoreboardMachine = (
 					callbacks.onGameComplete?.(winner);
 				}
 			},
-			updateCurrentServer: assign(({ context, event }) => {
-				const totalPoints = context.player1Score + context.player2Score;
-				const isDeuce = shouldAlternateEveryPoint(
-					context.player1Score,
-					context.player2Score,
-					context.pointsToWin,
-				);
-
-				if (event.type === "SET_PLAYER_ONE_STARTS") {
-					return { playerOneStarts: event.starts };
-				}
-
-				if (isDeuce) {
-					// Alternate server every point at deuce
-					return { playerOneStarts: totalPoints % 2 === 0 };
-				}
-
-				// Alternate server every two points
-				const pairIndex = Math.floor(totalPoints / 2);
-				return { playerOneStarts: pairIndex % 2 === 0 };
-			}),
 			checkMidGameSwap: assign(({ context }) => {
 				const totalGamesWon = context.player1GamesWon + context.player2GamesWon;
 				const isLastGame = totalGamesWon === context.bestOf - 1;
@@ -134,8 +107,8 @@ export const createScoreboardMachine = (
 					SET_PLAYERS: {
 						target: "playing",
 						actions: assign(({ event }) => ({
-							player1: event.player1,
-							player2: event.player2,
+							player1Name: event.player1_name,
+							player2Name: event.player2_name,
 						})),
 					},
 				},
@@ -148,7 +121,6 @@ export const createScoreboardMachine = (
 								const player = `player${event.player}Score` as const;
 								return { [player]: context[player] + 1 };
 							}),
-							"updateCurrentServer",
 							"notifyScoreChange",
 							"checkMidGameSwap",
 						],
@@ -160,7 +132,6 @@ export const createScoreboardMachine = (
 									event.player === 1 ? "player1Score" : "player2Score";
 								return { [player]: event.score };
 							}),
-							"updateCurrentServer",
 							"notifyScoreChange",
 							"checkMidGameSwap",
 						],
@@ -170,7 +141,6 @@ export const createScoreboardMachine = (
 							assign(({ event }) => ({
 								playerOneStarts: event.starts,
 							})),
-							"updateCurrentServer",
 							"notifyPlayerOneStartsChange",
 						],
 					},
@@ -187,13 +157,7 @@ export const createScoreboardMachine = (
 				},
 				always: [
 					{
-						guard: ({ context }) => {
-							const { player1Score, player2Score, pointsToWin } = context;
-							const twoPointLead = Math.abs(player1Score - player2Score) >= 2;
-							const reachedMinPoints =
-								Math.max(player1Score, player2Score) >= pointsToWin;
-							return reachedMinPoints && twoPointLead;
-						},
+						guard: ({ context }) => getWinner(context) !== null,
 						target: "waitingForGameOverConfirmation",
 					},
 				],
@@ -214,7 +178,6 @@ export const createScoreboardMachine = (
 									event.player === 1 ? "player1Score" : "player2Score";
 								return { [player]: event.score };
 							}),
-							"updateCurrentServer",
 							"notifyScoreChange",
 						],
 					},
@@ -237,7 +200,6 @@ export const createScoreboardMachine = (
 										player1Score: 0,
 										player2Score: 0,
 										sidesSwapped: !context.sidesSwapped,
-										currentServer: context.playerOneStarts ? 1 : 2,
 									};
 								}),
 							],
@@ -269,7 +231,6 @@ export const createScoreboardMachine = (
 									event.player === 1 ? "player1Score" : "player2Score";
 								return { [player]: event.score };
 							}),
-							"updateCurrentServer",
 							"notifyScoreChange",
 						],
 					},
@@ -290,7 +251,6 @@ export const createScoreboardMachine = (
 					},
 					{
 						target: "playing",
-						actions: [],
 					},
 				],
 			},

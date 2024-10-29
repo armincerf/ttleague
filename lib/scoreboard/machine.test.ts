@@ -60,7 +60,7 @@ describe("scoreboard machine", () => {
 		expect(actor.getSnapshot().matches("gameOverConfirmation")).toBe(true);
 
 		actor.send({ type: "CONFIRM_GAME_OVER", confirmed: true });
-		expect(mockCallbacks.onGameComplete).toHaveBeenCalledWith(1);
+		expect(mockCallbacks.onGameComplete).toHaveBeenCalledWith(true);
 		expect(actor.getSnapshot().context.player1GamesWon).toBe(1);
 	});
 
@@ -132,7 +132,7 @@ describe("scoreboard machine", () => {
 			expect(snapshot.context.player1GamesWon).toBe(1);
 			expect(snapshot.context.player1Score).toBe(0);
 			expect(snapshot.context.player2Score).toBe(0);
-			expect(mockCallbacks.onGameComplete).toHaveBeenCalledWith(1);
+			expect(mockCallbacks.onGameComplete).toHaveBeenCalledWith(true);
 		});
 
 		it("should decrement winning score when not confirmed", async () => {
@@ -202,123 +202,44 @@ describe("scoreboard machine", () => {
 		});
 	});
 
-	describe("starting player alternation", () => {
-		it("should swap starting player every two points", () => {
+	describe("player one starts", () => {
+		it("should handle starting player changes", () => {
 			const actor = createTestActor();
 			actor.start();
 
-			// Set initial starting player explicitly
+			actor.send({ type: "SET_PLAYER_ONE_STARTS", starts: true });
+			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
+			expect(mockCallbacks.onPlayerOneStartsChange).toHaveBeenCalledWith(true);
+
 			actor.send({ type: "SET_PLAYER_ONE_STARTS", starts: false });
 			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
+			expect(mockCallbacks.onPlayerOneStartsChange).toHaveBeenCalledWith(false);
+		});
 
-			// First point - starting player shouldn't change
+		it("should maintain playerOneStarts value during score changes", () => {
+			const actor = createTestActor();
+			actor.start();
+
+			actor.send({ type: "SET_PLAYER_ONE_STARTS", starts: true });
 			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
+			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
 
-			// Second point - starting player should change to true
 			actor.send({ type: "INCREMENT_SCORE", player: 2 });
 			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
 		});
 
-		it("should maintain correct starting player after score corrections", () => {
+		it("should maintain playerOneStarts during corrections", () => {
 			const actor = createTestActor();
 			actor.start();
 
-			// Enable corrections mode
+			actor.send({ type: "SET_PLAYER_ONE_STARTS", starts: true });
 			actor.send({ type: "TOGGLE_CORRECTIONS_MODE" });
 
-			actor.send({ type: "SET_SCORE", player: 1, score: 3 });
-			actor.send({ type: "SET_SCORE", player: 2, score: 2 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
+			actor.send({ type: "SET_SCORE", player: 1, score: 5 });
+			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
 
-			// Correct score to 2-2 (should be starting player false)
-			actor.send({ type: "SET_SCORE", player: 1, score: 2 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
-
-			// Correct score to 3-2 (should be starting player false still)
-			actor.send({ type: "SET_SCORE", player: 1, score: 3 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
-
-			// Correct score to 3-3 (should be starting player true)
 			actor.send({ type: "SET_SCORE", player: 2, score: 3 });
 			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
-		});
-
-		it("should change starting player every point after deuce", () => {
-			const actor = createTestActor();
-			actor.start();
-
-			// Score to 10-10
-			for (let i = 0; i < 10; i++) {
-				actor.send({ type: "INCREMENT_SCORE", player: 1 });
-				actor.send({ type: "INCREMENT_SCORE", player: 2 });
-			}
-
-			// At 10-10, starting player should be false (based on total points = 20)
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
-
-			// Point 21: starting player should change to true
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
-
-			// Point 22: starting player should change to false
-			actor.send({ type: "INCREMENT_SCORE", player: 2 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
-		});
-
-		it("should maintain correct starting player when correcting scores around deuce", () => {
-			const actor = createTestActor();
-			actor.start();
-			actor.send({ type: "TOGGLE_CORRECTIONS_MODE" });
-
-			// Set score to 10-10
-			actor.send({ type: "SET_SCORE", player: 1, score: 10 });
-			actor.send({ type: "SET_SCORE", player: 2, score: 10 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
-
-			// Correct to 11-10 (should change starting player)
-			actor.send({ type: "SET_SCORE", player: 1, score: 11 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
-
-			// Correct back to 10-10
-			actor.send({ type: "SET_SCORE", player: 1, score: 10 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
-		});
-
-		it("should have player one serving when they start and score is 1-0", () => {
-			const actor = createTestActor();
-			actor.start();
-
-			// Set player one as starting player
-			actor.send({ type: "SET_PLAYER_ONE_STARTS", starts: true });
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
-		});
-
-		it("should alternate server every 2 points", () => {
-			const actor = createTestActor();
-			actor.start();
-
-			// Set player one as starting player
-			actor.send({ type: "SET_PLAYER_ONE_STARTS", starts: true });
-
-			// First two points - player one serves
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-
-			// Next two points - player two serves
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
-
-			// Next two points - player one serves again
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(true);
-			actor.send({ type: "INCREMENT_SCORE", player: 1 });
-			expect(actor.getSnapshot().context.playerOneStarts).toBe(false);
 		});
 	});
 
