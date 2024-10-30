@@ -1,4 +1,4 @@
-import type { TUseScoreboardMachine } from "@/components/scoreboard/Scoreboard";
+import type { useScoreboard } from "@/lib/hooks/useScoreboard";
 import type { Player } from "./machine";
 
 export interface ScoreDisplayProps {
@@ -9,8 +9,8 @@ export interface ScoreDisplayProps {
 }
 
 export interface LandscapeOrPortraitScoreboardProps {
-	state: TUseScoreboardMachine["state"];
-	send: TUseScoreboardMachine["send"];
+	state: ReturnType<typeof useScoreboard>["state"];
+	send: ReturnType<typeof useScoreboard>["send"];
 	player1: Player;
 	player2: Player;
 	winner: boolean;

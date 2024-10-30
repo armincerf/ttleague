@@ -7,8 +7,9 @@ import {
 	formatPlayerName,
 } from "@/lib/scoreboard/utils";
 import { Triangle } from "lucide-react";
-import { ScoreboardMachineContext } from "@/lib/contexts/ScoreboardContext";
 import type { Player } from "@/lib/scoreboard/machine";
+import { useScoreboard } from "@/lib/hooks/useScoreboard";
+import { CorrectionActions } from "./CorrectionButton";
 
 export function SetCounter({
 	score,
@@ -37,10 +38,21 @@ export function ScoreDisplay({
 	scoreClasses,
 	containerClasses,
 }: ScoreDisplayProps) {
-	const servingPlayer = ScoreboardMachineContext.useSelector((state) => {
-		return calculateCurrentServer(state.context);
-	});
+	const { state } = useScoreboard();
+	const context = state.context;
+	const servingPlayer = calculateCurrentServer(context);
 	const isServingPlayer = servingPlayer === formatPlayerName(player);
+	const matchPoint =
+		player.matchPoint &&
+		// shouldn't need this check, but still some tricky edge cases
+		context.playerOne.currentScore !== context.playerTwo.currentScore &&
+		(!context.playerOne.matchPoint ||
+			!context.playerTwo.matchPoint ||
+			score ===
+				Math.max(
+					context.playerOne.currentScore,
+					context.playerTwo.currentScore,
+				));
 
 	return (
 		<div
@@ -64,7 +76,8 @@ export function ScoreDisplay({
 			</div>
 			<div
 				className={cn(
-					"flex-1 flex items-center justify-center h-full font-[impact] text-9xl",
+					"flex-1 flex items-center justify-center h-full font-[impact] text-9xl transition-colors",
+					matchPoint ? "text-red-500" : "text-black",
 					scoreClasses,
 				)}
 			>
@@ -74,83 +87,59 @@ export function ScoreDisplay({
 	);
 }
 
-type CorrectionButtonsProps = {
-	onAdd: () => void;
-	onSubtract: () => void;
-};
-
-export function CorrectionButtons({
-	onAdd,
-	onSubtract,
-}: CorrectionButtonsProps) {
-	return (
-		<div className="flex flex-col gap-2">
-			<button
-				onClick={onAdd}
-				className="w-full bg-red-500 py-1 uppercase text-2xl text-white z-50"
-				type="button"
-			>
-				add point
-			</button>
-			<button
-				onClick={onSubtract}
-				className="w-full bg-red-500 py-1 uppercase text-2xl text-white z-50"
-				type="button"
-			>
-				subtract point
-			</button>
-		</div>
-	);
-}
-
 const FLIP_ANIMATION_DURATION = 0.7;
 const FLIP_COMPLETE_DELAY = FLIP_ANIMATION_DURATION * 700;
 
 type ScoreCardProps = {
-	score: number;
-	correction: boolean;
-	handleScoreChange: (score: number) => void;
 	player: Player;
-	containerClasses?: string;
 	scoreClasses?: string;
+	containerClasses?: string;
 };
 
 export function ScoreCard({
-	score,
-	handleScoreChange,
 	player,
-	containerClasses,
 	scoreClasses,
+	containerClasses,
 }: ScoreCardProps) {
+	const score = player.currentScore;
 	const [displayScore, setDisplayScore] = useState(score);
+	const [bottomScore, setBottomScore] = useState(score + 1);
 	const [isFlipping, setIsFlipping] = useState(false);
 	const [isResetting, setIsResetting] = useState(false);
 	const [touchStart, setTouchStart] = useState<number>(0);
-	const isCorrectionsMode = ScoreboardMachineContext.useSelector(
-		(state) => state.context.correctionsMode,
-	);
+	const { state, send } = useScoreboard();
+	const isCorrectionsMode = state.matches("corrections");
 
 	useEffect(() => {
+		if (isFlipping) return;
 		if (score !== displayScore) {
 			if (isCorrectionsMode || score < displayScore) {
 				setDisplayScore(score);
+				setBottomScore(score + 1);
 				setIsFlipping(false);
 				setIsResetting(true);
 			} else {
 				const timer = setTimeout(() => {
 					setDisplayScore(score);
+					setBottomScore(score + 1);
 					setIsFlipping(false);
 					setIsResetting(false);
 				}, FLIP_COMPLETE_DELAY);
 				return () => clearTimeout(timer);
 			}
 		}
-	}, [score, displayScore, isCorrectionsMode]);
+	}, [score, displayScore, isCorrectionsMode, isFlipping]);
 
 	function handleClick() {
 		if (isCorrectionsMode || isFlipping) return;
 		setIsFlipping(true);
-		handleScoreChange(score + 1);
+		setBottomScore(score + 1);
+		setTimeout(() => {
+			send({ type: "INCREMENT_SCORE", playerId: player.id });
+			setIsFlipping(false);
+			setIsResetting(false);
+			setDisplayScore(score + 1);
+		}, FLIP_COMPLETE_DELAY);
 	}
 
 	function handleTouchStart(e: TouchEvent) {
@@ -169,7 +158,11 @@ export function ScoreCard({
 		if (swipeDistance > 50) {
 			handleClick();
 		} else if (swipeDistance < -50 && isCorrectionsMode) {
-			handleScoreChange(Math.max(0, score - 1));
+			send({
+				type: "SET_SCORE",
+				playerId: player.id,
+				score: Math.max(0, score - 1),
+			});
 		}
 	}
 
@@ -185,7 +178,7 @@ export function ScoreCard({
 			>
 				<ScoreDisplay
 					player={player}
-					score={displayScore + 1}
+					score={bottomScore}
 					containerClasses={containerClasses}
 					scoreClasses={scoreClasses}
 				/>
@@ -213,9 +206,17 @@ export function ScoreCard({
 			</button>
 
 			{isCorrectionsMode && (
-				<CorrectionButtons
-					onAdd={() => handleScoreChange(score + 1)}
-					onSubtract={() => handleScoreChange(Math.max(0, score - 1))}
+				<CorrectionActions
+					onAdd={() =>
+						send({ type: "SET_SCORE", playerId: player.id, score: score + 1 })
+					}
+					onSubtract={() =>
+						send({
+							type: "SET_SCORE",
+							playerId: player.id,
+							score: Math.max(0, score - 1),
+						})
+					}
 				/>
 			)}
 		</div>

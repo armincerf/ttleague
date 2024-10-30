@@ -1,12 +1,5 @@
 import type { Player } from "@/lib/scoreboard/machine";
-import type { TUseScoreboardMachine } from "./Scoreboard";
-
-export type ScoreCard = {
-	player: Player;
-	score: number;
-	handleScoreChange: (score: number) => void;
-	indicatorColor: string;
-};
+import type { useScoreboard } from "@/lib/hooks/useScoreboard";
 
 export type ScoreDisplayProps = {
 	player: Player;
@@ -16,8 +9,6 @@ export type ScoreDisplayProps = {
 };
 
 export type BaseScoreboardProps = {
-	state: TUseScoreboardMachine["state"];
-	send: TUseScoreboardMachine["send"];
-	orderedScoreCards: ScoreCard[];
-	winner?: boolean;
+	state: ReturnType<typeof useScoreboard>["state"];
+	send: ReturnType<typeof useScoreboard>["send"];
 };

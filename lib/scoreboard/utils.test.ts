@@ -1,31 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { calculateCurrentServer } from "./utils";
 import type { ScoreboardContext } from "./machine";
+import { DEFAULT_GAME_STATE } from "./constants";
 
 describe("calculateCurrentServer", () => {
 	const createContext = (
 		overrides: Partial<ScoreboardContext> = {},
 	): ScoreboardContext => ({
-		bestOf: 5,
+		...DEFAULT_GAME_STATE,
+		...overrides,
 		playerOne: {
-			id: "player1",
+			...DEFAULT_GAME_STATE.playerOne,
 			firstName: "Player",
 			lastName: "1",
-			currentScore: 0,
-			gamesWon: 0,
 		},
 		playerTwo: {
-			id: "player2",
+			...DEFAULT_GAME_STATE.playerTwo,
 			firstName: "Player",
 			lastName: "2",
-			currentScore: 0,
-			gamesWon: 0,
 		},
-		pointsToWin: 11,
-		playerOneStarts: true,
-		correctionsMode: false,
-		sidesSwapped: false,
-		...overrides,
 	});
 
 	function assertServer(

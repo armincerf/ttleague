@@ -1,11 +1,11 @@
 import { createActorContext } from "@xstate/react";
 import {
 	createScoreboardMachine,
+	ScoreboardStateSchema,
 	type ScoreboardContext,
 } from "../scoreboard/machine";
 import { calculateCurrentServer } from "../scoreboard/utils";
 import type { StateProvider } from "../hooks/useScoreboard";
-import { useMemo } from "react";
 
 // Create base machine - we'll provide implementations in the Provider
 const baseScoreboardMachine = createScoreboardMachine();
@@ -30,34 +30,53 @@ interface ScoreboardProviderProps {
 	children: React.ReactNode;
 }
 
+const machine = createScoreboardMachine({
+	onGameComplete: (winnerIsPlayerOne) => {
+		console.log("game complete", winnerIsPlayerOne);
+	},
+});
+
+export const STORAGE_KEY = "scoreboard-json";
+
+const getPersistedState = () => {
+	if (typeof window === "undefined") return null;
+
+	try {
+		const savedState = localStorage.getItem(STORAGE_KEY);
+		if (!savedState) return null;
+
+		const parsedState = JSON.parse(savedState);
+		const validatedState = ScoreboardStateSchema.safeParse(parsedState);
+
+		if (!validatedState.success) {
+			console.warn("Invalid persisted state:", validatedState.error);
+			localStorage.removeItem(STORAGE_KEY);
+			return null;
+		}
+
+		return validatedState.data;
+	} catch (error) {
+		console.warn("Error loading persisted state:", error);
+		localStorage.removeItem(STORAGE_KEY);
+		return null;
+	}
+};
+
+const persistedState = getPersistedState();
+
+console.log("persistedState", persistedState);
+
 export function ScoreboardProvider({
 	initialContext = {},
 	stateProvider,
 	children,
 }: ScoreboardProviderProps) {
-	const machine = useMemo(
-		() =>
-			createScoreboardMachine({
-				onScoreChange: (playerId, score) => {
-					stateProvider?.updateScore(playerId === "player1" ? 1 : 2, score);
-				},
-				onGameComplete: (winnerIsPlayerOne) => {
-					console.log("game complete", winnerIsPlayerOne);
-				},
-			}),
-		[stateProvider],
-	);
-
 	return (
 		<ScoreboardMachineContext.Provider
 			logic={machine}
 			options={{
 				input: {
-					initialContext: {
-						playerOneStarts: true,
-						sidesSwapped: false,
-						...initialContext,
-					},
+					initialContext: persistedState?.context,
 				},
 			}}
 		>

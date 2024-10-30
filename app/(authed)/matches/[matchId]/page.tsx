@@ -18,11 +18,13 @@ export default function MatchPage() {
 				...match.player1,
 				gamesWon: 0,
 				currentScore: 0,
+				matchPoint: false,
 			}}
 			player2={{
 				...match.player2,
 				gamesWon: 0,
 				currentScore: 0,
+				matchPoint: false,
 			}}
 		/>
 	);

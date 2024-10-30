@@ -29,8 +29,8 @@ export function formatPlayerName(player: {
 	lastName?: string;
 	name?: string;
 }) {
-	if (!player.firstName) {
-		if (player.name) {
+	if (!player?.firstName) {
+		if (player?.name) {
 			return player.name;
 		}
 		return "-";

@@ -18,8 +18,7 @@ import type { ScoreboardContext, Player } from "@/lib/scoreboard/machine";
 import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
 import { splitName, formatPlayerName } from "@/lib/scoreboard/utils";
-import { ScoreboardMachineContext } from "@/lib/contexts/ScoreboardContext";
-import { getStoredSettings, saveSettings } from "@/lib/scoreboard/storage";
+import { useScoreboard } from "@/lib/hooks/useScoreboard";
 
 type SettingsFormValues = Pick<
 	ScoreboardContext,
@@ -44,14 +43,8 @@ export function SettingsModal({
 	settings,
 	onUpdate,
 }: SettingsModalProps) {
-	const send = ScoreboardMachineContext.useActorRef().send;
-	const context = ScoreboardMachineContext.useSelector(
-		(state) => state.context,
-	);
-
-	console.log("Current context:", context);
-	console.log("Initial settings:", settings);
-	console.log("Stored settings:", getStoredSettings());
+	const { send, state } = useScoreboard();
+	const context = state.context;
 
 	const form = useForm({
 		defaultValues: {
@@ -61,7 +54,6 @@ export function SettingsModal({
 			player2Name: formatPlayerName(context.playerTwo),
 		},
 		onSubmit: async ({ value }) => {
-			saveSettings(value);
 			send({
 				type: "SETTINGS_UPDATE",
 				settings: {

@@ -1,6 +1,7 @@
 import { setup, assign } from "xstate";
 import { getWinner } from "./utils";
 import { z } from "zod";
+import { DELAYS, DEFAULT_GAME_STATE } from "./constants";
 
 // Define the schema first
 export const PlayerSchema = z.object({
@@ -9,6 +10,7 @@ export const PlayerSchema = z.object({
 	lastName: z.string().optional(),
 	gamesWon: z.number(),
 	currentScore: z.number(),
+	matchPoint: z.boolean().default(false),
 });
 
 export const ScoreboardContextSchema = z.object({
@@ -17,7 +19,6 @@ export const ScoreboardContextSchema = z.object({
 	pointsToWin: z.number(),
 	bestOf: z.number(),
 	playerOneStarts: z.boolean(),
-	correctionsMode: z.boolean(),
 	sidesSwapped: z.boolean(),
 });
 
@@ -36,28 +37,6 @@ export interface ScoreboardCallbacks {
 	onPlayerOneStartsChange?: (playerOneStarts: boolean) => void;
 	onGameComplete?: (winnerIsPlayerOne: boolean) => void;
 }
-
-export const DELAYS = {
-	GAME_OVER_DELAY: 100,
-} as const;
-
-export const DEFAULT_GAME_STATE: ScoreboardContext = {
-	playerOne: {
-		id: "player1",
-		gamesWon: 0,
-		currentScore: 0,
-	},
-	playerTwo: {
-		id: "player2",
-		gamesWon: 0,
-		currentScore: 0,
-	},
-	pointsToWin: 11,
-	bestOf: 5,
-	playerOneStarts: true,
-	correctionsMode: false,
-	sidesSwapped: false,
-};
 
 const isWinningScore = ({ context }: { context: ScoreboardContext }) =>
 	getWinner(context) !== null;
@@ -91,7 +70,8 @@ export type ScoreboardEvent =
 			firstName: string;
 			lastName: string;
 			isPlayerOne: boolean;
-	  };
+	  }
+	| { type: "RESET_GAME" };
 
 const updatePlayerScore = ({
 	context,
@@ -154,36 +134,63 @@ export const createScoreboardMachine = (
 					context.playerOne.gamesWon + context.playerTwo.gamesWon;
 				const currentGameNumber = totalGamesWon + 1;
 				const isFinalGame = currentGameNumber === context.bestOf;
-				const reachedMidPoint =
-					Math.max(
-						context.playerOne.currentScore,
-						context.playerTwo.currentScore,
-					) === 5;
-				const otherPlayerScore = Math.min(
-					context.playerOne.currentScore,
-					context.playerTwo.currentScore,
-				);
 
-				console.log("Mid-game swap check:", {
-					totalGamesWon,
-					currentGameNumber,
-					bestOf: context.bestOf,
-					isFinalGame,
-					reachedMidPoint,
-					otherPlayerScore,
-					currentSidesSwapped: context.sidesSwapped,
-				});
-
-				if (
-					isFinalGame &&
-					reachedMidPoint &&
-					!context.sidesSwapped &&
-					otherPlayerScore < 5
-				) {
-					console.log("Swapping sides mid-game!");
-					return { sidesSwapped: true };
+				// If not final game, keep current sidesSwapped state
+				if (!isFinalGame) {
+					return {};
 				}
-				return {};
+
+				const p1Score = context.playerOne.currentScore;
+				const p2Score = context.playerTwo.currentScore;
+				const maxScore = Math.max(p1Score, p2Score);
+				const midPoint = Math.floor((context.pointsToWin - 1) / 2);
+				// Before midpoint: swapped is false
+				// After or at midpoint: swapped is true
+				return { sidesSwapped: maxScore >= midPoint };
+			}),
+			checkMatchPoint: assign(({ context }) => {
+				// Clear match point if either player is below the threshold
+				if (
+					context.playerOne.currentScore < context.pointsToWin - 1 &&
+					context.playerTwo.currentScore < context.pointsToWin - 1
+				) {
+					return {
+						playerOne: {
+							...context.playerOne,
+							matchPoint: false,
+						},
+						playerTwo: {
+							...context.playerTwo,
+							matchPoint: false,
+						},
+					};
+				}
+
+				const gamesNeeded = Math.ceil(context.bestOf / 2);
+				const pointsNeeded = context.pointsToWin;
+
+				const p1MatchPoint =
+					(context.playerOne.gamesWon === gamesNeeded - 1 &&
+						context.playerOne.currentScore === pointsNeeded - 1) ||
+					(context.playerOne.currentScore >= pointsNeeded - 1 &&
+						context.playerOne.currentScore > context.playerTwo.currentScore);
+
+				const p2MatchPoint =
+					(context.playerTwo.gamesWon === gamesNeeded - 1 &&
+						context.playerTwo.currentScore === pointsNeeded - 1) ||
+					(context.playerTwo.currentScore >= pointsNeeded - 1 &&
+						context.playerTwo.currentScore > context.playerOne.currentScore);
+
+				return {
+					playerOne: {
+						...context.playerOne,
+						matchPoint: p1MatchPoint,
+					},
+					playerTwo: {
+						...context.playerTwo,
+						matchPoint: p2MatchPoint,
+					},
+				};
 			}),
 		},
 		delays: DELAYS,
@@ -205,6 +212,7 @@ export const createScoreboardMachine = (
 							assign(updatePlayerScore),
 							"notifyScoreChange",
 							"checkMidGameSwap",
+							"checkMatchPoint",
 						],
 					},
 					SET_SCORE: {
@@ -212,6 +220,7 @@ export const createScoreboardMachine = (
 							assign(updatePlayerScore),
 							"notifyScoreChange",
 							"checkMidGameSwap",
+							"checkMatchPoint",
 						],
 					},
 					SET_PLAYER_ONE_STARTS: {
@@ -221,9 +230,7 @@ export const createScoreboardMachine = (
 						],
 					},
 					TOGGLE_CORRECTIONS_MODE: {
-						actions: assign({
-							correctionsMode: ({ context }) => !context.correctionsMode,
-						}),
+						target: "corrections",
 					},
 					EXTERNAL_UPDATE: {
 						actions: assign(({ event }) => event.state),
@@ -256,6 +263,107 @@ export const createScoreboardMachine = (
 					},
 				],
 			},
+			corrections: {
+				id: "corrections",
+				description: "Corrections mode for adjusting scores",
+				on: {
+					INCREMENT_SCORE: {
+						actions: [
+							assign(updatePlayerScore),
+							"notifyScoreChange",
+							"checkMidGameSwap",
+							"checkMatchPoint",
+						],
+					},
+					SET_SCORE: {
+						actions: [
+							assign(updatePlayerScore),
+							"notifyScoreChange",
+							"checkMidGameSwap",
+							"checkMatchPoint",
+						],
+					},
+					TOGGLE_CORRECTIONS_MODE: {
+						target: "playing",
+					},
+					RESET_MATCH: {
+						target: "playing",
+						actions: assign(({ context }) => ({
+							playerOne: {
+								...context.playerOne,
+								gamesWon: 0,
+								currentScore: 0,
+								matchPoint: false,
+							},
+							playerTwo: {
+								...context.playerTwo,
+								gamesWon: 0,
+								currentScore: 0,
+								matchPoint: false,
+							},
+						})),
+					},
+					SET_PLAYER_ONE_STARTS: {
+						actions: [
+							assign({ playerOneStarts: ({ event }) => event.starts }),
+							"notifyPlayerOneStartsChange",
+						],
+					},
+					EXTERNAL_UPDATE: {
+						actions: assign(({ event }) => event.state),
+					},
+					UPDATE_PLAYER_NAME: {
+						actions: assign(({ context, event }) => ({
+							[event.isPlayerOne ? "playerOne" : "playerTwo"]: {
+								...context[event.isPlayerOne ? "playerOne" : "playerTwo"],
+								firstName: event.firstName,
+								lastName: event.lastName,
+							},
+						})),
+					},
+					SETTINGS_UPDATE: {
+						actions: assign(({ context, event }) => {
+							const newContext = { ...context, ...event.settings };
+							return newContext;
+						}),
+					},
+					RESET_GAME: {
+						actions: assign(({ context }) => {
+							const totalGamesWon =
+								context.playerOne.gamesWon + context.playerTwo.gamesWon;
+							const isLastGame = totalGamesWon + 1 === context.bestOf;
+							const maxScore = Math.max(
+								context.playerOne.currentScore,
+								context.playerTwo.currentScore,
+							);
+							const midPoint = (context.pointsToWin - 1) / 2;
+
+							return {
+								playerOne: {
+									...context.playerOne,
+									currentScore: 0,
+									matchPoint: false,
+								},
+								playerTwo: {
+									...context.playerTwo,
+									currentScore: 0,
+									matchPoint: false,
+								},
+								sidesSwapped:
+									isLastGame && maxScore > midPoint
+										? !context.sidesSwapped
+										: context.sidesSwapped,
+							};
+						}),
+					},
+				},
+				always: [
+					{
+						guard: "isWinningScore",
+						target: "waitingForGameOverConfirmation",
+					},
+				],
+			},
 			waitingForGameOverConfirmation: {
 				id: "waitingForGameOverConfirmation",
 				description:
@@ -266,7 +374,11 @@ export const createScoreboardMachine = (
 				on: {
 					SET_SCORE: {
 						target: "playing",
-						actions: [assign(updatePlayerScore), "notifyScoreChange"],
+						actions: [
+							assign(updatePlayerScore),
+							"notifyScoreChange",
+							"checkMatchPoint",
+						],
 					},
 				},
 			},
@@ -289,19 +401,20 @@ export const createScoreboardMachine = (
 									const updatedWinningPlayer = {
 										...context[winningPlayer],
 										gamesWon: context[winningPlayer].gamesWon + 1,
-										currentScore: 0,
 									};
 
 									return {
 										playerOne: {
 											...context.playerOne,
-											currentScore: 0,
 											...(winner ? updatedWinningPlayer : {}),
+											currentScore: 0,
+											matchPoint: false,
 										},
 										playerTwo: {
 											...context.playerTwo,
-											currentScore: 0,
 											...(winner ? {} : updatedWinningPlayer),
+											currentScore: 0,
+											matchPoint: false,
 										},
 									};
 								}),
@@ -325,7 +438,11 @@ export const createScoreboardMachine = (
 					],
 					SET_SCORE: {
 						target: "playing",
-						actions: [assign(updatePlayerScore), "notifyScoreChange"],
+						actions: [
+							assign(updatePlayerScore),
+							"notifyScoreChange",
+							"checkMatchPoint",
+						],
 					},
 				},
 			},
@@ -353,16 +470,17 @@ export const createScoreboardMachine = (
 					RESET_MATCH: {
 						target: "playing",
 						actions: assign(({ context }) => ({
-							...DEFAULT_GAME_STATE,
 							playerOne: {
 								...context.playerOne,
 								gamesWon: 0,
 								currentScore: 0,
+								matchPoint: false,
 							},
 							playerTwo: {
 								...context.playerTwo,
 								gamesWon: 0,
 								currentScore: 0,
+								matchPoint: false,
 							},
 							playerOneStarts: !context.playerOneStarts,
 						})),
