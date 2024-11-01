@@ -2,7 +2,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import ZoomResetButton from "@/components/ZoomResetButton";
+import PostHogPageView from "./PostHogPageView";
+import { PHProvider } from "./providers";
+import { Suspense } from "react";
 
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
@@ -33,14 +35,18 @@ function RootLayout({
 					data-website-id="a8747a05-e034-47ec-a1fd-839f69723b03"
 				/>
 			</head>
-			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-			>
-				{children}
-				<Toaster />
-				<SpeedInsights />
-				<ZoomResetButton />
-			</body>
+			<PHProvider>
+				<body
+					className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+				>
+					<Suspense fallback={null}>
+						<PostHogPageView />
+					</Suspense>
+					{children}
+					<Toaster />
+					<SpeedInsights />
+				</body>
+			</PHProvider>
 		</html>
 	);
 }

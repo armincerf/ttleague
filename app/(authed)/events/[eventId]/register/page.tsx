@@ -8,6 +8,7 @@ import { getDivision, leagueDivisionsSchema } from "@/lib/ratingSystem";
 import { fetchEvent, fetchEvents } from "@/lib/actions/events";
 import { fetchUser } from "@/lib/actions/users";
 import { fetchLeagues } from "@/lib/actions/leagues";
+import { formatDate } from "date-fns";
 
 // Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
 export const revalidate = 60;
@@ -76,8 +77,8 @@ export default async function EventRegistrationPage({
 						<CardTitle>Event Details</CardTitle>
 					</CardHeader>
 					<CardContent>
-						<p>Date: {new Date(event.start_time).toLocaleDateString()}</p>
-						<p>Time: {new Date(event.start_time).toLocaleTimeString()}</p>
+						<p>Date: {formatDate(event.start_time, "dd MMM")}</p>
+						<p>Time: {formatDate(event.start_time, "h:mm a")}</p>
 						<p>Location: {event.club?.name}</p>
 					</CardContent>
 				</Card>

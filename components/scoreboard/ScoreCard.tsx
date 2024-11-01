@@ -1,5 +1,5 @@
 import { useState, useEffect, type TouchEvent } from "react";
-import { motion } from "framer-motion";
+import { motion, MotionGlobalConfig, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { ScoreDisplayProps } from "./types";
 import {
@@ -101,9 +101,12 @@ export function ScoreCard({
 	scoreClasses,
 	containerClasses,
 }: ScoreCardProps) {
+	const reduceMotionSetting = useReducedMotion();
+	const animationsDisabled = MotionGlobalConfig.skipAnimations;
+	const prefersReducedMotion = reduceMotionSetting || animationsDisabled;
 	const score = player.currentScore;
-	const [displayScore, setDisplayScore] = useState(score);
-	const [bottomScore, setBottomScore] = useState(score + 1);
+	const [currentScore, setCurrentScore] = useState(score);
+	const [nextScore, setNextScore] = useState(score + 1);
 	const [isFlipping, setIsFlipping] = useState(false);
 	const [isResetting, setIsResetting] = useState(false);
 	const [touchStart, setTouchStart] = useState<number>(0);
@@ -112,33 +115,46 @@ export function ScoreCard({
 
 	useEffect(() => {
 		if (isFlipping) return;
-		if (score !== displayScore) {
-			if (isCorrectionsMode || score < displayScore) {
-				setDisplayScore(score);
-				setBottomScore(score + 1);
+		if (score !== currentScore) {
+			if (isCorrectionsMode || score < currentScore || prefersReducedMotion) {
+				setCurrentScore(score);
+				setNextScore(score + 1);
 				setIsFlipping(false);
 				setIsResetting(true);
-			} else {
-				const timer = setTimeout(() => {
-					setDisplayScore(score);
-					setBottomScore(score + 1);
-					setIsFlipping(false);
-					setIsResetting(false);
-				}, FLIP_COMPLETE_DELAY);
-				return () => clearTimeout(timer);
+				return;
 			}
+
+			const timer = setTimeout(() => {
+				setCurrentScore(score);
+				setNextScore(score + 1);
+				setIsFlipping(false);
+				setIsResetting(false);
+			}, FLIP_COMPLETE_DELAY);
+			return () => clearTimeout(timer);
 		}
-	}, [score, displayScore, isCorrectionsMode, isFlipping]);
+	}, [
+		score,
+		currentScore,
+		isCorrectionsMode,
+		isFlipping,
+		prefersReducedMotion,
+	]);
 
 	function handleClick() {
 		if (isCorrectionsMode || isFlipping) return;
+
+		if (prefersReducedMotion) {
+			send({ type: "INCREMENT_SCORE", playerId: player.id });
+			return;
+		}
+
 		setIsFlipping(true);
-		setBottomScore(score + 1);
+		setNextScore(score + 1);
 		setTimeout(() => {
 			send({ type: "INCREMENT_SCORE", playerId: player.id });
 			setIsFlipping(false);
 			setIsResetting(false);
-			setDisplayScore(score + 1);
+			setCurrentScore(score + 1);
 		}, FLIP_COMPLETE_DELAY);
 	}
 
@@ -178,31 +194,33 @@ export function ScoreCard({
 			>
 				<ScoreDisplay
 					player={player}
-					score={bottomScore}
+					score={currentScore}
 					containerClasses={containerClasses}
 					scoreClasses={scoreClasses}
 				/>
 
-				<motion.div
-					initial={{ rotateX: 0 }}
-					animate={{ rotateX: isFlipping ? 320 : 0 }}
-					transition={{
-						duration: isFlipping ? FLIP_ANIMATION_DURATION : 0,
-						ease: "easeInOut",
-					}}
-					className="absolute inset-0 bg-white origin-top"
-					style={{
-						transformStyle: "preserve-3d",
-						transition: isResetting ? "none" : undefined,
-					}}
-				>
-					<ScoreDisplay
-						player={player}
-						score={displayScore}
-						containerClasses={containerClasses}
-						scoreClasses={scoreClasses}
-					/>
-				</motion.div>
+				{isFlipping && (
+					<motion.div
+						initial={{ rotateX: 230 }}
+						animate={{ rotateX: -50 }}
+						transition={{
+							duration: FLIP_ANIMATION_DURATION,
+							ease: "easeInOut",
+						}}
+						className="absolute inset-0 bg-white origin-top"
+						style={{
+							transformStyle: "preserve-3d",
+							transition: isResetting ? "none" : undefined,
+						}}
+					>
+						<ScoreDisplay
+							player={player}
+							score={nextScore}
+							containerClasses={containerClasses}
+							scoreClasses={scoreClasses}
+						/>
+					</motion.div>
+				)}
 			</button>
 
 			{isCorrectionsMode && (

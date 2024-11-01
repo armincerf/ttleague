@@ -6,6 +6,7 @@ import {
 } from "../scoreboard/machine";
 import { calculateCurrentServer } from "../scoreboard/utils";
 import type { StateProvider } from "../hooks/useScoreboard";
+import { MotionGlobalConfig } from "framer-motion";
 
 // Create base machine - we'll provide implementations in the Provider
 const baseScoreboardMachine = createScoreboardMachine();
@@ -31,6 +32,9 @@ interface ScoreboardProviderProps {
 }
 
 const machine = createScoreboardMachine({
+	onScoreChange: (playerId, score) => {
+		console.log("score change", playerId, score);
+	},
 	onGameComplete: (winnerIsPlayerOne) => {
 		console.log("game complete", winnerIsPlayerOne);
 	},
@@ -54,6 +58,8 @@ const getPersistedState = () => {
 			return null;
 		}
 
+		MotionGlobalConfig.skipAnimations =
+			validatedState.data.context.disableAnimations;
 		return validatedState.data;
 	} catch (error) {
 		console.warn("Error loading persisted state:", error);
@@ -63,8 +69,6 @@ const getPersistedState = () => {
 };
 
 const persistedState = getPersistedState();
-
-console.log("persistedState", persistedState);
 
 export function ScoreboardProvider({
 	initialContext = {},

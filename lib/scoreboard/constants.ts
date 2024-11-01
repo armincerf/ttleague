@@ -21,4 +21,5 @@ export const DEFAULT_GAME_STATE: ScoreboardContext = {
 	bestOf: 5,
 	playerOneStarts: true,
 	sidesSwapped: false,
+	disableAnimations: false,
 };

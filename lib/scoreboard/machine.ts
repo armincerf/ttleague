@@ -20,6 +20,7 @@ export const ScoreboardContextSchema = z.object({
 	bestOf: z.number(),
 	playerOneStarts: z.boolean(),
 	sidesSwapped: z.boolean(),
+	disableAnimations: z.boolean().default(false),
 });
 
 // Derive types from the schema
@@ -60,7 +61,11 @@ export type ScoreboardEvent =
 			type: "SETTINGS_UPDATE";
 			settings: Pick<
 				ScoreboardContext,
-				"playerOneStarts" | "sidesSwapped" | "bestOf" | "pointsToWin"
+				| "playerOneStarts"
+				| "sidesSwapped"
+				| "bestOf"
+				| "pointsToWin"
+				| "disableAnimations"
 			>;
 	  }
 	| { type: "RESET_MATCH" }

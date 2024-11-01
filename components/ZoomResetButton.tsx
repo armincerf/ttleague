@@ -54,7 +54,7 @@ function ZoomResetButton() {
 	return (
 		<Button
 			onClick={handleReset}
-			className="fixed bottom-[4vh] right-[4vw] z-50 rounded-full shadow-lg"
+			className="fixed bottom-1/2 right-1/2 z-[1000] rounded-full shadow-lg"
 			style={{ transform: "translate(0, 0)" }} // Prevents any automatic repositioning
 		>
 			Reset Zoom

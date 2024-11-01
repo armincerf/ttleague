@@ -41,7 +41,6 @@ function RecordScoreForm({
 		try {
 			const now = new Date();
 			const tx = await client.update("games", gameId, (game) => {
-				game.final_score = `${currentGame.player_1_score} - ${currentGame.player_2_score}`;
 				game.completed_at = now;
 				game.last_edited_at = now;
 			});

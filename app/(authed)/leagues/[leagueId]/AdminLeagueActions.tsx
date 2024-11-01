@@ -46,7 +46,6 @@ function CreateEventForm({
 			league_id: leagueId,
 			...event,
 			status: "scheduled",
-			best_of: 5,
 			created_at: new Date(),
 			updated_at: new Date(),
 		});
@@ -158,7 +157,6 @@ export function AdminLeagueActions({ leagueId }: AdminLeagueActionsProps) {
 		await client.insert("events", {
 			id: eventId,
 			league_id: leagueId,
-			best_of: 5,
 			name: `${isPast ? "Past" : "Future"} Event ${Math.floor(Math.random() * 1000)}`,
 			description: "Random event description",
 			start_time: startTime,

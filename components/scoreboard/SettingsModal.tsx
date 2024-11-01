@@ -19,10 +19,18 @@ import { Button } from "../ui/button";
 import { Input } from "@/components/ui/input";
 import { splitName, formatPlayerName } from "@/lib/scoreboard/utils";
 import { useScoreboard } from "@/lib/hooks/useScoreboard";
+import { Toggle } from "../ui/toggle";
+import { Switch } from "../ui/switch";
+import { Label } from "../ui/label";
+import { MotionGlobalConfig } from "framer-motion";
 
 type SettingsFormValues = Pick<
 	ScoreboardContext,
-	"bestOf" | "pointsToWin" | "playerOneStarts" | "sidesSwapped"
+	| "bestOf"
+	| "pointsToWin"
+	| "playerOneStarts"
+	| "sidesSwapped"
+	| "disableAnimations"
 >;
 
 interface SettingsModalProps {
@@ -50,6 +58,7 @@ export function SettingsModal({
 		defaultValues: {
 			...settings,
 			playerOneStarts: settings.playerOneStarts,
+			disableAnimations: settings.disableAnimations,
 			player1Name: formatPlayerName(context.playerOne),
 			player2Name: formatPlayerName(context.playerTwo),
 		},
@@ -61,6 +70,7 @@ export function SettingsModal({
 					sidesSwapped: value.sidesSwapped,
 					bestOf: value.bestOf,
 					pointsToWin: value.pointsToWin,
+					disableAnimations: value.disableAnimations,
 				},
 			});
 			const currentPlayer1Name = formatPlayerName(context.playerOne);
@@ -98,6 +108,7 @@ export function SettingsModal({
 				playerOneStarts: value.playerOneStarts,
 				sidesSwapped: value.sidesSwapped,
 			});
+			MotionGlobalConfig.skipAnimations = value.disableAnimations;
 
 			onClose();
 		},
@@ -121,116 +132,6 @@ export function SettingsModal({
 					}}
 					className="space-y-4"
 				>
-					<form.Field
-						name="bestOf"
-						validators={{
-							onChange: ({ value }) =>
-								![3, 5, 7].includes(value) ? "Must be 3, 5, or 7" : undefined,
-						}}
-					>
-						{(field) => (
-							<FormItem className="space-y-3">
-								<FormLabel>Best of</FormLabel>
-								<FormControl>
-									<RadioGroup
-										value={field.state.value.toString()}
-										onValueChange={(value) => field.handleChange(Number(value))}
-										className="flex gap-4"
-									>
-										{[3, 5, 7].map((num) => (
-											<FormItem
-												key={num}
-												className="flex items-center space-x-2"
-											>
-												<FormControl>
-													<RadioGroupItem value={num.toString()} />
-												</FormControl>
-												<FormLabel className="font-normal">{num}</FormLabel>
-											</FormItem>
-										))}
-									</RadioGroup>
-								</FormControl>
-								{field.state.meta.errors && (
-									<FormMessage>
-										{field.state.meta.errors.join(", ")}
-									</FormMessage>
-								)}
-							</FormItem>
-						)}
-					</form.Field>
-
-					<form.Field
-						name="pointsToWin"
-						validators={{
-							onChange: ({ value }) =>
-								![11, 21].includes(value) ? "Must be 11 or 21" : undefined,
-						}}
-					>
-						{(field) => (
-							<FormItem className="space-y-3">
-								<FormLabel>Points to Win</FormLabel>
-								<FormControl>
-									<RadioGroup
-										value={field.state.value.toString()}
-										onValueChange={(value) => field.handleChange(Number(value))}
-										className="flex gap-4"
-									>
-										{[11, 21].map((num) => (
-											<FormItem
-												key={num}
-												className="flex items-center space-x-2"
-											>
-												<FormControl>
-													<RadioGroupItem value={num.toString()} />
-												</FormControl>
-												<FormLabel className="font-normal">{num}</FormLabel>
-											</FormItem>
-										))}
-									</RadioGroup>
-								</FormControl>
-								{field.state.meta.errors && (
-									<FormMessage>
-										{field.state.meta.errors.join(", ")}
-									</FormMessage>
-								)}
-							</FormItem>
-						)}
-					</form.Field>
-
-					<form.Field name="playerOneStarts">
-						{(field) => (
-							<FormItem className="flex items-center space-x-2">
-								<FormControl>
-									<Checkbox
-										checked={field.state.value}
-										onCheckedChange={(checked) => field.handleChange(!!checked)}
-									/>
-								</FormControl>
-								<FormLabel className="text-sm font-medium">
-									Player 1 Starts
-								</FormLabel>
-							</FormItem>
-						)}
-					</form.Field>
-
-					<form.Field name="sidesSwapped">
-						{(field) => (
-							<FormItem className="flex items-center space-x-2">
-								<FormControl>
-									<Checkbox
-										checked={field.state.value}
-										onCheckedChange={(checked) =>
-											field.handleChange(checked as Updater<boolean>)
-										}
-									/>
-								</FormControl>
-								<FormLabel className="text-sm font-medium">
-									Swap Sides
-								</FormLabel>
-							</FormItem>
-						)}
-					</form.Field>
-
 					<form.Field name="player1Name">
 						{(field) => (
 							<FormItem>
@@ -264,6 +165,104 @@ export function SettingsModal({
 							</FormItem>
 						)}
 					</form.Field>
+					<div className="flex flex-col sm:flex-row gap-2 sm:space-x-4 sm:justify-around">
+						<form.Field
+							name="bestOf"
+							validators={{
+								onChange: ({ value }) =>
+									![3, 5, 7].includes(value) ? "Must be 3, 5, or 7" : undefined,
+							}}
+						>
+							{(field) => (
+								<FormItem className="space-y-3">
+									<FormLabel>Best of</FormLabel>
+									<FormControl>
+										<RadioGroup
+											value={field.state.value.toString()}
+											onValueChange={(value) =>
+												field.handleChange(Number(value))
+											}
+											className="flex gap-4"
+										>
+											{[3, 5, 7].map((num) => (
+												<FormItem
+													key={num}
+													className="flex items-center space-x-2"
+												>
+													<FormControl>
+														<RadioGroupItem value={num.toString()} />
+													</FormControl>
+													<FormLabel className="font-normal">{num}</FormLabel>
+												</FormItem>
+											))}
+										</RadioGroup>
+									</FormControl>
+									{field.state.meta.errors && (
+										<FormMessage>
+											{field.state.meta.errors.join(", ")}
+										</FormMessage>
+									)}
+								</FormItem>
+							)}
+						</form.Field>
+
+						<div className="bg-slate-200 w-full h-[1px] sm:w-[1px] sm:h-24 m-2" />
+
+						<form.Field
+							name="pointsToWin"
+							validators={{
+								onChange: ({ value }) =>
+									![11, 21].includes(value) ? "Must be 11 or 21" : undefined,
+							}}
+						>
+							{(field) => (
+								<FormItem className="space-y-3">
+									<FormLabel>Points to Win</FormLabel>
+									<FormControl>
+										<RadioGroup
+											value={field.state.value.toString()}
+											onValueChange={(value) =>
+												field.handleChange(Number(value))
+											}
+											className="flex gap-4"
+										>
+											{[11, 21].map((num) => (
+												<FormItem
+													key={num}
+													className="flex items-center space-x-2"
+												>
+													<FormControl>
+														<RadioGroupItem value={num.toString()} />
+													</FormControl>
+													<FormLabel className="font-normal">{num}</FormLabel>
+												</FormItem>
+											))}
+										</RadioGroup>
+									</FormControl>
+									{field.state.meta.errors && (
+										<FormMessage>
+											{field.state.meta.errors.join(", ")}
+										</FormMessage>
+									)}
+								</FormItem>
+							)}
+						</form.Field>
+
+						<div className="bg-slate-200 w-full h-[1px] sm:w-[1px] sm:h-24 m-2" />
+
+						<form.Field name="disableAnimations">
+							{(field) => (
+								<div className="flex items-center space-x-2">
+									<Switch
+										id="disableAnimations"
+										checked={!field.state.value}
+										onCheckedChange={(checked) => field.handleChange(!checked)}
+									/>
+									<Label htmlFor="disableAnimations">Animations</Label>
+								</div>
+							)}
+						</form.Field>
+					</div>
 
 					<form.Subscribe
 						selector={(state) => [state.canSubmit, state.isSubmitting]}

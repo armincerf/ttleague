@@ -9,21 +9,22 @@ import {
 	CardFooter,
 	CardHeader,
 } from "@/components/ui/card";
-import type { Club, Event, EventRegistration } from "@/triplit/schema";
+import RegisteredUsers from "./RegisteredUsers";
+import { Skeleton } from "./ui/skeleton";
+import { Suspense } from "react";
+import type { Event } from "@/lib/actions/events";
 
-function hashColor(bestOf: number) {
-	const hue = (bestOf * 30) % 360;
+function hashColor(clubId: string) {
+	const nanoIdToNumber = (nanoId: string) =>
+		Number.parseInt(nanoId.slice(0, 6), 36);
+	const hue = (nanoIdToNumber(clubId) * 30) % 360;
 	return `hsl(${hue}, 70%, 60%)`;
 }
-
-export type TEventCardEvent = Event & {
-	registrations?: EventRegistration[];
-};
 
 export function EventCard({
 	event,
 }: {
-	event: TEventCardEvent;
+	event: Event;
 }) {
 	const date = new Date(event.start_time);
 	const formattedDate = isThisYear(date)
@@ -40,7 +41,11 @@ export function EventCard({
 		scheduled: "bg-purple-500",
 	};
 
-	const colorHash = hashColor(event.best_of);
+	const colorHash = hashColor(event.club_id);
+
+	function formatDescription(description: string | undefined): string {
+		return description?.replace("\n", " ") ?? "";
+	}
 
 	return (
 		<Card className="w-full max-w-2xl overflow-hidden">
@@ -59,19 +64,21 @@ export function EventCard({
 			</CardHeader>
 			<CardContent>
 				<div className="flex items-center space-x-2 mb-4">
-					<Badge
+					{/* <Badge
 						variant="outline"
 						className="text-xs flex items-center"
 						style={{ backgroundColor: colorHash, color: "#fff" }}
 					>
 						<Trophy className="w-3 h-3 mr-1" />
 						Best of {event.best_of}
-					</Badge>
+					</Badge> */}
 					<Badge variant="secondary" className="text-xs">
 						Status: {event.status}
 					</Badge>
 				</div>
-				<p className="text-muted-foreground mb-4">{event.description}</p>
+				<p className="text-muted-foreground mb-4">
+					{formatDescription(event.description)}
+				</p>
 				<div className="flex flex-col space-y-2">
 					<div className="flex items-center space-x-2">
 						<Table2 className="w-5 h-5 text-muted-foreground" />
@@ -81,14 +88,18 @@ export function EventCard({
 					</div>
 					<div className="flex items-center space-x-2">
 						<Users className="w-5 h-5 text-muted-foreground" />
-						<span className="text-sm text-muted-foreground">
-							{event.registrations?.length ?? 0} users registered
-						</span>
+						<Suspense fallback={<Skeleton className="w-20 h-4" />}>
+							<RegisteredUsers
+								eventId={event.id}
+								serverRegistrations={event.registrations}
+								capacity={event.capacity}
+							/>
+						</Suspense>
 					</div>
 				</div>
 			</CardContent>
 			<CardFooter>
-				<Button className="w-full" asChild>
+				<Button variant="outline" className="w-full" asChild>
 					<Link href={`/events/${event.id}`}>View Event Details</Link>
 				</Button>
 			</CardFooter>

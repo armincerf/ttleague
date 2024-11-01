@@ -42,6 +42,7 @@ import {
 import { Card, CardContent } from "./ui/card";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { formatDate } from "date-fns";
 
 export function UnauthChatView() {
 	const router = useRouter();
@@ -215,10 +216,8 @@ function MessageList({ convoId, userId }: { convoId: string; userId: string }) {
 							const isOwnMessage = message.sender_id === userId;
 							const isFirstMessageInABlockFromThisDay =
 								index === messages.length - 1 ||
-								new Date(
-									messages[index + 1]?.created_at,
-								).toLocaleDateString() !==
-									new Date(message.created_at).toLocaleDateString();
+								formatDate(messages[index + 1]?.created_at, "dd MMM") !==
+									formatDate(message.created_at, "dd MMM");
 							return (
 								<Fragment key={message.id}>
 									<ChatBubble
@@ -233,11 +232,7 @@ function MessageList({ convoId, userId }: { convoId: string; userId: string }) {
 											className="text-center text-sm text-muted-foreground"
 											key={message.created_at}
 										>
-											{new Date(message.created_at).toLocaleDateString([], {
-												weekday: "long",
-												month: "long",
-												day: "numeric",
-											})}
+											{formatDate(message.created_at, "dd MMM")}
 										</div>
 									)}
 								</Fragment>

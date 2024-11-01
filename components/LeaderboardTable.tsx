@@ -118,7 +118,6 @@ export default function LeaderboardTable({
 
 	const memoizedColumns = useMemo(() => columns, []);
 
-
 	const { results, fetching, error } = useQuery(
 		client,
 		client.query("users").order("rating", "DESC"),
@@ -204,7 +203,7 @@ export default function LeaderboardTable({
 					onChange={handleGlobalFilterChange}
 					className="max-w-sm"
 				/>
-				<Select onValueChange={handleGenderFilterChange}>
+				{/* <Select onValueChange={handleGenderFilterChange}>
 					<SelectTrigger className="w-[180px]">
 						<SelectValue placeholder="Filter by gender" />
 					</SelectTrigger>
@@ -213,7 +212,7 @@ export default function LeaderboardTable({
 						<SelectItem value="Male">Male</SelectItem>
 						<SelectItem value="Female">Female</SelectItem>
 					</SelectContent>
-				</Select>
+				</Select> */}
 			</div>
 			<div className="flex-grow overflow-auto">
 				<Table>
@@ -322,7 +321,7 @@ function LeaderboardSkeleton({ columns, rows }: LeaderboardSkeletonProps) {
 									key={`header-${
 										// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 										i
-										}`}
+									}`}
 								>
 									<TableHeaderSkeleton />
 								</TableHead>
@@ -335,14 +334,14 @@ function LeaderboardSkeleton({ columns, rows }: LeaderboardSkeletonProps) {
 								key={`row-${
 									// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 									rowIndex
-									}`}
+								}`}
 							>
 								{Array.from({ length: columns }).map((_, colIndex) => (
 									<TableCell
 										key={`cell-${rowIndex}-${
 											// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 											colIndex
-											}`}
+										}`}
 									>
 										<TableCellSkeleton />
 									</TableCell>

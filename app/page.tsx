@@ -24,7 +24,7 @@ export default function Home() {
 								Sign In
 							</button>
 						</SignInButton>
-						<SignUpButton mode="modal">
+						<SignUpButton mode="redirect">
 							<button
 								type="button"
 								className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"

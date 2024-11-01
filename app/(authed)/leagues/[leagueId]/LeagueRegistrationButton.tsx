@@ -83,11 +83,7 @@ function LeagueRegistrationButton({ leagueId }: { leagueId: string }) {
 
 	const isRegistered = myEvents?.registered_league_ids.has(leagueId);
 	if (isRegistered) {
-		return (
-			<Button className="w-full mb-8 bg-green-700" size="lg" disabled>
-				You are registered for this league!
-			</Button>
-		);
+		return null;
 	}
 
 	return (

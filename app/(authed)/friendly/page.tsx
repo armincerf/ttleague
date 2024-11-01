@@ -4,6 +4,7 @@ import { unstable_cache } from "next/cache";
 import UsersList from "@/components/UsersList";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import WIPAlertBanner from "@/components/WIPAlertBanner";
 
 const getUsers = unstable_cache(
 	async () => {
@@ -29,6 +30,7 @@ export default async function FriendlyPage() {
 
 	return (
 		<PageLayout>
+			<WIPAlertBanner />
 			<div className="flex justify-between items-center mb-6">
 				<h1 className="text-3xl font-bold">Challenge Players</h1>
 				<Button asChild>

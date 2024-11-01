@@ -1,3 +1,4 @@
+import { PLAY_STYLES, RUBBER_TYPES } from "@/lib/constants";
 import {
 	type ClientSchema,
 	type Entity,
@@ -49,11 +50,23 @@ export const schema = {
 	users: {
 		schema: S.Schema({
 			id: S.Id(),
-			table_tennis_england_id: S.String(),
+			table_tennis_england_id: S.Optional(S.String()),
 			email: S.String(),
 			profile_image_url: S.Optional(S.String()),
 			first_name: S.String(),
 			last_name: S.String(),
+			bio: S.Optional(S.String()),
+			playStyle: S.Optional(S.String({ enum: PLAY_STYLES })),
+			forehandRubber: S.Optional(
+				S.String({
+					enum: RUBBER_TYPES,
+				}),
+			),
+			backhandRubber: S.Optional(
+				S.String({
+					enum: RUBBER_TYPES,
+				}),
+			),
 			gender: S.Optional(S.String({ enum: ["male", "female"] as const })),
 			current_division: S.Optional(S.String()),
 			default_min_opponent_level: S.Optional(S.String()),
@@ -108,6 +121,7 @@ export const schema = {
 			admins: S.Set(S.Id()),
 			latitude: S.Number(),
 			longitude: S.Number(),
+			mapsLink: S.Optional(S.String()),
 			events: S.RelationMany("events", {
 				where: [["club_id", "=", "$id"]],
 			}),
@@ -122,6 +136,10 @@ export const schema = {
 			id: S.Id(),
 			name: S.String(),
 			description: S.Optional(S.String()),
+			price_gbp: S.Optional(S.Number()),
+			paymentOptions: S.Optional(
+				S.Set(S.String({ enum: ["cash", "card", "in-app"] })),
+			),
 			start_time: S.Date(),
 			end_time: S.Date(),
 			created_at: S.Date({ default: S.Default.now() }),
@@ -131,7 +149,6 @@ export const schema = {
 			club: S.RelationById("clubs", "$club_id"),
 			league_id: S.Id(),
 			season_id: S.Optional(S.Id()),
-			best_of: S.Number(),
 			tables: S.Set(S.Number()),
 			capacity: S.Optional(S.Number()),
 			status: S.String({
@@ -190,6 +207,7 @@ export const schema = {
 			player_1: S.Id(),
 			player_2: S.Id(),
 			umpire: S.Optional(S.Id()),
+			best_of: S.Number({ default: 3 }),
 			manually_created: S.Boolean(),
 			event_id: S.Id(),
 			table_number: S.Number(),
@@ -247,7 +265,7 @@ export const schema = {
 			match_id: S.Id(),
 			player_1_score: S.Number(),
 			player_2_score: S.Number(),
-			final_score: S.Optional(S.String()),
+			score_history_blob: S.Optional(S.String()),
 			started_at: S.Date(),
 			completed_at: S.Optional(S.Date()),
 			last_edited_at: S.Date(),
@@ -404,6 +422,15 @@ export const schema = {
 				},
 			},
 		},
+	},
+	admin_actions: {
+		schema: S.Schema({
+			id: S.Id(),
+			action: S.String(),
+			user_id: S.Optional(S.Id()),
+			acknowledged: S.Optional(S.Set(S.Id())),
+			created_at: S.Date({ default: S.Default.now() }),
+		}),
 	},
 } satisfies ClientSchema;
 

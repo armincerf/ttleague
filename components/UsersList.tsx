@@ -20,7 +20,7 @@ export default function UsersList({ users }: UsersListProps) {
 	}
 
 	return (
-		<div className="grid gap-4">
+		<div className="grid gap-4 py-4">
 			{users.map((user, index) => (
 				<Card key={user.id} className="p-4">
 					<div className="flex items-center gap-4">

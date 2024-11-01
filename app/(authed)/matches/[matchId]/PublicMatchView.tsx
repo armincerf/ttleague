@@ -71,24 +71,16 @@ export function PublicMatchView({ serverMatch }: { serverMatch: Match }) {
 					</div>
 					<ul>
 						{match.games.map((game, idx) => {
-							// Show both final and in-progress scores
-							const score =
-								game.final_score ||
-								(game.player_1_score !== undefined &&
-								game.player_2_score !== undefined
-									? `${game.player_1_score} - ${game.player_2_score}`
-									: null);
-							if (!score) return null;
-
-							return (
-								<li key={game.id}>
-									<span className="font-semibold pr-2">Game {idx + 1}:</span>{" "}
-									<span className="font-mono">
-										{padScore(score)}
-										{!game.final_score && " (in progress)"}
-									</span>
-								</li>
-							);
+							const finalScore = `${game.player_1_score}-${game.player_2_score}`;
+							if (game.player_1_score >= 11 || game.player_2_score >= 11) {
+								return (
+									<li key={game.id}>
+										<span className="font-semibold pr-2">Game {idx + 1}:</span>{" "}
+										<span className="font-mono">{padScore(finalScore)}</span>
+									</li>
+								);
+							}
+							return null;
 						})}
 					</ul>
 				</CardContent>

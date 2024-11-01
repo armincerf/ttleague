@@ -110,7 +110,7 @@ function EventCard({
 				<CardHeader>
 					<CardTitle>Event Completed</CardTitle>
 					<CardDescription>
-						{event.name} - {event.start_time.toLocaleString()}
+						{event.name} - {formatDate(event.start_time, "dd MMM - h:mm a")}
 					</CardDescription>
 					<CardContent>
 						<h2>Results</h2>

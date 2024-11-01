@@ -31,6 +31,7 @@ function PlayerAvatar({
 	player: AvatarUser;
 }) {
 	const [isOpen, setIsOpen] = useState(false);
+	const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 	const { leagueId } = useParams();
 
 	const parsedLeagueId = leagueId?.toString() ?? "";
@@ -49,72 +50,69 @@ function PlayerAvatar({
 	const registrationCount = registrations?.length ?? 0;
 
 	return (
-		<Popover open={isOpen} onOpenChange={setIsOpen}>
-			<PopoverTrigger asChild>
-				<Button variant="ghost" className="p-0 h-auto">
-					<Avatar className="hover:z-10 cursor-pointer hover:border-2 hover:border-black hover:border-opacity-15">
-						<AvatarImage
-							src={player.profile_image_url ?? ""}
-							alt={`${player.first_name} ${player.last_name}`}
-						/>
-						<AvatarFallback>
-							{player.first_name[0]}
-							{player.last_name[0]}
-						</AvatarFallback>
-					</Avatar>
-				</Button>
-			</PopoverTrigger>
-			<PopoverContent>
-				<div>
-					<p>
-						{player.first_name} {player.last_name}
-					</p>
-					<p>Events Played: {registrationCount}</p>
-				</div>
-				<Link href={`/users/${player.id}`} passHref>
-					<Button variant="outline" className="mt-2 w-full">
-						View Profile
+		<>
+			<Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+				<PopoverTrigger asChild>
+					<Button variant="ghost" className="p-0 h-auto">
+						<Avatar className="hover:z-10 cursor-pointer hover:border-2 hover:border-black hover:border-opacity-15">
+							<AvatarImage
+								src={player.profile_image_url ?? ""}
+								alt={`${player.first_name} ${player.last_name}`}
+							/>
+							<AvatarFallback>
+								{player.first_name[0]}
+								{player.last_name[0]}
+							</AvatarFallback>
+						</Avatar>
 					</Button>
-				</Link>
-			</PopoverContent>
-			<PopoverContent>
-				<Dialog open={isOpen} onOpenChange={setIsOpen}>
-					<DialogContent className="w-11/12 sm:w-full sm:max-w-3xl max-h-[90vh] overflow-auto">
-						<DialogHeader>
-							<DialogTitle>
-								{player.first_name} {player.last_name}
-							</DialogTitle>
-							<DialogDescription>
-								List of players registered for {player.first_name}{" "}
-								{player.last_name}
-							</DialogDescription>
-						</DialogHeader>
-						<ul>
-							{registrations?.map((registration) => (
-								<li key={registration.id} className="flex items-center py-2">
-									<Avatar className="mr-2">
-										<AvatarImage
-											src={player.profile_image_url ?? ""}
-											alt={`${player.first_name} ${player.last_name}`}
-										/>
-										<AvatarFallback>
-											{player.first_name[0]}
-											{player.last_name[0]}
-										</AvatarFallback>
-									</Avatar>
-									<Link
-										href={`/users/${player.id}`}
-										className="hover:underline"
-									>
-										{player.first_name} {player.last_name}
-									</Link>
-								</li>
-							))}
-						</ul>
-					</DialogContent>
-				</Dialog>
-			</PopoverContent>
-		</Popover>
+				</PopoverTrigger>
+				<PopoverContent>
+					<div>
+						<p>
+							{player.first_name} {player.last_name}
+						</p>
+						<p>Events Played: {registrationCount}</p>
+					</div>
+					<Link href={`/users/${player.id}`} passHref>
+						<Button variant="outline" className="mt-2 w-full">
+							View Profile
+						</Button>
+					</Link>
+				</PopoverContent>
+			</Popover>
+			<Dialog open={isOpen} onOpenChange={setIsOpen}>
+				<DialogContent className="w-11/12 sm:w-full sm:max-w-3xl max-h-[90vh] overflow-auto">
+					<DialogHeader>
+						<DialogTitle>
+							{player.first_name} {player.last_name}
+						</DialogTitle>
+						<DialogDescription>
+							List of players registered for {player.first_name}{" "}
+							{player.last_name}
+						</DialogDescription>
+					</DialogHeader>
+					<ul>
+						{registrations?.map((registration) => (
+							<li key={registration.id} className="flex items-center py-2">
+								<Avatar className="mr-2">
+									<AvatarImage
+										src={player.profile_image_url ?? ""}
+										alt={`${player.first_name} ${player.last_name}`}
+									/>
+									<AvatarFallback>
+										{player.first_name[0]}
+										{player.last_name[0]}
+									</AvatarFallback>
+								</Avatar>
+								<Link href={`/users/${player.id}`} className="hover:underline">
+									{player.first_name} {player.last_name}
+								</Link>
+							</li>
+						))}
+					</ul>
+				</DialogContent>
+			</Dialog>
+		</>
 	);
 }
 

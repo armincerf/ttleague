@@ -50,13 +50,19 @@ export default function MatchListContent({ event, status }: MatchListProps) {
 									{match.games
 										.reduce(
 											(score, game) => {
-												if (game.final_score) {
-													const [player1Score, player2Score] = game.final_score
-														.split("-")
-														.map(Number);
+												if (
+													game.player_1_score >= 11 ||
+													game.player_2_score >= 11
+												) {
 													return [
-														score[0] + (player1Score > player2Score ? 1 : 0),
-														score[1] + (player2Score > player1Score ? 1 : 0),
+														score[0] +
+															(game.player_1_score > game.player_2_score
+																? 1
+																: 0),
+														score[1] +
+															(game.player_2_score > game.player_1_score
+																? 1
+																: 0),
 													];
 												}
 												return score;

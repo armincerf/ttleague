@@ -14,8 +14,8 @@ interface AdminButtonProps {
 }
 
 async function AdminButtonContents({ children }: AdminButtonProps) {
-	const { userId } = await auth();
-	if (!userId) {
+	const { userId, sessionClaims } = await auth();
+	if (!userId || sessionClaims?.type !== "admin") {
 		return null;
 	}
 	return (

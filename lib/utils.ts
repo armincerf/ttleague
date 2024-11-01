@@ -84,3 +84,24 @@ export function debounce<T extends (...args: Parameters<T>) => void>(
 		timeoutId = setTimeout(() => fn(...args), delay);
 	};
 }
+
+export function getPriceLabel(
+	priceGbp?: number,
+	paymentOptions?: Set<string> | undefined,
+) {
+	if (!priceGbp) {
+		return "Free Event";
+	}
+
+	const price = `£${priceGbp.toFixed(2)}`;
+
+	if (!paymentOptions?.size) {
+		return price;
+	}
+
+	const options = Array.from(paymentOptions)
+		.map((option) => (option === "in-app" ? "app" : option))
+		.join("/");
+
+	return `${price} (${options})`;
+}

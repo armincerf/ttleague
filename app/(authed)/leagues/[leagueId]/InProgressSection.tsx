@@ -22,7 +22,9 @@ function InProgressEvent({ event }: { event: Event }) {
 }
 function fetchInProgressEvents(leagueId: string) {
 	return fetchEvents(leagueId).then((events) =>
-		events.filter((event) => event.start_time < new Date()),
+		events.filter(
+			(event) => event.start_time > new Date() && event.status === "active",
+		),
 	);
 }
 

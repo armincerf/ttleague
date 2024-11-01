@@ -1,8 +1,8 @@
 "use client";
 
-import { useTokenCheck } from "@/hooks/use-token-check";
+import { useCheckForOnboarding, useTokenCheck } from "@/hooks/use-token-check";
 import { client } from "@/lib/triplit";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
@@ -19,16 +19,21 @@ const navItems = [
 	{ icon: FaUsers, label: "Friendly", href: "/friendly" },
 	{ icon: FaTrophy, label: "League", href: "/leagues/mk-ttl-singles" },
 	{ icon: FaTableTennis, label: "Matches", href: "/matches" },
-	{ icon: FaComments, label: "Chat", href: "/chat" },
 ];
 
 export default function BottomNav() {
 	const pathname = usePathname();
 
 	useTokenCheck();
+	useCheckForOnboarding();
+
 	return (
-		<div className="fixed bottom-0 left-0 z-40 w-full bg-white border-t border-gray-200 dark:bg-gray-700 dark:border-gray-600 pb-safe-area-inset-bottom">
-			<div className="grid h-16 max-w-lg grid-cols-5 mx-auto font-medium">
+		<div
+			className={`bottom-0 left-0 z-40 w-full bg-white border-t border-gray-200 
+				dark:bg-gray-700 dark:border-gray-600 pb-safe-area-inset-bottom
+				${pathname.includes("onboarding") ? "hidden" : "fixed"}`}
+		>
+			<div className="grid h-16 max-w-lg grid-cols-4 mx-auto font-medium">
 				{navItems.map((item) => (
 					<Link
 						key={item.href}

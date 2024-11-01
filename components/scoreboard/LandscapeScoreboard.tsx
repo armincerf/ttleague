@@ -53,13 +53,16 @@ export function LandscapeScoreboard({
 	].sort((a, b) => a.order - b.order);
 
 	return (
-		<div className="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center w-full h-full">
+		<div className="fixed inset-0 bg-black z-50 flex flex-col justify-center items-center w-full">
 			<motion.div
 				className="bg-black p-2 shadow-2xl w-full h-full"
-				animate={{ scale: isCorrectionsMode ? 0.8 : 1 }}
+				animate={{
+					scale: isCorrectionsMode ? 0.8 : 1,
+					translateY: isCorrectionsMode ? -30 : 0,
+				}}
 				transition={{ duration: 0.2 }}
 			>
-				<div className="flex justify-between items-start mb-4 gap-2 h-[75%]">
+				<div className="flex justify-between items-start mb-4 gap-2 h-[75%] ">
 					<AnimatePresence mode="popLayout" initial={false}>
 						{scoreboardItems.map(({ id, component, className }) => (
 							<motion.div
@@ -84,7 +87,7 @@ export function LandscapeScoreboard({
 					className={cn(
 						isCorrectionsMode
 							? "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pt-3 z-50 border-2 bg-white p-4 rounded-lg"
-							: "flex justify-center items-end pt-3",
+							: "flex justify-start ",
 					)}
 				>
 					<CorrectionButton

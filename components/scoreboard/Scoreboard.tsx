@@ -13,6 +13,9 @@ import { PortraitScoreboard } from "./PortraitScoreboard";
 import { useScoreboard, type StateProvider } from "@/lib/hooks/useScoreboard";
 import localFont from "next/font/local";
 import { ScoreboardProvider } from "@/lib/contexts/ScoreboardContext";
+import { useEntity } from "@triplit/react";
+import { client } from "@/lib/triplit";
+import { useAuth } from "@clerk/nextjs";
 
 const impact = localFont({
 	src: "./fonts/anton-regular.ttf",
@@ -39,12 +42,24 @@ export default function Scoreboard({
 		console.log("handlePlayersSubmit", newPlayer1, newPlayer2);
 	}
 
+	const { userId } = useAuth();
+	const user = useEntity(client, "users", userId ?? "");
+
 	return (
 		<ScoreboardProvider stateProvider={stateProvider}>
 			<ScoreboardContent
 				loading={loading}
 				onPlayersSubmit={handlePlayersSubmit}
-				initialPlayer1={initialPlayer1}
+				initialPlayer1={
+					initialPlayer1 || {
+						firstName: user?.result?.first_name,
+						lastName: user?.result?.last_name,
+						id: user?.result?.id ?? "player1",
+						gamesWon: 0,
+						currentScore: 0,
+						matchPoint: false,
+					}
+				}
 				initialPlayer2={initialPlayer2}
 			/>
 		</ScoreboardProvider>
@@ -65,7 +80,27 @@ function ScoreboardContent({
 	const [isLandscape, setIsLandscape] = useState(false);
 	const [showSettings, setShowSettings] = useState(false);
 
+	console.log("initialPlayer1", initialPlayer1, loading);
+
 	const { state, send, isGameOver, isMatchOver } = useScoreboard();
+
+	useEffect(() => {
+		send({
+			type: "UPDATE_PLAYER_NAME",
+			isPlayerOne: true,
+			firstName: initialPlayer1?.firstName ?? "Player",
+			lastName: initialPlayer1?.lastName ?? "1",
+		});
+	}, [initialPlayer1, send]);
+
+	useEffect(() => {
+		send({
+			type: "UPDATE_PLAYER_NAME",
+			isPlayerOne: false,
+			firstName: initialPlayer2?.firstName ?? "Player",
+			lastName: initialPlayer2?.lastName ?? "2",
+		});
+	}, [initialPlayer2, send]);
 
 	useEffect(() => {
 		function handleOrientationChange() {
@@ -78,6 +113,7 @@ function ScoreboardContent({
 		handleOrientationChange();
 		window.addEventListener("resize", handleOrientationChange);
 		setTimeout(() => {
+			// @ts-ignore
 			document.documentElement.style.zoom = "100%";
 		}, 500);
 		return () => window.removeEventListener("resize", handleOrientationChange);
@@ -148,6 +184,7 @@ function ScoreboardContent({
 						pointsToWin: context.pointsToWin,
 						playerOneStarts: context.playerOneStarts,
 						sidesSwapped: context.sidesSwapped,
+						disableAnimations: context.disableAnimations,
 					}}
 					players={{
 						player1: context.playerOne,

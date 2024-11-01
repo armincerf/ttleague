@@ -7,6 +7,26 @@ interface Club {
 	name: string;
 	latitude: number;
 	longitude: number;
+	mapsLink?: string;
+}
+
+export function ClubLocationLinkComponent({
+	club,
+	className,
+}: { club: Club; className?: string }) {
+	return (
+		<Link
+			href={
+				club.mapsLink ??
+				`https://www.google.com/maps/search/?api=1&query=${club.latitude},${club.longitude}`
+			}
+			className={className}
+			target="_blank"
+			rel="noopener noreferrer"
+		>
+			{club.name}
+		</Link>
+	);
 }
 
 function ClubLocationLink({
@@ -19,14 +39,7 @@ function ClubLocationLink({
 			<MapPin
 				className={cn("w-4 h-4 mr-2 text-muted-foreground", iconClassName)}
 			/>
-			<Link
-				href={`https://www.google.com/maps/search/?api=1&query=${club.latitude},${club.longitude}`}
-				target="_blank"
-				rel="noopener noreferrer"
-				className={cn("text-sm", textClassName)}
-			>
-				{club.name}
-			</Link>
+			<ClubLocationLinkComponent club={club} />
 		</div>
 	);
 }

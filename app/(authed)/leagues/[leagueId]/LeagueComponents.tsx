@@ -2,11 +2,14 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { Season, Event } from "@/triplit/schema";
+import type { Season } from "@/triplit/schema";
 import { EventCard } from "@/components/EventCard";
 import { useQuery } from "@triplit/react";
 import { client } from "@/lib/triplit";
 import { useMemo } from "react";
+import { formatDate } from "date-fns";
+import type { Event } from "@/lib/actions/events";
+import * as R from "remeda";
 
 export function SeasonList({
 	title,
@@ -22,8 +25,8 @@ export function SeasonList({
 					<ul>
 						{seasons.map((season) => (
 							<li key={season.id}>
-								{new Date(season.start_date).toLocaleDateString()} -{" "}
-								{new Date(season.end_date).toLocaleDateString()}
+								{formatDate(season.start_date, "dd MMM")} -{" "}
+								{formatDate(season.end_date, "dd MMM")}
 							</li>
 						))}
 					</ul>
@@ -55,6 +58,17 @@ export function EventList({
 				past
 					? ["end_time", "<", new Date().toISOString()]
 					: ["start_time", ">", new Date().toISOString()],
+			)
+			.include("club")
+			.include("matches", (rel) =>
+				rel("matches")
+					.include("player1")
+					.include("player2")
+					.include("games")
+					.build(),
+			)
+			.include("registrations", (rel) =>
+				rel("registrations").include("user").build(),
 			);
 	}, [past]);
 	const { results: clientEvents } = useQuery(client, query);

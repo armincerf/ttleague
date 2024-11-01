@@ -1,31 +1,21 @@
-"use client";
-import ScoreboardWrapper from "@/app/(noauth)/scoreboard/ScoreboardWrapper";
-import { createTriplitProvider } from "@/lib/scoreboard/triplitProvider";
-import { useTriplitMatch } from "@/lib/scoreboard/useTriplitMatch";
-import { useParams } from "next/navigation";
+import MatchView from "./MatchView";
+import { fetchMatch } from "@/lib/actions/matches";
 
-export default function MatchPage() {
-	const { matchId } = useParams();
-	const match = useTriplitMatch(matchId?.toString() ?? "");
+export default async function MatchPage({
+	params,
+}: {
+	params: Promise<{ matchId: string }>;
+}) {
+	const { matchId } = await params;
+	const match = await fetchMatch(matchId);
 
-	if (!match || !match.player1 || !match.player2) {
+	if (!match || !match.player_1 || !match.player_2) {
 		return <div>Match not found</div>;
 	}
 
 	return (
-		<ScoreboardWrapper
-			player1={{
-				...match.player1,
-				gamesWon: 0,
-				currentScore: 0,
-				matchPoint: false,
-			}}
-			player2={{
-				...match.player2,
-				gamesWon: 0,
-				currentScore: 0,
-				matchPoint: false,
-			}}
-		/>
+		<div className="flex flex-col items-center pt-2 h-full">
+			<MatchView serverMatch={match} />
+		</div>
 	);
 }

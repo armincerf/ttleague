@@ -1,5 +1,7 @@
 import pino from "pino";
-import posthog from "posthog-js";
+import PostHogClient from "@/app/posthog";
+
+const posthog = PostHogClient();
 
 const logger = pino({
 	level: process.env.LOG_LEVEL || "info",
@@ -17,9 +19,10 @@ const logger = pino({
 					typeof object.properties === "object"
 				) {
 					const { distinctId, event, properties } = object;
-					posthog.capture(object.eventName, {
-						distinctId: object.distinctId || "anonymous",
-						event,
+					posthog?.capture({
+						distinctId:
+							typeof distinctId === "string" ? distinctId : "anonymous",
+						event: object.eventName,
 						properties,
 					});
 

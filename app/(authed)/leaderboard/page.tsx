@@ -1,5 +1,6 @@
 import LeaderboardTable from "@/components/LeaderboardTable";
 import PageLayout from "@/components/PageLayout";
+import WIPAlertBanner from "@/components/WIPAlertBanner";
 import { httpClient } from "@/lib/triplitServerClient";
 import { unstable_cache } from "next/cache";
 
@@ -26,6 +27,7 @@ async function LeaderboardPage() {
 
 	return (
 		<PageLayout>
+			<WIPAlertBanner />
 			<h1 className="text-3xl font-bold mb-6">Leaderboard</h1>
 			<LeaderboardTable initialUsers={initialUsers} />
 		</PageLayout>
