@@ -76,7 +76,8 @@ export const schema = {
 			wins: S.Number(),
 			losses: S.Number(),
 			no_shows: S.Number(),
-			registered_league_ids: S.Set(S.Id()),
+			current_tournament_priority: S.Number({ default: 0 }),
+			registered_league_ids: S.Set(S.String()),
 			leagues: S.RelationMany("leagues", {
 				where: [["id", "in", "$registered_league_ids"]],
 			}),
@@ -93,7 +94,7 @@ export const schema = {
 			}),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Optional(S.Id()),
+			updated_by: S.Optional(S.String()),
 			conversations: S.RelationMany("conversations", {
 				where: [["members", "has", "$id"]],
 			}),
@@ -105,7 +106,8 @@ export const schema = {
 				insert: {
 					filter: [["id", "=", "$role.userId"]],
 				},
-				update: { filter: [["id", "=", "$role.userId"]] },
+				// TODO - just for local test
+				update: { filter: [true] },
 				delete: { filter: [["id", "=", "$role.userId"]] },
 			},
 			anonymous: {
@@ -118,7 +120,7 @@ export const schema = {
 			id: S.Id(),
 			name: S.String(),
 			tables: S.Number(),
-			admins: S.Set(S.Id()),
+			admins: S.Set(S.String()),
 			latitude: S.Number(),
 			longitude: S.Number(),
 			mapsLink: S.Optional(S.String()),
@@ -127,7 +129,7 @@ export const schema = {
 			}),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Optional(S.Id()),
+			updated_by: S.Optional(S.String()),
 		}),
 		permissions: defaultPermissions,
 	},
@@ -144,10 +146,10 @@ export const schema = {
 			end_time: S.Date(),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Optional(S.Id()),
-			club_id: S.Id(),
-			league_id: S.Id(),
-			season_id: S.Optional(S.Id()),
+			updated_by: S.Optional(S.String()),
+			club_id: S.String(),
+			league_id: S.String(),
+			season_id: S.Optional(S.String()),
 			tables: S.Set(S.Number()),
 			capacity: S.Optional(S.Number()),
 			status: S.String({
@@ -173,12 +175,12 @@ export const schema = {
 	event_registrations: {
 		schema: S.Schema({
 			id: S.Id(),
-			user_id: S.Id(),
-			event_id: S.Id(),
-			league_id: S.Id(),
+			user_id: S.String(),
+			event_id: S.String(),
+			league_id: S.String(),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Optional(S.Id()),
+			updated_by: S.Optional(S.String()),
 			minimum_opponent_level: S.Optional(S.String()),
 			max_opponent_level: S.Optional(S.String()),
 			confidence_level: S.Number(),
@@ -205,22 +207,28 @@ export const schema = {
 	matches: {
 		schema: S.Schema({
 			id: S.Id(),
-			player_1: S.Id(),
-			player_2: S.Id(),
-			umpire: S.Optional(S.Id()),
+			player_1: S.String(),
+			player_2: S.String(),
+			umpire: S.Optional(S.String()),
 			best_of: S.Number({ default: 3 }),
 			manually_created: S.Boolean(),
-			event_id: S.Id(),
+			event_id: S.String(),
 			table_number: S.Number(),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Optional(S.Id()),
-			edited_at: S.Date(),
+			updated_by: S.Optional(S.String()),
+			edited_at: S.Date({ default: S.Default.now() }),
 			status: S.String({
-				enum: ["pending", "confirmed", "cancelled"] as const,
+				enum: [
+					"pending",
+					"confirmed",
+					"cancelled",
+					"ended",
+					"ongoing",
+				] as const,
 			}),
 			ranking_score_delta: S.Number(),
-			winner: S.Optional(S.Id()),
+			winner: S.Optional(S.String()),
 			player1: S.RelationById("users", "$player_1"),
 			player2: S.RelationById("users", "$player_2"),
 			umpireUser: S.RelationById("users", "$umpire"),
@@ -228,55 +236,29 @@ export const schema = {
 			games: S.RelationMany("games", {
 				where: [["match_id", "=", "$id"]],
 			}),
+			playersConfirmed: S.Set(S.String()),
+			umpireConfirmed: S.Boolean({ default: false }),
+			startTime: S.Date({ default: S.Default.now() }),
+			endTime: S.Optional(S.Date()),
 		}),
-		permissions: {
-			...defaultPermissions,
-			user: {
-				...userReadOnly,
-				insert: {
-					filter: [
-						["player_1", "=", "$role.userId"],
-						["player_2", "=", "$role.userId"],
-						["umpire", "=", "$role.userId"],
-					],
-				},
-				update: {
-					filter: [
-						["player_1", "=", "$role.userId"],
-						["player_2", "=", "$role.userId"],
-						["umpire", "=", "$role.userId"],
-					],
-				},
-				delete: {
-					filter: [
-						["player_1", "=", "$role.userId"],
-						["player_2", "=", "$role.userId"],
-						["umpire", "=", "$role.userId"],
-					],
-				},
-			},
-			anonymous: {
-				read: { filter: [true] },
-			},
-		},
 	},
 	games: {
 		schema: S.Schema({
 			id: S.Id(),
-			match_id: S.Id(),
+			match_id: S.String(),
 			player_1_score: S.Number(),
 			player_2_score: S.Number(),
 			score_history_blob: S.Optional(S.String()),
-			started_at: S.Date(),
+			started_at: S.Date({ default: S.Default.now() }),
 			completed_at: S.Optional(S.Date()),
-			last_edited_at: S.Date(),
+			last_edited_at: S.Date({ default: S.Default.now() }),
 			game_number: S.Number(),
 			current_server: S.Optional(S.Number()),
 			match: S.RelationById("matches", "$match_id"),
 			editor: S.RelationById("users", "$edited_by"),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Optional(S.Id()),
+			updated_by: S.Optional(S.String()),
 		}),
 		permissions: {
 			...defaultPermissions,
@@ -298,11 +280,11 @@ export const schema = {
 			description: S.String(),
 			logo_image_url: S.String(),
 			faq_html: S.String(),
-			club_ids: S.Set(S.Id()),
-			admins: S.Set(S.Id()),
+			club_ids: S.Set(S.String()),
+			admins: S.Set(S.String()),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Id(),
+			updated_by: S.String(),
 			clubs: S.RelationMany("clubs", {
 				where: [["id", "in", "$club_ids"]],
 			}),
@@ -319,7 +301,7 @@ export const schema = {
 		schema: S.Schema({
 			id: S.Id(),
 			name: S.String(),
-			league_id: S.Id(),
+			league_id: S.String(),
 			start_date: S.Date(),
 			end_date: S.Date(),
 			status: S.String({
@@ -328,7 +310,7 @@ export const schema = {
 			rules_html: S.String(),
 			created_at: S.Date({ default: S.Default.now() }),
 			updated_at: S.Date({ default: S.Default.now() }),
-			updated_by: S.Id(),
+			updated_by: S.String(),
 			league: S.RelationById("leagues", "$league_id"),
 		}),
 		permissions: defaultPermissions,
@@ -373,7 +355,7 @@ export const schema = {
 			sender_id: S.String(),
 			sender: S.RelationById("users", "$sender_id"),
 			text: S.String(),
-			created_at: S.String({ default: S.Default.now() }),
+			created_at: S.Date({ default: S.Default.now() }),
 			likes: S.Optional(S.Set(S.String())),
 			convo: S.RelationById("conversations", "$conversationId"),
 			reactions: S.RelationMany("reactions", {
@@ -428,9 +410,40 @@ export const schema = {
 		schema: S.Schema({
 			id: S.Id(),
 			action: S.String(),
-			user_id: S.Optional(S.Id()),
-			acknowledged: S.Optional(S.Set(S.Id())),
+			user_id: S.Optional(S.String()),
+			acknowledged: S.Optional(S.Set(S.String())),
 			created_at: S.Date({ default: S.Default.now() }),
+		}),
+	},
+	active_tournaments: {
+		schema: S.Schema({
+			id: S.Id(),
+			event_id: S.String(),
+			status: S.String({
+				enum: ["idle", "started", "finished"] as const,
+				default: "idle",
+			}),
+			player_ids: S.Set(S.String()),
+			bracket_type: S.String({
+				enum: ["single_elimination", "round_robin"] as const,
+				default: "round_robin",
+			}),
+			total_rounds: S.Number({ default: 1 }),
+			created_at: S.Date({ default: S.Default.now() }),
+			updated_at: S.Date({ default: S.Default.now() }),
+			updated_by: S.Optional(S.String()),
+
+			// Relations
+			event: S.RelationById("events", "$event_id"),
+			players: S.RelationMany("users", {
+				where: [["id", "in", "$player_ids"]],
+			}),
+			matches: S.RelationMany("matches", {
+				where: [
+					["event_id", "=", "$event_id"],
+					["status", "!=", "cancelled"],
+				],
+			}),
 		}),
 	},
 } satisfies ClientSchema;
@@ -446,3 +459,4 @@ export type Game = Entity<typeof schema, "games">;
 export type Conversation = Entity<typeof schema, "conversations">;
 export type Message = Entity<typeof schema, "messages">;
 export type Reaction = Entity<typeof schema, "reactions">;
+export type ActiveTournament = Entity<typeof schema, "active_tournaments">;

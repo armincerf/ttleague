@@ -230,7 +230,7 @@ function MessageList({ convoId, userId }: { convoId: string; userId: string }) {
 									{isFirstMessageInABlockFromThisDay && (
 										<div
 											className="text-center text-sm text-muted-foreground"
-											key={message.created_at}
+											key={message.created_at.toISOString()}
 										>
 											{formatDate(message.created_at, "dd MMM")}
 										</div>

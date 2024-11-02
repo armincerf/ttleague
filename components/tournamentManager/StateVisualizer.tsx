@@ -1,12 +1,13 @@
 import type { StateValue } from "xstate";
-import type { TournamentContext } from "@/lib/tournamentManager/types";
+import type { TournamentState } from "@/lib/tournamentManager/hooks/useTournamentState";
 
 type StateVisualizerProps = {
-	currentState: StateValue;
-	context: TournamentContext;
+	state: StateValue;
+	context: TournamentState;
+	tableCount: number;
 };
 
-function formatContext(context: TournamentContext) {
+function formatContext(context: TournamentState) {
 	const replacer = (_key: string, value: unknown) => {
 		if (value instanceof Map) {
 			return Object.fromEntries(value);
@@ -18,9 +19,13 @@ function formatContext(context: TournamentContext) {
 }
 
 export function StateVisualizer({
-	currentState,
+	state,
 	context,
+	tableCount,
 }: StateVisualizerProps) {
+	const activeMatchesCount = context.matches.filter(
+		(match) => match.status === "ongoing",
+	).length;
 	return (
 		<div className="mb-6 p-4 bg-gray-50 rounded-lg">
 			<h2 className="text-lg font-semibold mb-2">State Machine Status</h2>
@@ -28,17 +33,20 @@ export function StateVisualizer({
 				<div>
 					<h3 className="font-medium text-gray-700">Current State:</h3>
 					<code className="block p-2 bg-white rounded border">
-						{JSON.stringify(currentState, null, 2)}
+						{JSON.stringify(state, null, 2)}
 					</code>
 				</div>
 				<div>
 					<h3 className="font-medium text-gray-700">Context Summary:</h3>
-					<ul className="space-y-1 text-sm">
-						<li>Players: {context.players.size}</li>
-						<li>Matches: {context.matches.size}</li>
-						<li>Free Tables: {context.freeTables}</li>
-						<li>Total Tables: {context.tables}</li>
-					</ul>
+					{context && (
+						<ul className="space-y-1 text-sm">
+							<li>Players: {context.player_ids.size}</li>
+							<li>Matches: {context.matches.length}</li>
+							<li>Free Tables: {tableCount - activeMatchesCount}</li>
+							<li>Total Tables: {tableCount}</li>
+							<li>Total Rounds: {context.total_rounds}</li>
+						</ul>
+					)}
 				</div>
 			</div>
 

@@ -1,23 +1,22 @@
 import { Table } from "lucide-react";
-import type { Match } from "@/lib/tournamentManager/types";
 import { MatchCard } from "./MatchCard";
-
+import type { Match, User } from "@/triplit/schema";
 interface MatchListProps {
 	matches: Match[];
+	players: User[];
 	tables: number;
 	freeTables: number;
-	onConfirmWinner: (matchId: string, winnerId: string) => void;
-	onConfirmMatch: (matchId: string, playerId: string) => void;
 }
 
 export function MatchList({
 	matches,
+	players,
 	tables,
 	freeTables,
-	onConfirmWinner,
-	onConfirmMatch,
 }: MatchListProps) {
-	const activeMatches = matches.filter((match) => match.state === "ongoing");
+	const activeMatches = matches.filter(
+		(match) => match.status === "ongoing" || match.status === "pending",
+	);
 
 	return (
 		<div className="bg-white p-6 rounded-lg shadow">
@@ -30,15 +29,23 @@ export function MatchList({
 				<p className="text-gray-500">No active matches.</p>
 			) : (
 				<ul className="space-y-4">
-					{activeMatches.map((match, index) => (
-						<MatchCard
-							key={match.id}
-							match={match}
-							tableNumber={index + 1}
-							onConfirmWinner={onConfirmWinner}
-							onConfirmMatch={onConfirmMatch}
-						/>
-					))}
+					{activeMatches.map((match, index) => {
+						const player1 = players.find((p) => p.id === match.player_1);
+						const player2 = players.find((p) => p.id === match.player_2);
+						const umpire = players.find((p) => p.id === match.umpire);
+						if (!player1 || !player2 || !umpire) return null;
+
+						return (
+							<MatchCard
+								key={match.id}
+								match={match}
+								player1={player1}
+								player2={player2}
+								umpire={umpire}
+								tableNumber={index + 1}
+							/>
+						);
+					})}
 				</ul>
 			)}
 		</div>
