@@ -146,7 +146,6 @@ export const schema = {
 			updated_at: S.Date({ default: S.Default.now() }),
 			updated_by: S.Optional(S.Id()),
 			club_id: S.Id(),
-			club: S.RelationById("clubs", "$club_id"),
 			league_id: S.Id(),
 			season_id: S.Optional(S.Id()),
 			tables: S.Set(S.Number()),
@@ -160,6 +159,8 @@ export const schema = {
 					"cancelled",
 				] as const,
 			}),
+
+			club: S.RelationById("clubs", "$club_id"),
 			registrations: S.RelationMany("event_registrations", {
 				where: [["event_id", "=", "$id"]],
 			}),
