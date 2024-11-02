@@ -43,6 +43,7 @@ export default async function NextEventPage({
 }) {
 	const { leagueId } = await params;
 	const event = await fetchNextEvent(leagueId);
+	if (!event) return <div>No upcoming events</div>;
 
 	return (
 		<div className="container max-w-2xl py-8 h-full overflow-y-auto relative">

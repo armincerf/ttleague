@@ -3,10 +3,14 @@ import logger from "@/lib/logging";
 import type { HttpClient, TriplitClient } from "@triplit/client";
 import type { schema } from "@/triplit/schema";
 
-export function eventQuery(client: HttpClient<typeof schema>, eventId: string) {
+export function eventQuery(
+	client: HttpClient<typeof schema>,
+	id: string,
+	idKey: "league_id" | "id",
+) {
 	return client
 		.query("events")
-		.where("id", "=", eventId)
+		.where(idKey, "=", id)
 		.include("club")
 		.include("matches", (rel) =>
 			rel("matches")
@@ -23,7 +27,7 @@ export function eventQuery(client: HttpClient<typeof schema>, eventId: string) {
 export async function fetchEvent(eventId: string) {
 	try {
 		const event = await httpClient.fetchOne(
-			eventQuery(httpClient, eventId).build(),
+			eventQuery(httpClient, eventId, "id").build(),
 		);
 		if (!event) {
 			logger.warn({ eventId }, "Event not found");
@@ -39,7 +43,7 @@ export async function fetchEvent(eventId: string) {
 export async function fetchEvents(leagueId: string) {
 	try {
 		const res = await httpClient.fetch(
-			eventQuery(httpClient, leagueId).build(),
+			eventQuery(httpClient, leagueId, "league_id").build(),
 		);
 		return res.filter(Boolean);
 	} catch (error) {
@@ -50,11 +54,11 @@ export async function fetchEvents(leagueId: string) {
 
 export async function fetchNextEvent(leagueId: string) {
 	const events = await fetchEvents(leagueId);
-	const nextEvent = events.sort(
-		(a, b) => a.start_time.getTime() - b.start_time.getTime(),
-	)?.[0];
-	console.log("nextEvent", nextEvent);
-	if (!nextEvent?.name) return null;
+	const nextEvent = events
+		.filter((event) => event.start_time)
+		.filter((event) => event.start_time > new Date())
+		.sort((a, b) => a.start_time.getTime() - b.start_time.getTime())?.[0];
+	if (!nextEvent || Array.isArray(nextEvent)) return null;
 
 	const firstThreePlayerIds = nextEvent?.registrations
 		?.slice(0, 3)
@@ -62,8 +66,6 @@ export async function fetchNextEvent(leagueId: string) {
 	const players = await httpClient.fetch(
 		httpClient.query("users").where("id", "in", firstThreePlayerIds).build(),
 	);
-
-	console.log("nextEvent", events);
 
 	return {
 		...nextEvent,
