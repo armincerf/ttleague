@@ -24,7 +24,7 @@ import { TableNumberSelector } from "@/components/form/TableNumberSelector";
 import { PlayerPicker } from "@/components/PlayerPicker";
 
 interface AdminEventActionsProps {
-	event: Event;
+	event: NonNullable<Event>;
 }
 
 const schema = z.object({
@@ -167,10 +167,9 @@ async function generateRandomMatches(eventId: string, count: number) {
 }
 
 export function AdminEventActions({ event }: AdminEventActionsProps) {
-	const { user } = useUser();
 	const [createMatchOpen, setCreateMatchOpen] = useState(false);
 
-	const handleSetStatus = async (status: Event["status"]) => {
+	const handleSetStatus = async (status: NonNullable<Event>["status"]) => {
 		const now = new Date();
 		let newStartTime = event.start_time;
 		let newEndTime = event.end_time;

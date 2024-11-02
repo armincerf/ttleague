@@ -8,7 +8,7 @@ import type { Event } from "@/lib/actions/events";
 export default function CountdownTimer({
 	seconds: initialSeconds,
 	event,
-}: { seconds: number; event: Event }) {
+}: { seconds: number; event: NonNullable<Event> }) {
 	const { result } = useQueryOne(
 		client,
 		client

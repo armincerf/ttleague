@@ -17,7 +17,6 @@ import { EventPageAuth } from "./EventPageAuth";
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import { CountdownTimerDisplay } from "./CountdownTimer";
-import { getPossibleInstrumentationHookFilenames } from "next/dist/build/utils";
 import MatchListContent from "./MatchListContent";
 
 const CountdownTimer = dynamic(() => import("./CountdownTimer"), {
@@ -25,28 +24,20 @@ const CountdownTimer = dynamic(() => import("./CountdownTimer"), {
 	loading: () => <CountdownTimerDisplay seconds={0} />,
 });
 
-const EventRegistrationButton = dynamic(
-	() => import("./EventRegistrationButton"),
-	{
-		ssr: false,
-		loading: () => (
-			<Button variant="outline" className="w-full" disabled>
-				Loading...
-			</Button>
-		),
-	},
-);
-
 function EventCard({
 	serverEvent,
 }: {
-	serverEvent: Event;
+	serverEvent: NonNullable<Event>;
 }) {
 	const { result: liveEvent } = useQueryOne(
 		client,
 		// @ts-expect-error - not worth fixing
 		eventQuery(client, serverEvent.id),
 	);
+	console.log({
+		serverEvent,
+		liveEvent,
+	});
 
 	const event = liveEvent || serverEvent;
 	const now = new Date();

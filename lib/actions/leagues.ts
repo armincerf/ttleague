@@ -9,7 +9,6 @@ export async function fetchLeague(leagueId: string) {
 				.query("leagues")
 				.where("id", "=", leagueId)
 				.include("clubs")
-				.include("seasons")
 				.include("players")
 				.build(),
 		);

@@ -1,27 +1,19 @@
 import PageLayout from "@/components/PageLayout";
 import { httpClient } from "@/lib/triplitServerClient";
-import { unstable_cache } from "next/cache";
 import UsersList from "@/components/UsersList";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import WIPAlertBanner from "@/components/WIPAlertBanner";
 
-const getUsers = unstable_cache(
-	async () => {
-		const query = httpClient
-			.query("users")
-			.order("first_name", "ASC")
-			.limit(25)
-			.build();
+const getUsers = async () => {
+	const query = httpClient
+		.query("users")
+		.order("first_name", "ASC")
+		.limit(25)
+		.build();
 
-		return httpClient.fetch(query);
-	},
-	["friendly-users"],
-	{
-		revalidate: 60,
-		tags: ["friendly-users"],
-	},
-);
+	return httpClient.fetch(query);
+};
 
 export const revalidate = 60;
 

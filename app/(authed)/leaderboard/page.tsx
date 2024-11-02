@@ -2,25 +2,16 @@ import LeaderboardTable from "@/components/LeaderboardTable";
 import PageLayout from "@/components/PageLayout";
 import WIPAlertBanner from "@/components/WIPAlertBanner";
 import { httpClient } from "@/lib/triplitServerClient";
-import { unstable_cache } from "next/cache";
 
-const getInitialUsers = unstable_cache(
-	async () => {
-		const query = httpClient
-			.query("users")
-			.order("rating", "DESC")
-			.limit(10)
-			.build();
+async function getInitialUsers() {
+	const query = httpClient
+		.query("users")
+		.order("rating", "DESC")
+		.limit(10)
+		.build();
 
-		const results = await httpClient.fetch(query);
-		return results;
-	},
-	["leaderboard-users"],
-	{
-		revalidate: 60,
-		tags: ["leaderboard-users"],
-	},
-);
+	return httpClient.fetch(query);
+}
 
 async function LeaderboardPage() {
 	const initialUsers = await getInitialUsers();

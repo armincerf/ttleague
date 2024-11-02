@@ -9,7 +9,7 @@ export default function RegisteredUsers({
 	capacity,
 }: {
 	eventId: string;
-	serverRegistrations?: Event["registrations"];
+	serverRegistrations?: NonNullable<Event>["registrations"];
 	capacity?: number;
 }) {
 	const { results: registrations } = useQuery(

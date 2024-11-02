@@ -12,7 +12,7 @@ import MatchListSkeleton from "./MatchListSkeleton";
 import type { Event } from "@/lib/actions/events";
 
 type MatchListProps = {
-	event: Event;
+	event: NonNullable<Event>;
 	status: "in_progress" | "pending" | "completed";
 };
 

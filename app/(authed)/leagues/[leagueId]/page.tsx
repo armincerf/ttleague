@@ -8,10 +8,10 @@ import LeagueRegistrationButton from "./LeagueRegistrationButton";
 import ClubLocationLink from "@/components/ClubLocationLink";
 import { fetchLeague, fetchLeagues } from "@/lib/actions/leagues";
 import logger from "@/lib/logging";
-import LeagueSeasons from "./LeagueSeasons";
 import InProgressSection from "./InProgressSection";
 import { AdminButton } from "@/components/AdminButton";
 import { AdminLeagueActions } from "./AdminLeagueActions";
+import LeagueSeasonsOrEvents from "./LeagueSeasons";
 
 function LeagueHeader({
 	league,
@@ -104,8 +104,9 @@ export default async function LeaguePage({
 					</Suspense>
 
 					<Suspense fallback={<div>Loading seasons and events...</div>}>
-						<LeagueSeasons leagueId={leagueId} />
+						<LeagueSeasonsOrEvents leagueId={leagueId} />
 					</Suspense>
+
 					<AdminButton>
 						<AdminLeagueActions leagueId={leagueId} />
 					</AdminButton>

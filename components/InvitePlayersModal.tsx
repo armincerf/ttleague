@@ -17,27 +17,35 @@ import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useQuery } from "@triplit/react";
 import { client } from "@/lib/triplit";
+import { usePostHog } from "posthog-js/react";
 
 interface InvitePlayersModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onComplete: () => void;
+	userId: string;
 }
 
 export function InvitePlayersModal({
 	isOpen,
 	onClose,
 	onComplete,
+	userId,
 }: InvitePlayersModalProps) {
 	const { results: existingEmails } = useQuery(
 		client,
 		client.query("users").select(["email"]),
 	);
+	const posthog = usePostHog();
 	const form = useForm({
 		defaultValues: {
 			emails: [""],
 		},
 		onSubmit: async ({ value }) => {
+			posthog?.capture("invite_players_modal_submitted", {
+				distinctId: userId,
+				formValues: value,
+			});
 			const validEmails = value.emails.filter(
 				(email) =>
 					email.trim().length > 0 &&

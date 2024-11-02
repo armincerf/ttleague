@@ -23,7 +23,7 @@ import type { AvatarUser } from "@/components/ui/avatar-group";
 import { useLoadingState } from "@/hooks/useLoadingState";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 import { useUser } from "@clerk/nextjs";
-import type { fetchEvent } from "@/lib/actions/events";
+import type { Event } from "@/lib/actions/events";
 
 function PlayerAvatar({ player }: { player: AvatarUser }) {
 	const [isOpen, setIsOpen] = useState(false);
@@ -63,7 +63,7 @@ function PlayerAvatar({ player }: { player: AvatarUser }) {
 export function EventRegisteredPlayers({
 	serverEvent,
 }: {
-	serverEvent: Awaited<ReturnType<typeof fetchEvent>>;
+	serverEvent: NonNullable<Event>;
 }) {
 	const eventId = serverEvent.id;
 	const eventName = serverEvent.name;

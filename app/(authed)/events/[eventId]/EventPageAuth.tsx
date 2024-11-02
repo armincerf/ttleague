@@ -6,7 +6,7 @@ import MatchListSkeleton from "./MatchListSkeleton";
 import type { Event } from "@/lib/actions/events";
 
 type Props = {
-	event: Event;
+	event: NonNullable<Event>;
 };
 
 const EventRegistrationButton = dynamic(

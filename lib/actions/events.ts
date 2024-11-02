@@ -31,7 +31,7 @@ export async function fetchEvent(eventId: string) {
 		);
 		if (!event) {
 			logger.warn({ eventId }, "Event not found");
-			throw new Error(`Event not found: ${eventId}`);
+			return null;
 		}
 		return event;
 	} catch (error) {
@@ -102,3 +102,4 @@ export async function revalidateEvents(leagueId: string) {
 }
 
 export type Event = Awaited<ReturnType<typeof fetchEvent>>;
+export type Events = Awaited<ReturnType<typeof fetchEvents>>;

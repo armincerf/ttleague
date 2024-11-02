@@ -24,7 +24,7 @@ function hashColor(clubId: string) {
 export function EventCard({
 	event,
 }: {
-	event: Event;
+	event: NonNullable<Event>;
 }) {
 	const date = new Date(event.start_time);
 	const formattedDate = isThisYear(date)

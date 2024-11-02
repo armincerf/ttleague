@@ -26,7 +26,6 @@ import {
 	FormItem,
 	FormLabel,
 } from "@/components/ui/form";
-import { client } from "@/lib/triplit";
 import {
 	getDivision,
 	initialRating,
@@ -62,7 +61,10 @@ export default function OnboardingForm() {
 			tableTennisEnglandId: searchParams.get("tableTennisEnglandId") || "",
 		} satisfies OnboardingFormValues,
 		onSubmit: async ({ value }) => {
-			console.log("value", value, user);
+			posthog?.capture("onboarding_form_submitted", {
+				distinctId: user?.id,
+				formValues: value,
+			});
 			if (!user) {
 				return;
 			}

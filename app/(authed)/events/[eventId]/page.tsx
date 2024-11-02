@@ -4,6 +4,10 @@ import { AdminButton } from "../../../../components/AdminButton";
 import { AdminEventActions } from "./AdminEventActions";
 import EventCard from "./EventCard";
 
+function EventNotFound() {
+	return <div>Event not found</div>;
+}
+
 export default async function EventPage({
 	params,
 }: {
@@ -12,7 +16,10 @@ export default async function EventPage({
 	const { eventId } = await params;
 
 	const event = await fetchEvent(eventId);
-	console.log(event);
+	if (!event) {
+		console.error("Event not found", eventId);
+		return <EventNotFound />;
+	}
 
 	return (
 		<div className="container mx-auto pt-8 px-4">

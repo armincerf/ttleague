@@ -27,6 +27,7 @@ function SeasonsContent({ leagueId }: { leagueId: string }) {
 
 function EventsContent({ leagueId }: { leagueId: string }) {
 	const events = use(fetchEvents(leagueId));
+	console.log("useevents", events);
 	const currentDate = new Date();
 	const upcomingEvents = events
 		.filter((e) => new Date(e.start_time) > currentDate)
@@ -34,6 +35,11 @@ function EventsContent({ leagueId }: { leagueId: string }) {
 	const pastEvents = events
 		.filter((e) => new Date(e.end_time) < currentDate)
 		.slice(0, 10);
+
+	console.log({
+		upcomingEvents,
+		pastEvents,
+	});
 
 	return (
 		<>
@@ -49,10 +55,13 @@ function EventsContent({ leagueId }: { leagueId: string }) {
 	);
 }
 
-export default function LeagueSeasons({ leagueId }: { leagueId: string }) {
+export default function LeagueSeasonsOrEvents({
+	leagueId,
+}: { leagueId: string }) {
+	// TODO for now, just show events
 	return (
 		<Suspense fallback={<div>Loading seasons and events...</div>}>
-			<SeasonsOrEvents leagueId={leagueId} />
+			<EventsContent leagueId={leagueId} />
 		</Suspense>
 	);
 }

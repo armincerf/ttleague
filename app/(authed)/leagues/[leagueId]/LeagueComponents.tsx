@@ -8,8 +8,7 @@ import { useQuery } from "@triplit/react";
 import { client } from "@/lib/triplit";
 import { useMemo } from "react";
 import { formatDate } from "date-fns";
-import type { Event } from "@/lib/actions/events";
-import * as R from "remeda";
+import type { Events } from "@/lib/actions/events";
 
 export function SeasonList({
 	title,
@@ -46,7 +45,7 @@ export function EventList({
 	leagueId,
 }: {
 	title: string;
-	events: Event[];
+	events: Events;
 	showSeeAll?: boolean;
 	leagueId?: string;
 	past?: boolean;
@@ -72,6 +71,7 @@ export function EventList({
 			);
 	}, [past]);
 	const { results: clientEvents } = useQuery(client, query);
+	console.log("clientEvents", clientEvents);
 	const leagueEvents = clientEvents ?? events;
 	return (
 		<div className="mt-8">

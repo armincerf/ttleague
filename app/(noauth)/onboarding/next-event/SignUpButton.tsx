@@ -6,17 +6,23 @@ import { InvitePlayersModal } from "@/components/InvitePlayersModal";
 import { useRouter } from "next/navigation";
 import { client } from "@/lib/triplit";
 import { useUser } from "@clerk/nextjs";
+import { usePostHog } from "posthog-js/react";
 
 export function SignUpButton({ eventId }: { eventId: string }) {
 	const [showInviteModal, setShowInviteModal] = useState(false);
 	const router = useRouter();
 	const { user } = useUser();
+	const posthog = usePostHog();
 
 	const handleComplete = async () => {
 		if (!user) {
 			console.error("No user found");
 			return;
 		}
+		posthog?.capture("signup_button_clicked", {
+			eventId,
+			distinctId: user.id,
+		});
 		setShowInviteModal(false);
 		await client.insert("event_registrations", {
 			user_id: user.id,
@@ -26,6 +32,11 @@ export function SignUpButton({ eventId }: { eventId: string }) {
 		});
 		router.push("/leagues/mk-ttl-singles");
 	};
+
+	if (!user) {
+		console.error("No user found");
+		return <div>Loading user details...</div>;
+	}
 
 	return (
 		<>
@@ -37,6 +48,7 @@ export function SignUpButton({ eventId }: { eventId: string }) {
 			</Button>
 
 			<InvitePlayersModal
+				userId={user.id}
 				isOpen={showInviteModal}
 				onClose={() => setShowInviteModal(false)}
 				onComplete={handleComplete}

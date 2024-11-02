@@ -1,7 +1,7 @@
 "use client";
 import { client } from "@/lib/triplit";
 import type { schema } from "@/triplit/schema";
-import { useAuth } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
 import type { Entity } from "@triplit/client";
 import { useConnectionStatus, useEntity, useQuery } from "@triplit/react";
 import { usePathname, useRouter } from "next/navigation";
@@ -91,11 +91,12 @@ function getLocalStorageKey(actionId: string): string {
 }
 
 export function useAdminActionListener() {
-	const { userId } = useAuth();
+	const { user } = useUser();
+	const userId = user?.id || "anon";
 	const { results: actions } = useQuery(client, client.query("admin_actions"));
 
 	useEffect(() => {
-		if (!actions?.length || !userId) {
+		if (!actions?.length) {
 			return;
 		}
 
@@ -108,12 +109,15 @@ export function useAdminActionListener() {
 				const isLocallyAcknowledged =
 					localStorage.getItem(localStorageKey) === userId;
 
-				if (isLocallyAcknowledged || action.acknowledged?.has(userId)) {
+				if (
+					isLocallyAcknowledged ||
+					(userId && action.acknowledged?.has(userId))
+				) {
 					return;
 				}
 
-				if (action.user_id && action.user_id === userId) {
-					console.log("action", action);
+				if (action.user_id && action.user_id !== userId) {
+					console.log("action with wrong user", action);
 				} else {
 					console.log("action", action);
 					if (action.action === "reset_client") {
