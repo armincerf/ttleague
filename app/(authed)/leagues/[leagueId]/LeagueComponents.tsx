@@ -58,12 +58,12 @@ export function EventList({
 					? ["end_time", "<", new Date().toISOString()]
 					: ["start_time", ">", new Date().toISOString()],
 			)
-			.include("club")
+			.include("club", (rel) => rel("club").build())
 			.include("matches", (rel) =>
 				rel("matches")
-					.include("player1")
-					.include("player2")
-					.include("games")
+					.include("player1", (rel) => rel("player1").build())
+					.include("player2", (rel) => rel("player2").build())
+					.include("games", (rel) => rel("games").build())
 					.build(),
 			)
 			.include("registrations", (rel) =>

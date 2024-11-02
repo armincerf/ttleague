@@ -1,6 +1,10 @@
 "use client";
 
-import { useCheckForOnboarding, useTokenCheck } from "@/hooks/use-token-check";
+import {
+	useAdminActionListener,
+	useCheckForOnboarding,
+	useTokenCheck,
+} from "@/hooks/use-token-check";
 import { client } from "@/lib/triplit";
 import { useAuth, useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -25,7 +29,7 @@ export default function BottomNav() {
 	const pathname = usePathname();
 
 	useTokenCheck();
-	useCheckForOnboarding();
+	useAdminActionListener();
 
 	return (
 		<div

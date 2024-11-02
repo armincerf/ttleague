@@ -1,33 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { client } from "@/lib/triplit";
-import { useQueryOne } from "@triplit/react";
 import type { Event } from "@/lib/actions/events";
 
 export default function CountdownTimer({
 	seconds: initialSeconds,
-	event,
-}: { seconds: number; event: NonNullable<Event> }) {
-	const { result } = useQueryOne(
-		client,
-		client
-			.query("events")
-			.where("id", "=", event.id)
-			.select(["status", "start_time"]),
-	);
+	eventId,
+	eventStatus,
+	eventStartTime,
+}: {
+	seconds: number;
+	eventId: string;
+	eventStatus: NonNullable<Event>["status"];
+	eventStartTime: Date;
+}) {
 	const [seconds, setSeconds] = useState(initialSeconds);
-	const eventStatus = result?.status || event.status;
 
 	useEffect(() => {
-		if (event.start_time !== result?.start_time && result?.start_time) {
-			setSeconds(
-				Math.floor(
-					(result?.start_time?.getTime() - new Date().getTime()) / 1000,
-				),
-			);
-		}
-	}, [result, event.start_time]);
+		setSeconds(
+			Math.floor((eventStartTime.getTime() - new Date().getTime()) / 1000),
+		);
+	}, [eventStartTime]);
 
 	useEffect(() => {
 		const timer = setInterval(() => {
@@ -42,14 +35,6 @@ export default function CountdownTimer({
 
 		return () => clearInterval(timer);
 	}, []);
-
-	useEffect(() => {
-		if (seconds < 0 && eventStatus === "scheduled") {
-			client.update("events", event.id, (event) => {
-				event.status = "active";
-			});
-		}
-	}, [seconds, eventStatus, event.id]);
 
 	return <CountdownTimerDisplay seconds={seconds} />;
 }

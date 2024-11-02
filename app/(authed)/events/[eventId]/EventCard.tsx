@@ -2,7 +2,6 @@
 
 import { useQueryOne } from "@triplit/react";
 import { client } from "@/lib/triplit";
-import { eventQuery } from "@/lib/actions/events";
 import type { Event } from "@/lib/actions/events";
 import {
 	Card,
@@ -14,7 +13,6 @@ import {
 import { differenceInSeconds, formatDate } from "date-fns";
 import { ClerkProvider } from "@clerk/nextjs";
 import { EventPageAuth } from "./EventPageAuth";
-import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import { CountdownTimerDisplay } from "./CountdownTimer";
 import MatchListContent from "./MatchListContent";
@@ -31,13 +29,8 @@ function EventCard({
 }) {
 	const { result: liveEvent } = useQueryOne(
 		client,
-		// @ts-expect-error - not worth fixing
-		eventQuery(client, serverEvent.id),
+		client.query("events").where("id", "=", serverEvent.id),
 	);
-	console.log({
-		serverEvent,
-		liveEvent,
-	});
 
 	const event = liveEvent || serverEvent;
 	const now = new Date();
@@ -58,7 +51,7 @@ function EventCard({
 					</CardDescription>
 					<CardContent className="p-0">
 						<ClerkProvider dynamic>
-							<EventPageAuth event={event} />
+							<EventPageAuth event={serverEvent} />
 						</ClerkProvider>
 					</CardContent>
 				</CardHeader>
@@ -70,24 +63,29 @@ function EventCard({
 		return (
 			<Card className="mb-8">
 				<CardHeader>
-					<CardTitle>Event Starts In</CardTitle>
+					<CardTitle>{event.name}</CardTitle>
 				</CardHeader>
 				<CardDescription className="px-6 pb-2">
-					{event.name} - {formatDate(event.start_time, "dd MMM - h:mm a")}
+					Arrive after {formatDate(event.start_time, "dd MMM - h:mm a")}
 					<br />
-					{event.club && (
+					{serverEvent.club && (
 						<>
-							Location: {event.club.name}
+							Location: {serverEvent.club.name}
 							<br />
 						</>
 					)}
 					{event.description}
 				</CardDescription>
 				<CardContent>
-					<CountdownTimer seconds={secondsUntilStart} event={event} />
+					<CountdownTimer
+						seconds={secondsUntilStart}
+						eventId={event.id}
+						eventStatus={event.status}
+						eventStartTime={event.start_time}
+					/>
 					<div className="flex flex-col gap-4 mt-2">
 						<ClerkProvider dynamic>
-							<EventPageAuth event={event} />
+							<EventPageAuth event={serverEvent} />
 						</ClerkProvider>
 					</div>
 				</CardContent>
@@ -105,10 +103,10 @@ function EventCard({
 					</CardDescription>
 					<CardContent>
 						<h2>Results</h2>
-						{event.matches.map((match) => (
+						{serverEvent.matches.map((match) => (
 							<MatchListContent
 								key={match.id}
-								event={event}
+								event={serverEvent}
 								status="completed"
 							/>
 						))}

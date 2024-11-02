@@ -65,6 +65,15 @@ const config: Config = {
 			screens: {
 				xxs: "400px",
 			},
+			keyframes: {
+				"subtle-parallax": {
+					"0%": { transform: "translateY(0)" },
+					"100%": { transform: "translateY(-10%)" },
+				},
+			},
+			animation: {
+				"subtle-parallax": "subtle-parallax 20s linear infinite alternate",
+			},
 		},
 	},
 	plugins: [require("tailwindcss-animate"), typography],

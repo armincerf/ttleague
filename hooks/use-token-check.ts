@@ -158,7 +158,6 @@ export function useCheckForOnboarding() {
 	const pathname = usePathname();
 	const { result: user } = useEntity(client, "users", userId ?? "");
 	const [loading, setLoading] = useState(true);
-	useAdminActionListener();
 
 	useEffect(() => {
 		setTimeout(() => {

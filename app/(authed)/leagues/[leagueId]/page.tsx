@@ -18,16 +18,22 @@ function LeagueHeader({
 }: { league: NonNullable<Awaited<ReturnType<typeof fetchLeague>>> }) {
 	return (
 		<>
-			<div className="flex items-center mb-6 h-16">
-				<div className="w-44 h-16 mr-4 relative overflow-hidden">
+			<div className="relative h-[40vh] w-full mb-8">
+				<div className="absolute inset-0">
 					<Image
 						src={league.logo_image_url}
 						alt={`${league.name} logo`}
 						fill
-						className="object-cover"
+						className="object-cover fixed-image"
+						priority
 					/>
+					<div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
 				</div>
-				<h1 className="text-3xl font-bold">{league.name}</h1>
+				<div className="relative h-full max-w-4xl mx-auto flex items-center px-4">
+					<h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-lg">
+						{league.name}
+					</h1>
+				</div>
 			</div>
 
 			<Card className="mb-8">
@@ -89,15 +95,6 @@ export default async function LeaguePage({
 			<PageLayout>
 				<div className="max-w-4xl mx-auto pb-24">
 					<LeagueHeader league={league} />
-
-					<LeagueRegistrationButton leagueId={leagueId} />
-
-					<Suspense fallback={<div>Loading registered players...</div>}>
-						<RegisteredPlayersList
-							leagueId={leagueId}
-							leagueName={league.name}
-						/>
-					</Suspense>
 
 					<Suspense fallback={<div>Loading in-progress section...</div>}>
 						<InProgressSection leagueId={leagueId} />

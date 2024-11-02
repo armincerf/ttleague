@@ -86,3 +86,9 @@ body {
 		padding-bottom: 1rem;
 	}
 }
+
+.fixed-image {
+  background-attachment: fixed;
+  transform: translateZ(0);
+  will-change: transform;
+}

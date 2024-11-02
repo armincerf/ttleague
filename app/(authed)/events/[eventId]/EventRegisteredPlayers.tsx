@@ -70,17 +70,16 @@ export function EventRegisteredPlayers({
 	const [isOpen, setIsOpen] = useState(false);
 	const { user } = useUser();
 
-	const { result: clientEvent, fetching } = useQueryOne(
+	const { results, fetching } = useQuery(
 		client,
 		client
-			.query("events")
-			.where(["id", "=", eventId])
-			.include("registrations", (rel) =>
-				rel("registrations").include("user").build(),
-			),
+			.query("event_registrations")
+			.where("event_id", "=", eventId)
+			.include("user"),
 	);
+	const registrations = results ?? [];
 
-	const event = clientEvent ?? serverEvent;
+	const event = { ...serverEvent, registrations };
 
 	const isLoading = useLoadingState(fetching, event);
 	const players =
@@ -89,6 +88,14 @@ export function EventRegisteredPlayers({
 	const currentUserRegistered = players.some(
 		(player) => player.id === user?.id,
 	);
+	console.log({
+		event,
+		isLoading,
+		players,
+		playerCount,
+		currentUserRegistered,
+		results,
+	});
 
 	return (
 		<Card className="mb-8">
