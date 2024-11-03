@@ -9,15 +9,28 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 		matches: Match[],
 		eventId: string,
 		totalRounds: number,
+		freeTables: number,
 	) {
 		if (waitingPlayers.length < 3) {
 			return { success: false, error: "Not enough players" };
+		}
+
+		if (freeTables < 1) {
+			return { success: false, error: "No free tables available" };
 		}
 
 		const validPair = findValidPlayerPair(waitingPlayers, matches, totalRounds);
 		if (!validPair?.[0] || !validPair?.[1]) {
 			return { success: false, error: "No valid matches" };
 		}
+
+		const usedTables = new Set(
+			matches.filter((m) => m.status === "ongoing").map((m) => m.table_number),
+		);
+		const nextTable =
+			Array.from({ length: freeTables }, (_, i) => i + 1).find(
+				(num) => !usedTables.has(num),
+			) ?? 1;
 
 		const [player1, player2] = validPair;
 		const umpire = waitingPlayers.find(
@@ -35,7 +48,7 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			umpire: umpire.id,
 			status: "pending",
 			manually_created: false,
-			table_number: 1,
+			table_number: nextTable,
 			ranking_score_delta: 0,
 			event_id: eventId,
 		} as const;

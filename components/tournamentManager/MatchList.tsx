@@ -22,7 +22,7 @@ export function MatchList({
 		<div className="bg-white p-6 rounded-lg shadow">
 			<h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
 				<Table className="w-6 h-6" />
-				Active Matches ({tables - freeTables}/{tables} tables in use)
+				Active Matches ({tables - freeTables} tables in use)
 			</h2>
 
 			{activeMatches.length === 0 ? (

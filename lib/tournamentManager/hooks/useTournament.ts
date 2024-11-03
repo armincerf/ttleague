@@ -9,6 +9,7 @@ export function useTournament() {
 		triplitClient
 			.query("active_tournaments")
 			.include("players")
+			.include("event")
 			.include("matches"),
 	).result;
 

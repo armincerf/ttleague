@@ -23,7 +23,7 @@ export function StateVisualizer({
 	tableCount,
 }: StateVisualizerProps) {
 	const activeMatchesCount = context.matches.filter(
-		(match) => match.status === "ongoing",
+		(match) => match.status === "ongoing" || match.status === "pending",
 	).length;
 	return (
 		<div className="mb-6 p-4 bg-gray-50 rounded-lg">

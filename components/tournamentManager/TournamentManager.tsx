@@ -12,7 +12,7 @@ import { RemainingMatches } from "./RemainingMatches";
 import { useTournament } from "@/lib/tournamentManager/hooks/useTournament";
 import { Input } from "../ui/input";
 
-const eventId = "123";
+const eventId = "mock-event";
 
 export function TournamentManager() {
 	const { state: tournamentState, service } = useTournament();
@@ -40,6 +40,10 @@ export function TournamentManager() {
 				</Button>
 			</div>
 		);
+
+	const activeMatches = matches.filter(
+		(m) => m.status === "ongoing" || m.status === "pending",
+	);
 
 	return (
 		<div className="max-w-6xl mx-auto">
@@ -89,12 +93,28 @@ export function TournamentManager() {
 							})
 						}
 					/>
+					<span>Number of Tables</span>
+					<Input
+						type="number"
+						value={tournamentState.event?.tables.size}
+						onChange={(e) =>
+							service.updateEvent(tournamentState.event_id, {
+								tables: new Set(
+									Array.from(
+										{ length: Number.parseInt(e.target.value) },
+										(_, i) => i,
+									),
+								),
+							})
+						}
+						className="w-16"
+					/>
 				</div>
 
 				<StateVisualizer
 					state={tournamentState.status}
 					context={tournamentState}
-					tableCount={1}
+					tableCount={tournamentState.event?.tables.size ?? 1}
 				/>
 
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -106,8 +126,10 @@ export function TournamentManager() {
 					<MatchList
 						matches={matches}
 						players={players}
-						tables={1}
-						freeTables={matches.length === 0 ? 1 : 0}
+						tables={tournamentState.event?.tables.size ?? 1}
+						freeTables={
+							tournamentState.event?.tables.size ?? 1 - activeMatches.length
+						}
 					/>
 					<Scoreboard players={players} matches={matches} />
 					<RemainingMatches

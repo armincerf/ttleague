@@ -1,6 +1,6 @@
 import { toast } from "@/hooks/use-toast";
 import type { TriplitClient } from "@triplit/client";
-import type { schema, Match, User, ActiveTournament } from "@/triplit/schema";
+import type { schema, ActiveTournament, Event } from "@/triplit/schema";
 import { createMatchGenerator } from "../utils/matchUtils";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createMatchConfirmation } from "../utils/matchConfirmationUtils";
@@ -65,6 +65,12 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 			});
 		},
 
+		async updateEvent(eventId: string, updates: Partial<Event>) {
+			await client.update("events", eventId, (event) => {
+				Object.assign(event, updates);
+			});
+		},
+
 		async generateNextMatch(tournamentId: string) {
 			const tournament = await client.fetchOne(
 				client
@@ -72,6 +78,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 					.where("id", "=", tournamentId)
 					.include("players")
 					.include("matches")
+					.include("event")
 					.build(),
 				{ policy: "remote-only" },
 			);
@@ -93,6 +100,12 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 					.build(),
 				{ policy: "remote-only" },
 			);
+			const event = await client.fetchOne(
+				client.query("events").where("id", "=", tournament.event_id).build(),
+				{ policy: "remote-only" },
+			);
+			const activeMatches = matches.filter((m) => m.status === "ongoing");
+			const freeTables = (event?.tables.size ?? 1) - activeMatches.length;
 
 			const waitingPlayers = getWaitingPlayers(players, matches);
 			const result = await matchGenerator(
@@ -101,6 +114,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				matches,
 				tournament.event_id,
 				tournament.total_rounds ?? 1,
+				freeTables,
 			);
 
 			if (!result.success) {
