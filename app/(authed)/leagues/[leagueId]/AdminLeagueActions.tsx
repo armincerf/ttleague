@@ -48,6 +48,7 @@ function CreateEventForm({
 			status: "scheduled",
 			created_at: new Date(),
 			updated_at: new Date(),
+			club_id: "mk-ttc",
 		});
 		console.log("event", event);
 		onSuccess();
@@ -164,6 +165,7 @@ export function AdminLeagueActions({ leagueId }: AdminLeagueActionsProps) {
 			status: isPast ? "completed" : "scheduled",
 			created_at: now,
 			updated_at: now,
+			club_id: "mk-ttc",
 		});
 	};
 

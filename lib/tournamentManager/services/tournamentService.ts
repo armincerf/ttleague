@@ -1,7 +1,6 @@
 import { toast } from "@/hooks/use-toast";
 import type { TriplitClient } from "@triplit/client";
 import type { schema, Match, User, ActiveTournament } from "@/triplit/schema";
-import type { TournamentState } from "../hooks/useTournamentState";
 import { createMatchGenerator } from "../utils/matchUtils";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createMatchConfirmation } from "../utils/matchConfirmationUtils";
@@ -28,15 +27,15 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				description: "New tournament has been created",
 			});
 
-			return tournament;
+			return tournament.output;
 		},
 
-		async resetTournament(tournament: TournamentState) {
+		async resetTournament(tournamentId: string, matchIds: string[]) {
 			await client.transact(async (tx) => {
-				for (const match of tournament.matches) {
-					await tx.delete("matches", match.id);
+				for (const matchId of matchIds) {
+					await tx.delete("matches", matchId);
 				}
-				await tx.delete("active_tournaments", tournament.id);
+				await tx.delete("active_tournaments", tournamentId);
 			});
 
 			toast({

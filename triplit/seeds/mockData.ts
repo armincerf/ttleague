@@ -25,6 +25,7 @@ const realClerkUsers = [
 		playStyle: "attack",
 		forehandRubber: "inverted_chinese",
 		backhandRubber: "inverted_euro",
+		current_tournament_priority: 0,
 	},
 ] satisfies User[];
 

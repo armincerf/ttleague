@@ -1,7 +1,7 @@
 import type { TriplitClient } from "@triplit/client";
 import type { Match, schema, User } from "@/triplit/schema";
 import { findValidPlayerPair } from "./pairingUtils";
-
+import { nanoid } from "nanoid";
 export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 	return async function generateMatchups(
 		tournamentId: string,
@@ -28,23 +28,26 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			return { success: false, error: "No available umpire" };
 		}
 
+		const newMatch = {
+			id: `match-${nanoid()}`,
+			player_1: player1.id,
+			player_2: player2.id,
+			umpire: umpire.id,
+			status: "pending",
+			manually_created: false,
+			table_number: 1,
+			ranking_score_delta: 0,
+			event_id: eventId,
+		} as const;
+
 		await client.transact(async (tx) => {
 			await tx.update("active_tournaments", tournamentId, (tournament) => {
 				tournament.status = "started";
 			});
 
-			await tx.insert("matches", {
-				player_1: player1.id,
-				player_2: player2.id,
-				umpire: umpire.id,
-				status: "pending",
-				manually_created: false,
-				table_number: 1,
-				ranking_score_delta: 0,
-				event_id: eventId,
-			});
+			await tx.insert("matches", newMatch);
 		});
 
-		return { success: true };
+		return { success: true, match: newMatch };
 	};
 }

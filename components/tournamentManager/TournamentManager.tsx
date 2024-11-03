@@ -70,7 +70,11 @@ export function TournamentManager() {
 					</Button>
 					<Button
 						variant="destructive"
-						onClick={() => service.resetTournament(tournamentState)}
+						onClick={() => {
+							const tournamentId = tournamentState.id;
+							const matchIds = tournamentState.matches.map((m) => m.id);
+							return service.resetTournament(tournamentId, matchIds);
+						}}
 					>
 						Reset Tournament
 					</Button>

@@ -1,8 +1,7 @@
-import type { StateValue } from "xstate";
-import type { TournamentState } from "@/lib/tournamentManager/hooks/useTournamentState";
+import type { TournamentState } from "@/lib/tournamentManager/hooks/useTournament";
 
 type StateVisualizerProps = {
-	state: StateValue;
+	state: string;
 	context: TournamentState;
 	tableCount: number;
 };

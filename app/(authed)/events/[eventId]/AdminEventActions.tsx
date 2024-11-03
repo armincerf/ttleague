@@ -61,6 +61,9 @@ function CreateMatchDialog({
 				edited_at: new Date(),
 				status: "pending",
 				ranking_score_delta: 0,
+				playersConfirmed: new Set(),
+				umpireConfirmed: false,
+				startTime: new Date(),
 			};
 
 			await client.insert("matches", match);
@@ -158,6 +161,9 @@ async function generateRandomMatches(eventId: string, count: number) {
 		edited_at: new Date(),
 		status: "pending",
 		ranking_score_delta: 0,
+		playersConfirmed: new Set(),
+		umpireConfirmed: false,
+		startTime: new Date(),
 	}));
 
 	for (const match of matches) {

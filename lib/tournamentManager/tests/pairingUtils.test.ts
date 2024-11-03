@@ -26,12 +26,12 @@ describe("pairingUtils", () => {
 		];
 
 		it("should return true if players have played", () => {
-			expect(hasPlayedMatch("1", "2", matches)).toBe(true);
-			expect(hasPlayedMatch("2", "1", matches)).toBe(true);
+			expect(hasPlayedMatch("1", "2", matches, 1)).toBe(true);
+			expect(hasPlayedMatch("2", "1", matches, 1)).toBe(true);
 		});
 
 		it("should return false if players haven't played", () => {
-			expect(hasPlayedMatch("1", "3", matches)).toBe(false);
+			expect(hasPlayedMatch("1", "3", matches, 1)).toBe(false);
 		});
 	});
 });

@@ -3,7 +3,7 @@ import { schema } from "@/triplit/schema";
 import type { Match, User, ActiveTournament } from "@/triplit/schema";
 
 export function createTestClient() {
-	return new TriplitClient({ schema });
+	return new TriplitClient({ schema, autoConnect: false });
 }
 
 export async function createMockEvent(client: TriplitClient<typeof schema>) {
@@ -31,6 +31,8 @@ export async function createMockTournament(
 		player_ids: new Set<string>(),
 		created_at: new Date(),
 		updated_at: new Date(),
+		bracket_type: "round_robin",
+		total_rounds: 1,
 	} satisfies ActiveTournament;
 
 	await client.insert("active_tournaments", tournament);
