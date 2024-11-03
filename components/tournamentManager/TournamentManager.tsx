@@ -49,16 +49,6 @@ export function TournamentManager() {
 					Tournament Management System
 				</h1>
 				<div className="flex items-center gap-2">
-					<Input
-						type="number"
-						value={tournamentState.total_rounds}
-						className="w-16"
-						onChange={(e) =>
-							service.updateTournament(tournamentState.id, {
-								total_rounds: Number.parseInt(e.target.value),
-							})
-						}
-					/>
 					<Button
 						variant="outline"
 						onClick={() =>
@@ -84,6 +74,17 @@ export function TournamentManager() {
 					>
 						Reset Tournament
 					</Button>
+					<span>Number of Rounds</span>
+					<Input
+						type="number"
+						value={tournamentState.total_rounds}
+						className="w-16"
+						onChange={(e) =>
+							service.updateTournament(tournamentState.id, {
+								total_rounds: Number.parseInt(e.target.value),
+							})
+						}
+					/>
 				</div>
 
 				<StateVisualizer
