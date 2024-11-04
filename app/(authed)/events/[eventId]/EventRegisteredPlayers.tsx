@@ -1,5 +1,5 @@
 "use client";
-
+import * as R from "remeda";
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryOne } from "@triplit/react";
@@ -83,10 +83,14 @@ export function EventRegisteredPlayers({
 
 	const isLoading = useLoadingState(fetching, event);
 	const players =
-		event?.registrations?.map((r) => r.user).filter(Boolean) ?? [];
+		R.pipe(
+			event?.registrations ?? [],
+			R.map((r) => r.user),
+			R.uniqueBy((u) => u?.id),
+		).filter(Boolean) ?? [];
 	const playerCount = players.length;
 	const currentUserRegistered = players.some(
-		(player) => player.id === user?.id,
+		(player) => player?.id === user?.id,
 	);
 	console.log({
 		event,
@@ -128,7 +132,7 @@ export function EventRegisteredPlayers({
 							</DialogDescription>
 						</DialogHeader>
 						<ul>
-							{players.map((player) => (
+							{players.filter(Boolean).map((player) => (
 								<li key={player.id} className="flex items-center py-2">
 									<Avatar className="mr-2">
 										<AvatarImage

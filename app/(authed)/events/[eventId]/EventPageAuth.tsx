@@ -1,9 +1,12 @@
+"use client";
 import { Button } from "@/components/ui/button";
-import type { fetchEvents } from "@/lib/actions/events";
-import { ClerkProvider, useUser } from "@clerk/nextjs";
+import { useUser } from "@clerk/nextjs";
 import dynamic from "next/dynamic";
 import MatchListSkeleton from "./MatchListSkeleton";
 import type { Event } from "@/lib/actions/events";
+import Link from "next/link";
+import { client } from "@/lib/triplit";
+import { useQueryOne } from "@triplit/react";
 
 type Props = {
 	event: NonNullable<Event>;
@@ -48,8 +51,12 @@ export function EventPageAuth({ event }: Props) {
 		(match) => match.status === "confirmed" && !match.winner,
 	);
 
-	const myEventRegistration = event.registrations?.find(
-		(registration) => registration.user_id === userId,
+	const { result: myEventRegistration } = useQueryOne(
+		client,
+		client.query("event_registrations").where([
+			["event_id", "=", event.id],
+			["user_id", "=", userId || ""],
+		]),
 	);
 
 	return (
@@ -60,13 +67,17 @@ export function EventPageAuth({ event }: Props) {
 				<div>No matches found</div>
 			)}
 
-			{event.status === "scheduled" && (
-				<EventRegistrationButton
-					eventId={event.id}
-					leagueId={event.league_id}
-					serverEventRegistration={myEventRegistration}
-				/>
+			{event.status === "active" && myEventRegistration && (
+				<Link href={`/events/${event.id}/active`}>
+					<Button>Join Event!</Button>
+				</Link>
 			)}
+
+			<EventRegistrationButton
+				eventId={event.id}
+				leagueId={event.league_id}
+				serverEventRegistration={myEventRegistration}
+			/>
 		</>
 	);
 }

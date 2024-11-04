@@ -34,8 +34,7 @@ import {
 import { ProfileImageUpload } from "./ProfileUpload";
 import { onboardingSchema, type OnboardingFormValues } from "../schema";
 import { toast } from "@/hooks/use-toast";
-import { HttpClient } from "@triplit/client";
-import { schema } from "@/triplit/schema";
+import { createUser } from "@/app/actions/users";
 import { usePostHog } from "posthog-js/react";
 
 export default function OnboardingForm() {
@@ -69,32 +68,18 @@ export default function OnboardingForm() {
 				return;
 			}
 			try {
-				const token = await getToken();
-				if (!token) {
-					throw new Error("No token available");
-				}
-				const client = new HttpClient({
-					schema,
-					serverUrl: process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
-					token,
-				});
+				const result = await createUser(value);
 
-				const result = await client.insert("users", {
-					id: user.id,
-					table_tennis_england_id: value.tableTennisEnglandId,
-					email: value.email,
-					first_name: value.firstName,
-					profile_image_url: user.imageUrl,
-					last_name: value.lastName,
-					rating: initialRating(value.currentLeagueDivision),
-					current_division: value.currentLeagueDivision,
-					registered_league_ids: new Set(["mk-ttl-singles"]),
-					matches_played: 0,
-					wins: 0,
-					losses: 0,
-					no_shows: 0,
-				});
-				if (result.output.email === value.email) {
+				if (!result.success) {
+					console.error("Error creating user:", result.error);
+					toast({
+						variant: "destructive",
+						title: "Error saving your details, complain to support",
+						description: result.error,
+					});
+				}
+
+				if (result.success) {
 					router.push("/onboarding/next-event/mk-ttl-singles");
 				}
 			} catch (error) {

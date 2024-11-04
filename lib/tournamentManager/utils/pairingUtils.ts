@@ -27,35 +27,61 @@ export function hasPlayedMatch(
 	return matchCount >= totalRounds;
 }
 
+export function createPairKey(id1: string, id2: string) {
+	return [id1, id2].sort().join("-");
+}
+
+export function getPlayerPairScore(
+	[p1, p2]: readonly [User, User],
+	pairMatchCounts: Map<string, number>,
+	playerMatchCounts: Map<string, number>,
+) {
+	const pairKey = createPairKey(p1.id, p2.id);
+	const pairMatches = pairMatchCounts.get(pairKey) ?? 0;
+	const totalMatches =
+		(playerMatchCounts.get(p1.id) ?? 0) + (playerMatchCounts.get(p2.id) ?? 0);
+	const priorityScore =
+		(p1.current_tournament_priority ?? 0) +
+		(p2.current_tournament_priority ?? 0);
+
+	// Weights: total matches (10) > pair matches (5) > priority (2)
+	return totalMatches * 10 + pairMatches * 5 - priorityScore * 2;
+}
 export function findValidPlayerPair(
 	players: User[],
 	matches: Match[],
 	totalRounds = 1,
 ) {
-	// Sort players by number of matches played
+	// Count matches between each pair and individual matches
+	const pairMatchCounts = new Map<string, number>();
+	const playerMatchCounts = new Map<string, number>();
+
+	for (const match of matches) {
+		const pairKey = createPairKey(match.player_1, match.player_2);
+		pairMatchCounts.set(pairKey, (pairMatchCounts.get(pairKey) ?? 0) + 1);
+
+		playerMatchCounts.set(
+			match.player_1,
+			(playerMatchCounts.get(match.player_1) ?? 0) + 1,
+		);
+		playerMatchCounts.set(
+			match.player_2,
+			(playerMatchCounts.get(match.player_2) ?? 0) + 1,
+		);
+	}
+
 	const playerPairs = players.flatMap((p1, i) =>
 		players.slice(i + 1).map((p2) => [p1, p2] as const),
 	);
 
-	// Count matches between each pair
-	const pairMatchCounts = new Map<string, number>();
-	for (const match of matches) {
-		const pairKey = [match.player_1, match.player_2].sort().join("-");
-		pairMatchCounts.set(pairKey, (pairMatchCounts.get(pairKey) ?? 0) + 1);
-	}
-
-	// Sort pairs by number of matches played together
 	return playerPairs
-		.sort((a, b) => {
-			const pairKeyA = [a[0].id, a[1].id].sort().join("-");
-			const pairKeyB = [b[0].id, b[1].id].sort().join("-");
-			const matchesA = pairMatchCounts.get(pairKeyA) ?? 0;
-			const matchesB = pairMatchCounts.get(pairKeyB) ?? 0;
-			return matchesA - matchesB;
-		})
+		.sort(
+			(a, b) =>
+				getPlayerPairScore(a, pairMatchCounts, playerMatchCounts) -
+				getPlayerPairScore(b, pairMatchCounts, playerMatchCounts),
+		)
 		.find(([p1, p2]) => {
-			const pairKey = [p1.id, p2.id].sort().join("-");
-			const matchCount = pairMatchCounts.get(pairKey) ?? 0;
-			return matchCount < totalRounds;
+			const pairKey = createPairKey(p1.id, p2.id);
+			return (pairMatchCounts.get(pairKey) ?? 0) < totalRounds;
 		});
 }

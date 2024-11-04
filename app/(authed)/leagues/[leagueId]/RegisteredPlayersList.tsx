@@ -48,6 +48,7 @@ function PlayerAvatar({
 	);
 
 	const registrationCount = registrations?.length ?? 0;
+	if (!player) return null;
 
 	return (
 		<>

@@ -5,6 +5,8 @@ import { createMatchGenerator } from "../utils/matchUtils";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createMatchConfirmation } from "../utils/matchConfirmationUtils";
 
+const marky = require("marky");
+
 export function createTournamentService(client: TriplitClient<typeof schema>) {
 	const matchGenerator = createMatchGenerator(client);
 	const matchConfirmation = createMatchConfirmation(client);
@@ -13,6 +15,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 		matchConfirmation,
 
 		async createTournament(eventId: string) {
+			marky.mark("createTournament");
 			const tournament = await client.insert("active_tournaments", {
 				event_id: eventId,
 				status: "idle",
@@ -27,10 +30,12 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				description: "New tournament has been created",
 			});
 
+			marky.stop("createTournament");
 			return tournament.output;
 		},
 
 		async resetTournament(tournamentId: string, matchIds: string[]) {
+			marky.mark("resetTournament");
 			await client.transact(async (tx) => {
 				for (const matchId of matchIds) {
 					await tx.delete("matches", matchId);
@@ -42,36 +47,51 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				title: "Tournament Reset",
 				description: "Tournament and all matches have been deleted",
 			});
+			marky.stop("resetTournament");
 		},
 
 		async addPlayer(tournamentId: string, playerId: string) {
-			await client.update("active_tournaments", tournamentId, (tournament) => {
-				tournament.player_ids.add(playerId);
+			marky.mark("addPlayer");
+			await client.transact(async (tx) => {
+				await tx.update("active_tournaments", tournamentId, (tournament) => {
+					tournament.player_ids.add(playerId);
+				});
+				await tx.update("users", playerId, (user) => {
+					user.current_tournament_priority = 5;
+				});
 			});
+			marky.stop("addPlayer");
 		},
 
 		async removePlayer(tournamentId: string, playerId: string) {
+			marky.mark("removePlayer");
 			await client.update("active_tournaments", tournamentId, (tournament) => {
 				tournament.player_ids.delete(playerId);
 			});
+			marky.stop("removePlayer");
 		},
 
 		async updateTournament(
 			tournamentId: string,
 			updates: Partial<ActiveTournament>,
 		) {
+			marky.mark("updateTournament");
 			await client.update("active_tournaments", tournamentId, (tournament) => {
 				Object.assign(tournament, updates);
 			});
+			marky.stop("updateTournament");
 		},
 
 		async updateEvent(eventId: string, updates: Partial<Event>) {
+			marky.mark("updateEvent");
 			await client.update("events", eventId, (event) => {
 				Object.assign(event, updates);
 			});
+			marky.stop("updateEvent");
 		},
 
 		async generateNextMatch(tournamentId: string) {
+			marky.mark("generateNextMatch");
 			const tournament = await client.fetchOne(
 				client
 					.query("active_tournaments")
@@ -80,30 +100,16 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 					.include("matches")
 					.include("event")
 					.build(),
-				{ policy: "remote-only" },
+				{ policy: "remote-first" },
 			);
 			if (!tournament) {
 				console.error(`Tournament not found: ${tournamentId}`);
 				return;
 			}
 			console.log("tournament", tournament);
-			// TODO shouldn't be needed, think triplit sets are a bit bugged
-			const playerIds = Object.keys(tournament.player_ids);
-			const players = await client.fetch(
-				client.query("users").where("id", "in", playerIds).build(),
-				{ policy: "remote-only" },
-			);
-			const matches = await client.fetch(
-				client
-					.query("matches")
-					.where("event_id", "=", tournament.event_id)
-					.build(),
-				{ policy: "remote-only" },
-			);
-			const event = await client.fetchOne(
-				client.query("events").where("id", "=", tournament.event_id).build(),
-				{ policy: "remote-only" },
-			);
+			const matches = tournament.matches;
+			const players = tournament.players;
+			const event = tournament.event;
 			const activeMatches = matches.filter((m) => m.status === "ongoing");
 			const freeTables = (event?.tables.size ?? 1) - activeMatches.length;
 
@@ -125,6 +131,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				});
 			}
 
+			marky.stop("generateNextMatch");
 			return result;
 		},
 	};

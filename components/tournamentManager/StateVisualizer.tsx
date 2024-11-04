@@ -1,4 +1,10 @@
 import type { TournamentState } from "@/lib/tournamentManager/hooks/useTournament";
+import {
+	Accordion,
+	AccordionContent,
+	AccordionItem,
+	AccordionTrigger,
+} from "../ui/accordion";
 
 type StateVisualizerProps = {
 	state: string;
@@ -49,12 +55,18 @@ export function StateVisualizer({
 				</div>
 			</div>
 
-			<div className="mt-4">
-				<h3 className="font-medium text-gray-700 mb-2">Full Context:</h3>
-				<pre className="block p-2 bg-white rounded border overflow-auto max-h-96">
-					<code className="text-sm">{formatContext(context)}</code>
-				</pre>
-			</div>
+			<Accordion type="single" collapsible>
+				<AccordionItem value="full-context">
+					<AccordionTrigger>
+						<h3 className="font-medium text-gray-700">Full Context</h3>
+					</AccordionTrigger>
+					<AccordionContent>
+						<pre className="block p-2 bg-white rounded border overflow-auto max-h-96">
+							<code className="text-sm">{formatContext(context)}</code>
+						</pre>
+					</AccordionContent>
+				</AccordionItem>
+			</Accordion>
 		</div>
 	);
 }

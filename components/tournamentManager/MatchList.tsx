@@ -3,7 +3,7 @@ import { MatchCard } from "./MatchCard";
 import type { Match, User } from "@/triplit/schema";
 interface MatchListProps {
 	matches: Match[];
-	players: User[];
+	players?: User[];
 	tables: number;
 	freeTables: number;
 }
@@ -30,9 +30,9 @@ export function MatchList({
 			) : (
 				<ul className="space-y-4">
 					{activeMatches.map((match, index) => {
-						const player1 = players.find((p) => p.id === match.player_1);
-						const player2 = players.find((p) => p.id === match.player_2);
-						const umpire = players.find((p) => p.id === match.umpire);
+						const player1 = players?.find((p) => p.id === match.player_1);
+						const player2 = players?.find((p) => p.id === match.player_2);
+						const umpire = players?.find((p) => p.id === match.umpire);
 						if (!player1 || !player2 || !umpire) return null;
 
 						return (

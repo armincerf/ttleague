@@ -17,7 +17,7 @@ import { SignUpButton } from "@clerk/nextjs";
 type EventRegistrationButtonProps = {
 	eventId: string;
 	leagueId: string;
-	serverEventRegistration?: EventRegistration;
+	serverEventRegistration?: EventRegistration | null;
 };
 
 async function registerForEvent(data: EventRegistration) {

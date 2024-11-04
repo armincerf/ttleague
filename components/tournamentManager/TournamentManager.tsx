@@ -11,6 +11,7 @@ import { Scoreboard } from "./Scoreboard";
 import { RemainingMatches } from "./RemainingMatches";
 import { useTournament } from "@/lib/tournamentManager/hooks/useTournament";
 import { Input } from "../ui/input";
+import { useEffect, useState } from "react";
 
 const eventId = "mock-event";
 
@@ -31,7 +32,6 @@ export function TournamentManager() {
 		if (!tournamentState) return;
 		await service.generateNextMatch(tournamentState.id);
 	};
-
 	if (!tournamentState)
 		return (
 			<div>
@@ -44,6 +44,11 @@ export function TournamentManager() {
 	const activeMatches = matches.filter(
 		(m) => m.status === "ongoing" || m.status === "pending",
 	);
+	console.log(
+		"tournamentState",
+		tournamentState?.event?.tables.size,
+		activeMatches.length,
+	);
 
 	return (
 		<div className="max-w-6xl mx-auto">
@@ -55,12 +60,14 @@ export function TournamentManager() {
 				<div className="flex items-center gap-2">
 					<Button
 						variant="outline"
-						onClick={() =>
-							service.addPlayer(
-								tournamentState.id,
-								allUsersNotInTournament[0].id,
-							)
-						}
+						onClick={() => {
+							if (allUsersNotInTournament.length > 0) {
+								service.addPlayer(
+									tournamentState.id,
+									allUsersNotInTournament[0].id,
+								);
+							}
+						}}
 					>
 						Add Player
 					</Button>
@@ -128,7 +135,7 @@ export function TournamentManager() {
 						players={players}
 						tables={tournamentState.event?.tables.size ?? 1}
 						freeTables={
-							tournamentState.event?.tables.size ?? 1 - activeMatches.length
+							(tournamentState.event?.tables.size ?? 1) - activeMatches.length
 						}
 					/>
 					<Scoreboard players={players} matches={matches} />

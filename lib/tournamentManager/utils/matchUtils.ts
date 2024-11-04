@@ -12,6 +12,7 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 		freeTables: number,
 	) {
 		if (waitingPlayers.length < 3) {
+			console.log("Not enough players", waitingPlayers);
 			return { success: false, error: "Not enough players" };
 		}
 
@@ -21,7 +22,7 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 
 		const validPair = findValidPlayerPair(waitingPlayers, matches, totalRounds);
 		if (!validPair?.[0] || !validPair?.[1]) {
-			return { success: false, error: "No valid matches" };
+			return { success: false, error: "No more valid matches" };
 		}
 
 		const usedTables = new Set(
@@ -33,13 +34,28 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			) ?? 1;
 
 		const [player1, player2] = validPair;
-		const umpire = waitingPlayers.find(
+		const availableUmpires = waitingPlayers.filter(
 			(p) => p.id !== player1.id && p.id !== player2.id,
 		);
 
-		if (!umpire) {
+		if (availableUmpires.length === 0) {
 			return { success: false, error: "No available umpire" };
 		}
+
+		// Count how many times each player has umpired
+		const umpireCount = matches.reduce<Record<string, number>>((acc, match) => {
+			if (match.umpire) {
+				acc[match.umpire] = (acc[match.umpire] ?? 0) + 1;
+			}
+			return acc;
+		}, {});
+
+		// Select umpire with lowest count
+		const umpire = availableUmpires.reduce((lowest, current) => {
+			const lowestCount = umpireCount[lowest.id] ?? 0;
+			const currentCount = umpireCount[current.id] ?? 0;
+			return currentCount < lowestCount ? current : lowest;
+		}, availableUmpires[0]);
 
 		const newMatch = {
 			id: `match-${nanoid()}`,
@@ -59,6 +75,15 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			});
 
 			await tx.insert("matches", newMatch);
+			await tx.update("users", player1.id, (user) => {
+				user.current_tournament_priority = 0;
+			});
+			await tx.update("users", player2.id, (user) => {
+				user.current_tournament_priority = 0;
+			});
+			await tx.update("users", umpire.id, (user) => {
+				user.current_tournament_priority = 3;
+			});
 		});
 
 		return { success: true, match: newMatch };
