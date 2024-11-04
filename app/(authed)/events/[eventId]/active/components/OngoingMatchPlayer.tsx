@@ -1,10 +1,15 @@
-import { MatchScoreCard } from "@/components/MatchScoreCard";
+import { type MatchScore, MatchScoreCard } from "@/components/MatchScoreCard";
 import { Button } from "@/components/ui/button";
 import { useAsyncAction } from "@/lib/hooks/useAsyncAction";
 import { getDivision } from "@/lib/ratingSystem";
 import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
 import type { User } from "@/triplit/schema";
+import { LivePlayerScore } from "./LivePlayerScore";
+import { useState } from "react";
+import { useQuery as useTSQuery } from "@tanstack/react-query";
+import { client } from "@/lib/triplit";
+import { fetchMatchScores } from "@/lib/matches/queries";
 
 type OngoingMatchPlayerProps = {
 	match: TournamentMatch & {
@@ -32,40 +37,29 @@ export function OngoingMatchPlayer({
 		actionName: "Done Playing",
 	});
 	const players = match.players.filter(Boolean);
+	const me = players.find((p) => p?.id === userId);
+
+	const { data = [] } = useTSQuery({
+		queryKey: ["matchResult", match.id],
+		queryFn: () => fetchMatchScores(match.id),
+		enabled: !!matchEnded,
+	});
+	console.log("data", data);
 
 	return (
 		<div className="p-4">
 			{!matchEnded && (
-				<div className="bg-green-50 border border-green-200 rounded-lg p-4">
-					<h2 className="text-lg font-semibold mb-2">Match in Progress</h2>
-					<p className="mb-4">Table {match.table_number}</p>
-
-					<div className="flex justify-between items-center mb-6">
-						{players.slice(0, 2).map((player) => (
-							<div
-								key={player.id}
-								className={`text-center ${player.id === userId ? "ring-2 ring-blue-500 rounded-xl p-2" : ""}`}
-							>
-								{player.profile_image_url && (
-									<img
-										src={player.profile_image_url}
-										alt=""
-										className="w-12 h-12 rounded-full mx-auto mb-2"
-									/>
-								)}
-								<span className="block">
-									{player.first_name} {player.last_name}
-								</span>
-							</div>
-						))}
-					</div>
-
-					<div className="space-y-4">
-						<p className="text-sm text-gray-600 text-center">
-							Waiting for umpire to record scores...
-						</p>
-					</div>
-				</div>
+				<LivePlayerScore
+					matchId={match.id}
+					userId={userId}
+					player={{
+						id: userId,
+						scoreKey:
+							match.player_1 === userId ? "player_1_score" : "player_2_score",
+						name: `${me?.first_name} ${me?.last_name}`,
+						avatar: me?.profile_image_url,
+					}}
+				/>
 			)}
 			{matchEnded && players && players.length >= 2 && (
 				<div className="text-sm text-gray-600 text-center">
@@ -86,29 +80,7 @@ export function OngoingMatchPlayer({
 							rating: players[1].rating ?? 0,
 							avatar: players[1].profile_image_url,
 						}}
-						scores={[
-							{
-								player1Points: 11,
-								player2Points: 9,
-								isComplete: true,
-								isValid: true,
-								isStarted: true,
-							},
-							{
-								player1Points: 9,
-								player2Points: 11,
-								isComplete: true,
-								isValid: true,
-								isStarted: true,
-							},
-							{
-								player1Points: 9,
-								player2Points: 11,
-								isComplete: true,
-								isValid: true,
-								isStarted: true,
-							},
-						]}
+						scores={data}
 						bestOf={match.best_of}
 					/>
 					<p>

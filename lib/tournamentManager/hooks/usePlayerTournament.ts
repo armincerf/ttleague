@@ -37,6 +37,7 @@ type PlayerTournamentState = {
 
 export function usePlayerTournament(playerId: string) {
 	const { state: tournamentState } = useTournament();
+	console.log("tournamentState", tournamentState);
 
 	const matches = tournamentState?.matches;
 	const activeMatches = matches?.filter(

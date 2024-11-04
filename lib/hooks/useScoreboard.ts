@@ -1,24 +1,22 @@
-import { useActor, useActorRef, useMachine, useSelector } from "@xstate/react";
-import { useEffect, useCallback } from "react";
-import {
-	createScoreboardMachine,
-	type ScoreboardContext,
-	type ScoreboardCallbacks,
-	ScoreboardStateSchema,
-} from "../scoreboard/machine";
-import { DEFAULT_GAME_STATE } from "@/lib/scoreboard/constants";
+import { useSelector } from "@xstate/react";
+import { useEffect } from "react";
+import type { ScoreboardContext } from "../scoreboard/machine";
 import {
 	ScoreboardMachineContext,
 	STORAGE_KEY,
 } from "../contexts/ScoreboardContext";
 import { debounce } from "@/lib/utils";
-import type { MachineSnapshot, StateValue } from "xstate";
-import { sub } from "date-fns";
 
 export interface StateProvider {
-	updateScore: (player: 1 | 2, score: number) => Promise<void>;
-	updatePlayerOneStarts: (starts: boolean) => Promise<void>;
-	updateGame: (gameState: Partial<ScoreboardContext>) => Promise<void>;
+	updateScore?: (
+		playerId: string,
+		score: number,
+		sidesSwapped: boolean,
+	) => Promise<void>;
+	updatePlayerOneStarts?: (starts: boolean) => Promise<void>;
+	updateGame?: (gameState: Partial<ScoreboardContext>) => Promise<void>;
+	onGameComplete?: (state: ScoreboardContext) => Promise<void>;
+	onMatchComplete?: (state: ScoreboardContext) => Promise<void>;
 	onExternalUpdate?: (
 		callback: (state: Partial<ScoreboardContext>) => void,
 	) => () => void;

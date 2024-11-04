@@ -1,4 +1,4 @@
-import ActiveEvent from "./ActiveEvent";
+import ActiveEventNoSSR from "./ActiveEventNoSSR";
 
 export default async function ActiveEventWrapper({
 	params,
@@ -6,5 +6,5 @@ export default async function ActiveEventWrapper({
 	params: Promise<{ eventId: string }>;
 }) {
 	const { eventId } = await params;
-	return <ActiveEvent eventId={eventId} />;
+	return <ActiveEventNoSSR eventId={eventId} />;
 }

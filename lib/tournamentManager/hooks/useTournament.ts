@@ -2,6 +2,7 @@ import { useQueryOne } from "@triplit/react";
 import { client as triplitClient } from "@/lib/triplit";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createTournamentService } from "../services/tournamentService";
+import { useMemo } from "react";
 export const tournamentService = createTournamentService(triplitClient);
 export function useTournament() {
 	const result = useQueryOne(
@@ -13,15 +14,19 @@ export function useTournament() {
 			.include("matches"),
 	).result;
 
-	const state = result
-		? {
-				...result,
-				waitingPlayers: getWaitingPlayers(
-					result.players ?? [],
-					result.matches ?? [],
-				),
-			}
-		: null;
+	const state = useMemo(
+		() =>
+			result
+				? {
+						...result,
+						waitingPlayers: getWaitingPlayers(
+							result.players ?? [],
+							result.matches ?? [],
+						),
+					}
+				: null,
+		[result],
+	);
 
 	return {
 		state,

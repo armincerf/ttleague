@@ -8,12 +8,12 @@ interface Player {
 	avatar?: string;
 }
 
-interface MatchScore {
+export interface MatchScore {
 	player1Points: number;
 	player2Points: number;
-	isComplete: boolean;
+	completedAt?: Date;
+	startedAt?: Date;
 	isValid: boolean;
-	isStarted: boolean;
 }
 
 interface MatchProps {
@@ -49,6 +49,14 @@ function PlayerCard({ player }: PlayerCardProps) {
 	);
 }
 
+function createEmptyScore(): MatchScore {
+	return {
+		player1Points: 0,
+		player2Points: 0,
+		isValid: false,
+	};
+}
+
 export function MatchScoreCard({
 	player1,
 	player2,
@@ -62,9 +70,16 @@ export function MatchScoreCard({
 	table,
 }: MatchProps) {
 	const gamesNeededToWin = Math.ceil(bestOf / 2);
-	const totalGamesWon = scores.reduce(
+	const paddedScores = [
+		...scores,
+		...Array(bestOf - scores.length)
+			.fill(0)
+			.map(createEmptyScore),
+	];
+
+	const totalGamesWon = paddedScores.reduce(
 		(acc, score) => {
-			if (score.isComplete && score.isValid) {
+			if (score.completedAt && score.isValid) {
 				return {
 					player1:
 						acc.player1 + (score.player1Points > score.player2Points ? 1 : 0),
@@ -96,7 +111,6 @@ export function MatchScoreCard({
 				</div>
 			</div>
 
-			{/* Match Scores - restructured to match example */}
 			<div className="bg-blue-50">
 				<PlayerCard player={player1} />
 				<div className="flex border-y border-blue-200">
@@ -126,7 +140,7 @@ export function MatchScoreCard({
 
 					{/* Game Points */}
 					<div className="flex flex-1">
-						{scores.map((score, index) => (
+						{paddedScores.map((score, index) => (
 							<div
 								key={`score-${
 									// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
@@ -140,7 +154,7 @@ export function MatchScoreCard({
 										score.player1Points > score.player2Points && "font-bold",
 									)}
 								>
-									{score.isStarted ? score.player1Points : "-"}
+									{score.startedAt ? score.player1Points : "-"}
 								</div>
 								<div
 									className={cn(
@@ -148,7 +162,7 @@ export function MatchScoreCard({
 										score.player2Points > score.player1Points && "font-bold",
 									)}
 								>
-									{score.isStarted ? score.player2Points : "-"}
+									{score.startedAt ? score.player2Points : "-"}
 								</div>
 							</div>
 						))}

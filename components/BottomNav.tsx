@@ -30,12 +30,14 @@ export default function BottomNav() {
 
 	useTokenCheck();
 	useAdminActionListener();
+	const isHidden =
+		pathname.includes("onboarding") || pathname.endsWith("/active");
 
 	return (
 		<div
 			className={`bottom-0 left-0 z-40 w-full bg-white border-t border-gray-200 
 				dark:bg-gray-700 dark:border-gray-600 pb-safe-area-inset-bottom
-				${pathname.includes("onboarding") ? "hidden" : "fixed"}`}
+				${isHidden ? "hidden" : "fixed"}`}
 		>
 			<div className="grid h-16 max-w-lg grid-cols-4 mx-auto font-medium">
 				{navItems.map((item) => (

@@ -11,14 +11,24 @@ export function createMatchConfirmation(client: TriplitClient<typeof schema>) {
 		},
 
 		async confirmInitialMatchUmpire(matchId: string, umpireId: string) {
-			await client.update("matches", matchId, (match) => {
-				match.status = "ongoing";
-				match.startTime = new Date();
-				match.umpireConfirmed = true;
-				match.updated_by = umpireId;
+			await client.transact(async (tx) => {
+				await tx.update("matches", matchId, (match) => {
+					match.status = "ongoing";
+					match.startTime = new Date();
+					match.umpireConfirmed = true;
+					match.updated_by = umpireId;
+				});
+
+				await tx.insert("games", {
+					match_id: matchId,
+					player_1_score: 0,
+					player_2_score: 0,
+					game_number: 1,
+					started_at: new Date(),
+					updated_by: umpireId,
+				});
 			});
 		},
-
 		async confirmWinner(matchId: string, winnerId: string) {
 			await client.update("matches", matchId, (match) => {
 				match.winner = winnerId;

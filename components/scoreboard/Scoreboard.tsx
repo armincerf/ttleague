@@ -29,14 +29,17 @@ interface ScoreboardProps {
 	initialState?: Partial<ScoreboardContext>;
 	stateProvider?: StateProvider;
 	loading?: boolean;
+	persistState?: boolean;
+	showTopBar?: boolean;
 }
 
 export default function Scoreboard({
 	player1: initialPlayer1,
 	player2: initialPlayer2,
-	initialState = {},
+	persistState = false,
 	stateProvider,
 	loading = false,
+	showTopBar = false,
 }: ScoreboardProps) {
 	function handlePlayersSubmit(newPlayer1: Player, newPlayer2: Player) {
 		console.log("handlePlayersSubmit", newPlayer1, newPlayer2);
@@ -44,23 +47,37 @@ export default function Scoreboard({
 
 	const { userId } = useAuth();
 	const user = useEntity(client, "users", userId ?? "");
+	console.log("user", initialPlayer1, initialPlayer2);
 
 	return (
-		<ScoreboardProvider stateProvider={stateProvider}>
+		<ScoreboardProvider
+			persistState={persistState}
+			stateProvider={stateProvider}
+		>
 			<ScoreboardContent
 				loading={loading}
 				onPlayersSubmit={handlePlayersSubmit}
+				showTopBar={showTopBar}
 				initialPlayer1={
 					initialPlayer1 || {
 						firstName: user?.result?.first_name,
 						lastName: user?.result?.last_name,
-						id: user?.result?.id ?? "player1",
+						id: user?.result?.id ?? "player1?",
 						gamesWon: 0,
 						currentScore: 0,
 						matchPoint: false,
 					}
 				}
-				initialPlayer2={initialPlayer2}
+				initialPlayer2={
+					initialPlayer2 || {
+						firstName: "Player",
+						lastName: "2",
+						id: "player2?",
+						gamesWon: 0,
+						currentScore: 0,
+						matchPoint: false,
+					}
+				}
 			/>
 		</ScoreboardProvider>
 	);
@@ -69,36 +86,40 @@ export default function Scoreboard({
 function ScoreboardContent({
 	loading,
 	onPlayersSubmit,
+	showTopBar,
 	initialPlayer1,
 	initialPlayer2,
 }: {
 	loading: boolean;
 	onPlayersSubmit: (player1: Player, player2: Player) => void;
+	showTopBar?: boolean;
 	initialPlayer1?: Player;
 	initialPlayer2?: Player;
 }) {
 	const [isLandscape, setIsLandscape] = useState(false);
 	const [showSettings, setShowSettings] = useState(false);
 
-	console.log("initialPlayer1", initialPlayer1, loading);
-
 	const { state, send, isGameOver, isMatchOver } = useScoreboard();
 
 	useEffect(() => {
 		send({
-			type: "UPDATE_PLAYER_NAME",
+			type: "UPDATE_PLAYER",
 			isPlayerOne: true,
 			firstName: initialPlayer1?.firstName ?? "Player",
 			lastName: initialPlayer1?.lastName ?? "1",
+			id: initialPlayer1?.id ?? "player1?",
+			gamesWon: initialPlayer1?.gamesWon ?? 0,
 		});
 	}, [initialPlayer1, send]);
 
 	useEffect(() => {
 		send({
-			type: "UPDATE_PLAYER_NAME",
+			type: "UPDATE_PLAYER",
 			isPlayerOne: false,
 			firstName: initialPlayer2?.firstName ?? "Player",
 			lastName: initialPlayer2?.lastName ?? "2",
+			id: initialPlayer2?.id ?? "player2?",
+			gamesWon: initialPlayer2?.gamesWon ?? 0,
 		});
 	}, [initialPlayer2, send]);
 
@@ -122,7 +143,7 @@ function ScoreboardContent({
 
 	return (
 		<div className={`relative p-0 m-0 ${impact.variable} w-full h-full`}>
-			{!isLandscape && <TopBar />}
+			{showTopBar && !isLandscape && <TopBar />}
 			<button
 				type="button"
 				onClick={() => setShowSettings(true)}

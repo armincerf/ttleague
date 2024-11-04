@@ -4,9 +4,9 @@ import type { ScoreboardContext } from "./machine";
 
 export function createTriplitProvider(gameId: string): StateProvider {
 	return {
-		async updateScore(player: 1 | 2, score: number) {
+		async updateScore(playerId: string, score: number) {
 			await client.update("games", gameId, (game) => {
-				if (player === 1) {
+				if (playerId === "player1") {
 					game.player_1_score = score;
 				} else {
 					game.player_2_score = score;

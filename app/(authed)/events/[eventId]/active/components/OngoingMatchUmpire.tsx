@@ -1,11 +1,18 @@
 import { MatchScoreCard } from "@/components/MatchScoreCard";
+import Scoreboard from "@/components/scoreboard/Scoreboard";
 import { Button } from "@/components/ui/button";
 import { useAsyncAction } from "@/lib/hooks/useAsyncAction";
 import { getDivision } from "@/lib/ratingSystem";
+import { getWinner } from "@/lib/scoreboard/utils";
 import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
+import { client } from "@/lib/triplit";
 import type { User } from "@/triplit/schema";
 import { useUser } from "@clerk/nextjs";
+import { useQuery, useQueryOne } from "@triplit/react";
+import { useEffect } from "react";
+import { fetchMatchScores } from "@/lib/matches/queries";
+import { useQuery as useTSQuery } from "@tanstack/react-query";
 
 type OngoingMatchUmpireProps = {
 	match: TournamentMatch & {
@@ -31,51 +38,134 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 	const awaitingUmpireConfirmation = !match.umpireConfirmed;
 	const { user } = useUser();
 	const players = match.players?.filter(Boolean);
+	const playerOne = players?.find((player) => player?.id === match.player_1);
+	const playerTwo = players?.find((player) => player?.id === match.player_2);
+	const { results: currentGames } = useQuery(
+		client,
+		client
+			.query("games")
+			.where([["match_id", "=", match.id]])
+			.order("started_at", "DESC")
+			.build(),
+	);
+	const playerOneGamesWon =
+		currentGames?.filter((game) => game.winner === match.player_1).length ?? 0;
+	const playerTwoGamesWon =
+		currentGames?.filter((game) => game.winner === match.player_2).length ?? 0;
+	const currentGame =
+		currentGames?.[0] && !currentGames[0].completed_at ? currentGames[0] : null;
+	const playerOneScore = currentGame?.player_1_score ?? 0;
+	const playerTwoScore = currentGame?.player_2_score ?? 0;
+	const bestOf = match.best_of;
+	const gamesNeededToWin = Math.floor(bestOf / 2) + 1;
+
+	const { data: scores = [] } = useTSQuery({
+		queryKey: ["matchResult", match.id],
+		queryFn: () => fetchMatchScores(match.id),
+		enabled: !!awaitingUmpireConfirmation,
+	});
+
+	useEffect(() => {
+		if (
+			(playerOneGamesWon >= gamesNeededToWin ||
+				playerTwoGamesWon >= gamesNeededToWin) &&
+			!awaitingUmpireConfirmation
+		) {
+			endMatchAction.executeAction(() =>
+				tournamentService.matchConfirmation.confirmWinner(
+					match.id,
+					playerOneGamesWon === gamesNeededToWin
+						? match.player_1
+						: match.player_2,
+				),
+			);
+		}
+	}, [
+		awaitingUmpireConfirmation,
+		match.id,
+		playerOneGamesWon,
+		playerTwoGamesWon,
+		match.player_1,
+		match.player_2,
+		endMatchAction.executeAction,
+		gamesNeededToWin,
+	]);
 	return (
-		<div className="p-4">
-			{!awaitingUmpireConfirmation && (
-				<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-					<h2 className="text-lg font-semibold mb-2">Umpiring Match</h2>
-					<p className="mb-4">Table {match.table_number}</p>
-
-					<div className="flex justify-between items-center mb-6">
-						{players?.slice(0, 2).map((player) => (
-							<div key={player.id} className="text-center">
-								{player.profile_image_url && (
-									<img
-										src={player.profile_image_url}
-										alt=""
-										className="w-12 h-12 rounded-full mx-auto mb-2"
-									/>
-								)}
-								<span className="block">
-									{player.first_name} {player.last_name}
-								</span>
-							</div>
-						))}
-					</div>
-
-					<div className="space-y-4">
-						{/* Score input controls would go here */}
-						<p className="text-sm text-gray-600 text-center">
-							Use the controls below to record scores
-						</p>
-						<Button
-							onClick={() =>
-								players &&
-								players.length >= 2 &&
-								endMatchAction.executeAction(() =>
-									tournamentService.matchConfirmation.confirmWinner(
-										match.id,
-										players[0].id,
-									),
-								)
-							}
-						>
-							End Match
-						</Button>
-					</div>
-				</div>
+		<>
+			{!awaitingUmpireConfirmation && playerOne?.id && playerTwo?.id && (
+				<Scoreboard
+					persistState={false}
+					showTopBar={false}
+					stateProvider={{
+						onGameComplete: async (state) => {
+							const playerOneScore = state.playerOne.currentScore;
+							const playerTwoScore = state.playerTwo.currentScore;
+							if (!currentGames || currentGames.length === 0) return;
+							await client.update("games", currentGames[0].id, (game) => {
+								game.player_1_score = playerOneScore;
+								game.player_2_score = playerTwoScore;
+								game.updated_at = new Date();
+								game.updated_by = userId;
+								game.winner =
+									playerOneScore > playerTwoScore
+										? match.player_1
+										: match.player_2;
+							});
+							const playerOneWonGame = playerOneScore > playerTwoScore;
+							const isMatchOver = playerOneWonGame
+								? playerOneGamesWon + 1 >= gamesNeededToWin
+								: playerTwoGamesWon + 1 >= gamesNeededToWin;
+							if (isMatchOver) return;
+							await client.insert("games", {
+								match_id: match.id,
+								game_number: currentGames[0].game_number + 1,
+								player_1_score: 0,
+								player_2_score: 0,
+								updated_by: userId,
+								sides_swapped: !state.sidesSwapped,
+							});
+						},
+						updateScore: async (playerId, score, sidesSwapped) => {
+							console.log("updateScore", playerId, score);
+							if (!currentGames || currentGames.length === 0) return;
+							await client.update("games", currentGames[0].id, (game) => {
+								game.sides_swapped = sidesSwapped;
+								if (playerId === match.player_1) {
+									game.player_1_score = score;
+								} else if (playerId === match.player_2) {
+									game.player_2_score = score;
+								}
+								game.updated_at = new Date();
+								game.updated_by = userId;
+							});
+						},
+						onMatchComplete: async (state) => {
+							const playerOneWin =
+								state.playerOne.currentScore > state.playerTwo.currentScore;
+							const winnerId = playerOneWin ? match.player_1 : match.player_2;
+							await tournamentService.matchConfirmation.confirmWinner(
+								match.id,
+								winnerId,
+							);
+						},
+					}}
+					player1={{
+						id: playerOne.id,
+						firstName: playerOne.first_name,
+						lastName: playerOne.last_name,
+						gamesWon: playerOneGamesWon,
+						currentScore: playerOneScore,
+						matchPoint: false,
+					}}
+					player2={{
+						id: playerTwo.id,
+						firstName: playerTwo.first_name,
+						lastName: playerTwo.last_name,
+						gamesWon: playerTwoGamesWon,
+						currentScore: playerTwoScore,
+						matchPoint: false,
+					}}
+				/>
 			)}
 			{awaitingUmpireConfirmation && players && players.length >= 2 && (
 				<div className="text-sm text-gray-600 text-center">
@@ -97,29 +187,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 							rating: players[1].rating ?? 0,
 							avatar: players[1].profile_image_url,
 						}}
-						scores={[
-							{
-								player1Points: 11,
-								player2Points: 9,
-								isComplete: true,
-								isValid: true,
-								isStarted: true,
-							},
-							{
-								player1Points: 9,
-								player2Points: 11,
-								isComplete: true,
-								isValid: true,
-								isStarted: true,
-							},
-							{
-								player1Points: 9,
-								player2Points: 11,
-								isComplete: true,
-								isValid: true,
-								isStarted: true,
-							},
-						]}
+						scores={scores}
 						bestOf={match.best_of}
 					/>
 					<p>
@@ -143,6 +211,6 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 					</Button>
 				</div>
 			)}
-		</div>
+		</>
 	);
 }

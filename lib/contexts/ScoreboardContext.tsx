@@ -29,16 +29,8 @@ interface ScoreboardProviderProps {
 	initialContext?: Partial<ScoreboardContext>;
 	stateProvider?: StateProvider;
 	children: React.ReactNode;
+	persistState?: boolean;
 }
-
-const machine = createScoreboardMachine({
-	onScoreChange: (playerId, score) => {
-		console.log("score change", playerId, score);
-	},
-	onGameComplete: (winnerIsPlayerOne) => {
-		console.log("game complete", winnerIsPlayerOne);
-	},
-});
 
 export const STORAGE_KEY = "scoreboard-json";
 
@@ -71,16 +63,20 @@ const getPersistedState = () => {
 const persistedState = getPersistedState();
 
 export function ScoreboardProvider({
-	initialContext = {},
 	stateProvider,
 	children,
+	persistState = false,
 }: ScoreboardProviderProps) {
+	const machine = createScoreboardMachine({
+		onScoreChange: stateProvider?.updateScore,
+		onGameComplete: stateProvider?.onGameComplete,
+	});
 	return (
 		<ScoreboardMachineContext.Provider
 			logic={machine}
 			options={{
 				input: {
-					initialContext: persistedState?.context,
+					initialContext: persistState ? persistedState?.context : {},
 				},
 			}}
 		>

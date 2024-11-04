@@ -28,6 +28,24 @@ export function TournamentManager() {
 	const matches = tournamentState?.matches ?? [];
 	const players = tournamentState?.players ?? [];
 
+	const [fetchTime, setFetchTime] = useState<number>(0);
+
+	const handleTestFetch = async () => {
+		const start = performance.now();
+		const res = await triplitClient.fetch(
+			triplitClient
+				.query("active_tournaments")
+				.where("id", "=", tournamentState?.id ?? "")
+				.include("event")
+				.include("matches")
+				.include("players")
+				.build(),
+		);
+		const end = performance.now();
+		console.log(res);
+		setFetchTime(end - start);
+	};
+
 	const handleStartTournament = async () => {
 		if (!tournamentState) return;
 		await service.generateNextMatch(tournamentState.id);
@@ -116,6 +134,9 @@ export function TournamentManager() {
 						}
 						className="w-16"
 					/>
+					<Button variant="outline" onClick={handleTestFetch}>
+						Test Fetch ({fetchTime.toFixed(2)}ms)
+					</Button>
 				</div>
 
 				<StateVisualizer

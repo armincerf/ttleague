@@ -85,8 +85,9 @@ export function SettingsModal({
 
 				if (player1NameChanged) {
 					send({
-						type: "UPDATE_PLAYER_NAME",
+						type: "UPDATE_PLAYER",
 						isPlayerOne: true,
+						id: context.playerOne.id,
 						firstName: player1Split.firstName,
 						lastName: player1Split.lastName,
 					});
@@ -94,8 +95,9 @@ export function SettingsModal({
 
 				if (player2NameChanged) {
 					send({
-						type: "UPDATE_PLAYER_NAME",
+						type: "UPDATE_PLAYER",
 						isPlayerOne: false,
+						id: context.playerTwo.id,
 						firstName: player2Split.firstName,
 						lastName: player2Split.lastName,
 					});

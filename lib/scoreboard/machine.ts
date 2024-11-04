@@ -34,9 +34,14 @@ export const ScoreboardStateSchema = z.object({
 });
 
 export interface ScoreboardCallbacks {
-	onScoreChange?: (playerId: string, newScore: number) => void;
-	onPlayerOneStartsChange?: (playerOneStarts: boolean) => void;
-	onGameComplete?: (winnerIsPlayerOne: boolean) => void;
+	onScoreChange?: (
+		playerId: string,
+		newScore: number,
+		sidesSwapped: boolean,
+	) => Promise<void>;
+	onPlayerOneStartsChange?: (playerOneStarts: boolean) => Promise<void>;
+	onGameComplete?: (state: ScoreboardContext) => Promise<void>;
+	onMatchComplete?: (state: ScoreboardContext) => Promise<void>;
 }
 
 const isWinningScore = ({ context }: { context: ScoreboardContext }) =>
@@ -71,9 +76,11 @@ export type ScoreboardEvent =
 	| { type: "RESET_MATCH" }
 	| { type: "SET_BEST_OF"; bestOf: number }
 	| {
-			type: "UPDATE_PLAYER_NAME";
+			type: "UPDATE_PLAYER";
 			firstName: string;
 			lastName: string;
+			id: string;
+			gamesWon?: number;
 			isPlayerOne: boolean;
 	  }
 	| { type: "RESET_GAME" };
@@ -118,9 +125,17 @@ export const createScoreboardMachine = (
 						event.playerId === context.playerOne.id
 							? context.playerOne
 							: context.playerTwo;
-					callbacks.onScoreChange?.(event.playerId, player.currentScore);
+					callbacks.onScoreChange?.(
+						event.playerId,
+						player.currentScore,
+						context.sidesSwapped,
+					);
 				} else if (event.type === "SET_SCORE") {
-					callbacks.onScoreChange?.(event.playerId, event.score);
+					callbacks.onScoreChange?.(
+						event.playerId,
+						event.score,
+						context.sidesSwapped,
+					);
 				}
 			},
 			notifyPlayerOneStartsChange: ({ event }) => {
@@ -131,8 +146,11 @@ export const createScoreboardMachine = (
 			notifyGameComplete: ({ context }) => {
 				const winner = getWinner(context);
 				if (winner !== null) {
-					callbacks.onGameComplete?.(winner);
+					callbacks.onGameComplete?.(context);
 				}
+			},
+			notifyMatchComplete: ({ context }) => {
+				callbacks.onMatchComplete?.(context);
 			},
 			checkMidGameSwap: assign(({ context }) => {
 				const totalGamesWon =
@@ -245,14 +263,19 @@ export const createScoreboardMachine = (
 							bestOf: ({ event }) => event.bestOf,
 						}),
 					},
-					UPDATE_PLAYER_NAME: {
-						actions: assign(({ context, event }) => ({
-							[event.isPlayerOne ? "playerOne" : "playerTwo"]: {
-								...context[event.isPlayerOne ? "playerOne" : "playerTwo"],
-								firstName: event.firstName,
-								lastName: event.lastName,
-							},
-						})),
+					UPDATE_PLAYER: {
+						actions: assign(({ context, event }) => {
+							const playerKey = event.isPlayerOne ? "playerOne" : "playerTwo";
+							return {
+								[playerKey]: {
+									...context[playerKey],
+									firstName: event.firstName,
+									lastName: event.lastName,
+									id: event.id,
+									gamesWon: event.gamesWon ?? context[playerKey].gamesWon,
+								},
+							};
+						}),
 					},
 					SETTINGS_UPDATE: {
 						actions: assign(({ context, event }) => {
@@ -264,7 +287,7 @@ export const createScoreboardMachine = (
 				always: [
 					{
 						guard: "isWinningScore",
-						target: "waitingForGameOverConfirmation",
+						target: "gameOverConfirmation",
 					},
 				],
 			},
@@ -317,14 +340,19 @@ export const createScoreboardMachine = (
 					EXTERNAL_UPDATE: {
 						actions: assign(({ event }) => event.state),
 					},
-					UPDATE_PLAYER_NAME: {
-						actions: assign(({ context, event }) => ({
-							[event.isPlayerOne ? "playerOne" : "playerTwo"]: {
-								...context[event.isPlayerOne ? "playerOne" : "playerTwo"],
-								firstName: event.firstName,
-								lastName: event.lastName,
-							},
-						})),
+					UPDATE_PLAYER: {
+						actions: assign(({ context, event }) => {
+							const playerKey = event.isPlayerOne ? "playerOne" : "playerTwo";
+							return {
+								[playerKey]: {
+									...context[playerKey],
+									firstName: event.firstName,
+									lastName: event.lastName,
+									id: event.id,
+									gamesWon: event.gamesWon ?? context[playerKey].gamesWon,
+								},
+							};
+						}),
 					},
 					SETTINGS_UPDATE: {
 						actions: assign(({ context, event }) => {
@@ -365,7 +393,7 @@ export const createScoreboardMachine = (
 				always: [
 					{
 						guard: "isWinningScore",
-						target: "waitingForGameOverConfirmation",
+						target: "gameOverConfirmation",
 					},
 				],
 			},
@@ -374,7 +402,9 @@ export const createScoreboardMachine = (
 				description:
 					"Waiting for a short delay before confirming game over to allow for corrections.",
 				after: {
-					GAME_OVER_DELAY: "gameOverConfirmation",
+					200: {
+						target: "gameOverConfirmation",
+					},
 				},
 				on: {
 					SET_SCORE: {
@@ -474,21 +504,24 @@ export const createScoreboardMachine = (
 				on: {
 					RESET_MATCH: {
 						target: "playing",
-						actions: assign(({ context }) => ({
-							playerOne: {
-								...context.playerOne,
-								gamesWon: 0,
-								currentScore: 0,
-								matchPoint: false,
-							},
-							playerTwo: {
-								...context.playerTwo,
-								gamesWon: 0,
-								currentScore: 0,
-								matchPoint: false,
-							},
-							playerOneStarts: !context.playerOneStarts,
-						})),
+						actions: [
+							"notifyMatchComplete",
+							assign(({ context }) => ({
+								playerOne: {
+									...context.playerOne,
+									gamesWon: 0,
+									currentScore: 0,
+									matchPoint: false,
+								},
+								playerTwo: {
+									...context.playerTwo,
+									gamesWon: 0,
+									currentScore: 0,
+									matchPoint: false,
+								},
+								playerOneStarts: !context.playerOneStarts,
+							})),
+						],
 					},
 				},
 			},

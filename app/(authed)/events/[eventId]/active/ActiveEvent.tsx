@@ -9,13 +9,13 @@ import { OngoingMatchUmpire } from "./components/OngoingMatchUmpire";
 import { useUser } from "@clerk/nextjs";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-export default function ActiveEvent({ eventId }: { eventId: string }) {
+function ActiveEvent({ eventId }: { eventId: string }) {
 	const { user } = useUser();
 	//const userId = user?.id;
 	const [userId, setUserId] = useState("");
 	const { loading, state } = usePlayerTournament(userId);
-	console.log(state);
 
 	function UserIdInput() {
 		return <Input type="text" onBlur={(e) => setUserId(e.target.value)} />;
@@ -52,5 +52,14 @@ export default function ActiveEvent({ eventId }: { eventId: string }) {
 		/>
 	) : (
 		<PendingMatchPlayer userId={userId} match={state.currentMatch} />
+	);
+}
+
+export default function ActiveEventWrapper({ eventId }: { eventId: string }) {
+	const queryClient = new QueryClient();
+	return (
+		<QueryClientProvider client={queryClient}>
+			<ActiveEvent eventId={eventId} />
+		</QueryClientProvider>
 	);
 }
