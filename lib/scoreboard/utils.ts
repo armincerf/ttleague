@@ -1,8 +1,20 @@
 import type { ScoreboardContext } from "./machine";
 import type { Player } from "./machine";
 
-export function getWinner(context: ScoreboardContext): boolean | null {
-	const { playerOne, playerTwo, pointsToWin } = context;
+type PlayerScore = { currentScore: number };
+type PlayerName = { firstName?: string; lastName?: string };
+type PlayerWithScore = PlayerName & PlayerScore;
+type PlayerWithGames = PlayerWithScore & { gamesWon: number };
+
+export function getWinner({
+	playerOne,
+	playerTwo,
+	pointsToWin,
+}: {
+	playerOne: PlayerScore;
+	playerTwo: PlayerScore;
+	pointsToWin: number;
+}): boolean | null {
 	const twoPointLead =
 		Math.abs(playerOne.currentScore - playerTwo.currentScore) >= 2;
 	const reachedMinPoints =
@@ -35,19 +47,38 @@ export function formatPlayerName(player: {
 		}
 		return "-";
 	}
+	if (!player.lastName) {
+		return player.firstName;
+	}
 	return `${player.firstName} ${player.lastName?.slice(0, 1)}`.trim();
 }
 
-export function shouldAlternateEveryPoint(context: ScoreboardContext): boolean {
-	const { playerOne, playerTwo, pointsToWin } = context;
+export function shouldAlternateEveryPoint({
+	playerOne,
+	playerTwo,
+	pointsToWin,
+}: {
+	playerOne: PlayerScore;
+	playerTwo: PlayerScore;
+	pointsToWin: number;
+}): boolean {
 	return (
 		playerOne.currentScore >= pointsToWin - 1 &&
 		playerTwo.currentScore >= pointsToWin - 1
 	);
 }
 
-export function calculateCurrentServer(context: ScoreboardContext): string {
-	const { playerOne, playerTwo, pointsToWin, playerOneStarts } = context;
+export function calculateCurrentServer({
+	playerOne,
+	playerTwo,
+	pointsToWin,
+	playerOneStarts,
+}: {
+	playerOne: PlayerWithGames;
+	playerTwo: PlayerWithGames;
+	pointsToWin: number;
+	playerOneStarts: boolean;
+}): string {
 	const totalScore = playerOne.currentScore + playerTwo.currentScore;
 	const totalGames = playerOne.gamesWon + playerTwo.gamesWon;
 	const isOddGame = totalGames % 2 === 1;
@@ -56,7 +87,7 @@ export function calculateCurrentServer(context: ScoreboardContext): string {
 		: playerOneStarts;
 
 	// Handle deuce scenario
-	if (shouldAlternateEveryPoint(context)) {
+	if (shouldAlternateEveryPoint({ playerOne, playerTwo, pointsToWin })) {
 		return (totalScore % 2 === 0) === effectivePlayerOneStarts
 			? formatPlayerName(playerOne) || "Player 1"
 			: formatPlayerName(playerTwo) || "Player 2";

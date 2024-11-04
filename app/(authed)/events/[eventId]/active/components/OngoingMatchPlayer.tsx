@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useQuery as useTSQuery } from "@tanstack/react-query";
 import { client } from "@/lib/triplit";
 import { fetchMatchScores } from "@/lib/matches/queries";
+import { calculateCurrentServer } from "@/lib/scoreboard/utils";
 
 type OngoingMatchPlayerProps = {
 	match: TournamentMatch & {
@@ -44,7 +45,6 @@ export function OngoingMatchPlayer({
 		queryFn: () => fetchMatchScores(match.id),
 		enabled: !!matchEnded,
 	});
-	console.log("data", data);
 
 	return (
 		<div className="p-4">
