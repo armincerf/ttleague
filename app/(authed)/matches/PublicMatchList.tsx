@@ -12,20 +12,16 @@ import { buildMatchesQuery, type Matches } from "@/lib/actions/matches";
 import { client } from "@/lib/triplit";
 import { useQuery } from "@triplit/react";
 import { calculateCurrentScore, formatScore } from "./shared/utils";
-import * as R from "remeda";
 
 export default function PublicMatchList({
 	serverMatches,
 }: { serverMatches: Matches }) {
 	const { results: liveGames } = useQuery(client, client.query("games"));
 
-	const matches = R.pipe(
-		serverMatches,
-		R.map((match) => ({
-			...match,
-			games: liveGames?.filter((g) => g.match_id === match.id) ?? match.games,
-		})),
-	);
+	const matches = serverMatches.map((match) => ({
+		...match,
+		games: liveGames?.filter((g) => g.match_id === match.id) ?? match.games,
+	}));
 
 	return (
 		<Table>
@@ -39,28 +35,31 @@ export default function PublicMatchList({
 				</TableRow>
 			</TableHeader>
 			<TableBody>
-				{matches.filter(Boolean).map((match) => (
-					<TableRow key={match.id}>
-						<TableCell>{match.event?.name}</TableCell>
-						<TableCell>
-							{match.player1?.first_name} {match.player1?.last_name}
-						</TableCell>
-						<TableCell>
-							{match.player2?.first_name} {match.player2?.last_name}
-						</TableCell>
-						<TableCell>
-							{liveGames ? formatScore(calculateCurrentScore(liveGames)) : "-"}
-						</TableCell>
-						<TableCell>
-							<Link
-								href={`/matches/${match.id}`}
-								className="text-blue-500 underline sm:no-underline sm:hover:underline"
-							>
-								View Match
-							</Link>
-						</TableCell>
-					</TableRow>
-				))}
+				{matches.filter(Boolean).map((match) => {
+					const games = match.games;
+					const score = games ? formatScore(calculateCurrentScore(games)) : "-";
+					console.log(score);
+					return (
+						<TableRow key={match.id}>
+							<TableCell>{match.event?.name}</TableCell>
+							<TableCell>
+								{match.player1?.first_name} {match.player1?.last_name}
+							</TableCell>
+							<TableCell>
+								{match.player2?.first_name} {match.player2?.last_name}
+							</TableCell>
+							<TableCell>{score}</TableCell>
+							<TableCell>
+								<Link
+									href={`/matches/${match.id}`}
+									className="text-blue-500 underline sm:no-underline sm:hover:underline"
+								>
+									View Match
+								</Link>
+							</TableCell>
+						</TableRow>
+					);
+				})}
 			</TableBody>
 		</Table>
 	);

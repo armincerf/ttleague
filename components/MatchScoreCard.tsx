@@ -76,6 +76,7 @@ export function MatchScoreCard({
 			.fill(0)
 			.map(createEmptyScore),
 	];
+	console.log(paddedScores);
 
 	const totalGamesWon = paddedScores.reduce(
 		(acc, score) => {

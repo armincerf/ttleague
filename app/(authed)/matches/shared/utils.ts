@@ -14,10 +14,13 @@ export function calculateCurrentScore(games: Match["games"]): [number, number] {
 	return games
 		.filter((game) => game.completed_at)
 		.reduce(
-			(totals, game) => [
-				totals[0] + (game.player_1_score > game.player_2_score ? 1 : 0),
-				totals[1] + (game.player_2_score > game.player_1_score ? 1 : 0),
-			],
+			(totals, game) => {
+				const player1Wins = game.player_1_score > game.player_2_score;
+				return [
+					totals[0] + (player1Wins ? 1 : 0),
+					totals[1] + (player1Wins ? 0 : 1),
+				];
+			},
 			[0, 0],
 		);
 }

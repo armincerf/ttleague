@@ -8,7 +8,7 @@ export default async function MatchesPage() {
 	return (
 		<PageLayout>
 			<div className="container">
-				<h1 className="text-3xl font-bold mb-6">Recent Matches</h1>
+				<h1 className="text-2xl sm:text-3xl font-bold mb-4">Recent Matches</h1>
 				<PublicMatchList serverMatches={matches} />
 			</div>
 		</PageLayout>

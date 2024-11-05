@@ -16,6 +16,8 @@ import {
 } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "../../../../components/ui/button";
+import { MatchScoreCard } from "@/components/MatchScoreCard";
+import { getDivision } from "@/lib/ratingSystem";
 
 export function MatchView2({ serverMatch }: { serverMatch: Match }) {
 	const [isLandscape, setIsLandscape] = useState(false);
@@ -67,63 +69,39 @@ export function MatchView2({ serverMatch }: { serverMatch: Match }) {
 		return <RecordScoreForm match={match} fullscreen />;
 	}
 
-	return (
-		<>
-			<div className="max-w-2xl mx-auto pb-24">
-				<h1 className="text-3xl font-bold mb-6">Table {match.table_number}</h1>
-				<h3 className="text-lg font-semibold mb-4">
-					Games played - {getGameNumber(match.games)}
-				</h3>
+	const scores = match.games.map((game) => ({
+		player1Points: game.player_1_score,
+		player2Points: game.player_2_score,
+		isValid: true,
+		startedAt: game.started_at,
+	}));
 
-				<Card>
-					<CardContent>
-						<div className="flex flex-col  justify-between items-center mb-4 pt-2">
-							<div className="flex items-center gap-2">
-								<Avatar>
-									<AvatarImage src={match.player1.profile_image_url} />
-									<AvatarFallback>
-										{match.player1.first_name[0]}
-										{match.player1.last_name[0]}
-									</AvatarFallback>
-								</Avatar>
-								<span>
-									{match.player1.first_name} {match.player1.last_name} -{" "}
-									{currentScore[0]}
-								</span>
-							</div>
-							<span className="font-bold">vs</span>
-							<div className="flex items-center gap-2">
-								<Avatar>
-									<AvatarImage src={match.player2.profile_image_url} />
-									<AvatarFallback>
-										{match.player2.first_name[0]}
-										{match.player2.last_name[0]}
-									</AvatarFallback>
-								</Avatar>
-								<span>
-									{match.player2.first_name} {match.player2.last_name} -{" "}
-									{currentScore[1]}
-								</span>
-							</div>
-						</div>
-						<ul>
-							{match.games.map((game, idx) => {
-								const finalScore = `${game.player_1_score}-${game.player_2_score}`;
-								if (game.player_1_score >= 11 || game.player_2_score >= 11) {
-									return (
-										<li key={game.id}>
-											<span className="font-semibold pr-2">Game {idx}:</span>{" "}
-											<span className="font-mono">{padScore(finalScore)}</span>
-										</li>
-									);
-								}
-								return null;
-							})}
-						</ul>
-					</CardContent>
-				</Card>
+	console.log(scores);
+	return (
+		<div className="p-4">
+			<div className="text-sm text-gray-600 text-center">
+				<h1 className="text-2xl font-bold mb-4">Match Details</h1>
+				<MatchScoreCard
+					table={`Table ${match.table_number}`}
+					player1={{
+						id: match.player1.id,
+						name: `${match.player1.first_name} ${match.player1.last_name}`,
+						division: getDivision(match.player1.current_division),
+						rating: match.player1.rating ?? 0,
+						avatar: match.player1.profile_image_url,
+					}}
+					player2={{
+						id: match.player2.id,
+						name: `${match.player2.first_name} ${match.player2.last_name}`,
+						division: getDivision(match.player2.current_division),
+						rating: match.player2.rating ?? 0,
+						avatar: match.player2.profile_image_url,
+					}}
+					scores={scores}
+					bestOf={match.best_of ?? 5}
+				/>
 			</div>
-		</>
+		</div>
 	);
 }
 
