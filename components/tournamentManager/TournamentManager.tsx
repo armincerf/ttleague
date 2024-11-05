@@ -11,9 +11,9 @@ import { Scoreboard } from "./Scoreboard";
 import { RemainingMatches } from "./RemainingMatches";
 import { useTournament } from "@/lib/tournamentManager/hooks/useTournament";
 import { Input } from "../ui/input";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
-const eventId = "mock-event";
+const eventId = "";
 
 export function TournamentManager() {
 	const { state: tournamentState, service } = useTournament();
@@ -46,10 +46,14 @@ export function TournamentManager() {
 		setFetchTime(end - start);
 	};
 
-	const handleStartTournament = async () => {
+	const handleStartTournament = useCallback(async () => {
 		if (!tournamentState) return;
-		await service.generateNextMatch(tournamentState.id);
-	};
+		await service.generateNextMatch({
+			tournamentId: tournamentState.id,
+			silent: false,
+		});
+	}, [tournamentState, service]);
+
 	if (!tournamentState)
 		return (
 			<div>

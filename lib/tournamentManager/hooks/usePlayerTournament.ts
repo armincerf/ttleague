@@ -3,38 +3,6 @@ import { useQuery } from "@triplit/react";
 import { client } from "@/lib/triplit";
 import { useTournament } from "./useTournament";
 
-type PlayerRole = "playing" | "umpiring" | "waiting";
-
-export type TournamentMatch = NonNullable<
-	ReturnType<typeof useTournament>["state"]
->["matches"][number];
-
-type PlayerTournamentState = {
-	currentMatch?: TournamentMatch & {
-		players: Array<
-			| {
-					id: string;
-					profile_image_url: string | undefined;
-					first_name: string;
-					last_name: string;
-			  }
-			| undefined
-		>;
-		table: number;
-	};
-	nextMatch?: {
-		id: string;
-		players: Array<{
-			id: string;
-			profile_image_url: string | undefined;
-			first_name: string;
-			last_name: string;
-		}>;
-	};
-	id: string;
-	currentRole: PlayerRole;
-};
-
 export function usePlayerTournament(playerId: string) {
 	const { state: tournamentState } = useTournament();
 	console.log("tournamentState", tournamentState);
@@ -72,6 +40,7 @@ export function usePlayerTournament(playerId: string) {
 				"last_name",
 				"profile_image_url",
 				"current_tournament_priority",
+				"current_division",
 			]),
 	);
 
@@ -88,13 +57,15 @@ export function usePlayerTournament(playerId: string) {
 		loading: false,
 		state: {
 			id: tournamentState.id,
+			players: players.filter(Boolean),
+			playerIds: tournamentState.players,
 			currentMatch: {
 				...currentMatch,
 				players: [
 					players?.find((p) => p.id === currentMatch?.player_1),
 					players?.find((p) => p.id === currentMatch?.player_2),
-					players?.find((p) => p.id === currentMatch?.umpire),
 				],
+				umpire: players?.find((p) => p.id === currentMatch?.umpire),
 				table: currentMatch?.table_number,
 			},
 			nextMatch: {
@@ -102,10 +73,13 @@ export function usePlayerTournament(playerId: string) {
 				players: [
 					players?.find((p) => p.id === upcomingMatches?.[0]?.player_1),
 					players?.find((p) => p.id === upcomingMatches?.[0]?.player_2),
-					players?.find((p) => p.id === upcomingMatches?.[0]?.umpire),
 				],
+				umpire: players?.find((p) => p.id === upcomingMatches?.[0]?.umpire),
 			},
 			currentRole,
-		} as PlayerTournamentState,
+		},
 	} as const;
 }
+export type TournamentMatch = NonNullable<
+	NonNullable<ReturnType<typeof usePlayerTournament>["state"]>["currentMatch"]
+>;

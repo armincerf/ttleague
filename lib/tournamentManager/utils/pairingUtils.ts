@@ -44,9 +44,19 @@ export function getPlayerPairScore(
 		(p1.current_tournament_priority ?? 0) +
 		(p2.current_tournament_priority ?? 0);
 
-	// Weights: total matches (10) > pair matches (5) > priority (2)
-	return totalMatches * 10 + pairMatches * 5 - priorityScore * 2;
+	// Calculate ranking difference (assuming User type has a ranking_score field)
+	const rankingDiff = Math.abs((p1.rating ?? 1500) - (p2.rating ?? 1500));
+
+	// Weights:
+	// - ranking difference (20): prefer closer skill levels
+	// - total matches (10): balance total games played
+	// - pair matches (5): avoid repeat matchups
+	// - priority (2): consider player waiting time
+	return (
+		rankingDiff * 20 + totalMatches * 10 + pairMatches * 5 - priorityScore * 2
+	);
 }
+
 export function findValidPlayerPair(
 	players: User[],
 	matches: Match[],

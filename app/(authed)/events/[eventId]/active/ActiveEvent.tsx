@@ -13,25 +13,25 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function ActiveEvent({ eventId }: { eventId: string }) {
 	const { user } = useUser();
-	//const userId = user?.id;
-	const [userId, setUserId] = useState("");
+	const userId = user?.id || "";
 	const { loading, state } = usePlayerTournament(userId);
-
-	function UserIdInput() {
-		return <Input type="text" onBlur={(e) => setUserId(e.target.value)} />;
-	}
 
 	if (loading || !userId) {
 		return (
 			<div className="flex justify-center items-center h-screen">
-				<UserIdInput />
 				loading...
 			</div>
 		);
 	}
 
-	if (state?.currentRole === "waiting" || !state?.currentMatch) {
-		return <WaitingPage />;
+	if (state?.currentRole === "waiting" || (!state?.currentMatch && state?.id)) {
+		return (
+			<WaitingPage
+				eventId={eventId}
+				tournamentId={state.id}
+				playerIds={new Set(state.playerIds.map((p) => p.id))}
+			/>
+		);
 	}
 
 	const isMatchOngoing = state?.currentMatch.status === "ongoing";

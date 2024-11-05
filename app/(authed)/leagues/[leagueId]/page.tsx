@@ -12,6 +12,7 @@ import InProgressSection from "./InProgressSection";
 import { AdminButton } from "@/components/AdminButton";
 import { AdminLeagueActions } from "./AdminLeagueActions";
 import LeagueSeasonsOrEvents from "./LeagueSeasons";
+import Link from "next/link";
 
 function LeagueHeader({
 	league,
@@ -62,21 +63,6 @@ function LeagueNotFound({ leagueId }: { leagueId: string }) {
 	return <div>League not found: {leagueId}</div>;
 }
 
-// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
-export const revalidate = 60;
-
-// We'll prerender only the params from `generateStaticParams` at build time.
-// If a request comes in for a path that hasn't been generated,
-// Next.js will server-render the page on-demand.
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-	const leagues = await fetchLeagues();
-	return leagues.map((league) => ({
-		leagueId: league.id,
-	}));
-}
-
 export default async function LeaguePage({
 	params,
 }: {
@@ -98,6 +84,11 @@ export default async function LeaguePage({
 
 					<Suspense fallback={<div>Loading in-progress section...</div>}>
 						<InProgressSection leagueId={leagueId} />
+						<Link
+							href={`/leagues/${leagueId}/events/0m9nZwXjpJiYM9A524Kd5/active`}
+						>
+							View active event
+						</Link>
 					</Suspense>
 
 					<Suspense fallback={<div>Loading seasons and events...</div>}>

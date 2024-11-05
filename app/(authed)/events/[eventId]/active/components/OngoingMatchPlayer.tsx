@@ -33,6 +33,7 @@ export function OngoingMatchPlayer({
 	tournamentId,
 	userId,
 }: OngoingMatchPlayerProps) {
+	const [hasClickedRest, setHasClickedRest] = useState(false);
 	const matchEnded = !match.umpireConfirmed;
 	const donePlayingAction = useAsyncAction({
 		actionName: "Done Playing",
@@ -83,22 +84,31 @@ export function OngoingMatchPlayer({
 						scores={data}
 						bestOf={match.best_of}
 					/>
-					<p>
-						If you're done playing for now, click below before the umpire
-						submits the scores.
-					</p>
-					<Button
-						loading={donePlayingAction.isLoading}
-						variant="destructive"
-						className="mt-4"
-						onClick={() =>
-							donePlayingAction.executeAction(() => {
-								return tournamentService.removePlayer(tournamentId, userId);
-							})
-						}
-					>
-						I'm done playing
-					</Button>
+					{!hasClickedRest ? (
+						<>
+							<p>
+								If you're done playing for now, click below before the umpire
+								submits the scores.
+							</p>
+							<Button
+								loading={donePlayingAction.isLoading}
+								variant="destructive"
+								className="mt-4"
+								onClick={() =>
+									donePlayingAction.executeAction(async () => {
+										await tournamentService.removePlayer(tournamentId, userId);
+										setHasClickedRest(true);
+									})
+								}
+							>
+								I need a rest
+							</Button>
+						</>
+					) : (
+						<p className="mt-4 text-green-600">
+							You won't be assigned another match. Enjoy your rest!
+						</p>
+					)}
 				</div>
 			)}
 		</div>

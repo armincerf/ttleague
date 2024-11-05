@@ -41,29 +41,35 @@ export function MatchCard({
 		onSuccess: async () => {
 			try {
 				if (!state?.id) throw new Error("Tournament ID is not set");
-				await service.generateNextMatch(state.id);
+				await service.generateNextMatch({ tournamentId: state.id });
 			} catch (error) {
 				console.error("Error generating next match:", error);
 			}
 		},
 	});
 
+	function formatPlayerName(player?: User) {
+		return player
+			? `${player.first_name} ${player.last_name}`
+			: "Unknown Player";
+	}
+
 	return (
 		<div className="p-4 bg-gray-50 rounded-lg space-y-4">
 			<div className="flex justify-between items-center">
 				<span className="font-medium">
-					{player1.first_name} {player1.last_name} vs {player2.first_name}{" "}
-					{player2.last_name}
+					{formatPlayerName(player1)} vs {formatPlayerName(player2)}
 				</span>
 				<span className="text-sm text-gray-500">Table {tableNumber}</span>
 			</div>
 			<div className="text-sm text-gray-600">
-				Umpire: {umpire.first_name} {umpire.last_name}
+				Umpire:{" "}
+				{umpire ? `${umpire.first_name} ${umpire.last_name}` : "Not assigned"}
 			</div>
 
 			{matchState.needsPlayersInitialConfirmation && (
 				<>
-					{!match.playersConfirmed.has(player1.id) && (
+					{player1 && !match.playersConfirmed.has(player1.id) && (
 						<Button
 							onClick={() =>
 								initialConfirmAction.executeAction(() =>
@@ -74,10 +80,10 @@ export function MatchCard({
 							className="w-full"
 							loading={initialConfirmAction.isLoading}
 						>
-							Confirm Match as {player1.first_name} {player1.last_name}
+							Confirm Match as {formatPlayerName(player1)}
 						</Button>
 					)}
-					{!match.playersConfirmed.has(player2.id) && (
+					{player2 && !match.playersConfirmed.has(player2.id) && (
 						<Button
 							onClick={() =>
 								initialConfirmAction.executeAction(() =>
@@ -88,13 +94,13 @@ export function MatchCard({
 							className="w-full"
 							loading={initialConfirmAction.isLoading}
 						>
-							Confirm Match as {player2.first_name} {player2.last_name}
+							Confirm Match as {formatPlayerName(player2)}
 						</Button>
 					)}
 				</>
 			)}
 
-			{matchState.needsUmpireInitialConfirmation && (
+			{matchState.needsUmpireInitialConfirmation && umpire && (
 				<Button
 					onClick={() =>
 						umpireInitialConfirmAction.executeAction(() =>
@@ -109,7 +115,7 @@ export function MatchCard({
 				</Button>
 			)}
 
-			{matchState.needsWinnerSelection && (
+			{matchState.needsWinnerSelection && player1 && player2 && (
 				<div className="flex gap-2">
 					<Button
 						onClick={() =>
@@ -121,7 +127,7 @@ export function MatchCard({
 						className="flex-1"
 						loading={winnerConfirmAction.isLoading}
 					>
-						{player1.first_name} {player1.last_name} Won
+						{formatPlayerName(player1)} Won
 					</Button>
 					<Button
 						onClick={() =>
@@ -133,12 +139,12 @@ export function MatchCard({
 						className="flex-1"
 						loading={winnerConfirmAction.isLoading}
 					>
-						{player2.first_name} {player2.last_name} Won
+						{formatPlayerName(player2)} Won
 					</Button>
 				</div>
 			)}
 
-			{matchState.needsUmpireConfirmation && (
+			{matchState.needsUmpireConfirmation && umpire && (
 				<Button
 					disabled={!state?.id}
 					loading={finalUmpireConfirmAction.isLoading}

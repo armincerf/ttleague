@@ -90,7 +90,13 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 			marky.stop("updateEvent");
 		},
 
-		async generateNextMatch(tournamentId: string) {
+		async generateNextMatch({
+			tournamentId,
+			silent = true,
+		}: {
+			tournamentId: string;
+			silent?: boolean;
+		}) {
 			marky.mark("generateNextMatch");
 			const tournament = await client.fetchOne(
 				client
@@ -125,7 +131,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				freeTables,
 			);
 
-			if (!result.success) {
+			if (!result.success && !silent) {
 				toast({
 					title: "Error",
 					description: result.error,

@@ -12,6 +12,8 @@ import {
 	createColumnHelper,
 	type Row,
 	type ColumnFiltersState,
+	getSortedRowModel,
+	type SortingState,
 } from "@tanstack/react-table";
 import { Input } from "@/components/ui/input";
 import {
@@ -79,11 +81,27 @@ const columns = [
 			id: "winRate",
 			header: "WR%",
 			cell: (info) => `${info.getValue().toFixed(1)}%`,
+			sortingFn: (rowA, rowB) => {
+				const totalA = rowA.original.wins + rowA.original.losses;
+				const totalB = rowB.original.wins + rowB.original.losses;
+				const wrA = totalA > 0 ? (rowA.original.wins / totalA) * 100 : 0;
+				const wrB = totalB > 0 ? (rowB.original.wins / totalB) * 100 : 0;
+
+				if (wrA === wrB) {
+					return totalB - totalA; // Secondary sort by total games played
+				}
+				return wrB - wrA;
+			},
 		},
 	),
 	columnHelper.accessor("rating", {
 		header: "Pts",
-		cell: (info) => info.getValue(),
+		cell: (info) => {
+			const row = info.row.original;
+			const gamesPlayed = row.wins + row.losses;
+			if (gamesPlayed === 0) return "";
+			return "pending";
+		},
 	}),
 	columnHelper.accessor("gender", {
 		header: "Gender",
@@ -115,13 +133,11 @@ export default function LeaderboardTable({
 
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
+	const [sorting, setSorting] = useState<SortingState>([]);
 
 	const memoizedColumns = useMemo(() => columns, []);
 
-	const { results, fetching, error } = useQuery(
-		client,
-		client.query("users").order("rating", "DESC"),
-	);
+	const { results, fetching, error } = useQuery(client, client.query("users"));
 
 	const tableData = useMemo(() => {
 		if (fetching) return initialUsers;
@@ -138,6 +154,7 @@ export default function LeaderboardTable({
 		getPaginationRowModel: getPaginationRowModel(),
 		getFacetedRowModel: getFacetedRowModel(),
 		getFacetedUniqueValues: getFacetedUniqueValues(),
+		getSortedRowModel: getSortedRowModel(),
 		state: {
 			pagination: {
 				pageIndex,
@@ -145,6 +162,7 @@ export default function LeaderboardTable({
 			},
 			columnFilters,
 			globalFilter,
+			sorting,
 			columnVisibility: {
 				gender: false,
 			},
@@ -152,7 +170,9 @@ export default function LeaderboardTable({
 		onPaginationChange: setPagination,
 		onColumnFiltersChange: setColumnFilters,
 		onGlobalFilterChange: setGlobalFilter,
+		onSortingChange: setSorting,
 		globalFilterFn: "includesString",
+		enableSorting: true,
 	});
 
 	function handleGlobalFilterChange(
@@ -220,11 +240,23 @@ export default function LeaderboardTable({
 						{table.getHeaderGroups().map((headerGroup) => (
 							<TableRow key={headerGroup.id}>
 								{headerGroup.headers.map((header) => (
-									<TableHead key={header.id}>
+									<TableHead
+										key={header.id}
+										className={
+											header.column.getCanSort()
+												? "cursor-pointer select-none"
+												: ""
+										}
+										onClick={header.column.getToggleSortingHandler()}
+									>
 										{flexRender(
 											header.column.columnDef.header,
 											header.getContext(),
 										)}
+										{{
+											asc: " 🔼",
+											desc: " 🔽",
+										}[header.column.getIsSorted() as string] ?? null}
 									</TableHead>
 								))}
 							</TableRow>
