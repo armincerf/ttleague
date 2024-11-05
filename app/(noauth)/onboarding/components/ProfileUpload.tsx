@@ -3,11 +3,14 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { FormLabel, FormControl } from "@/components/ui/form";
 import { ImageCropper } from "@/components/form/ImageCropper";
 import { useUser } from "@clerk/nextjs";
+import { client } from "@/lib/triplit";
+import { usePostHog } from "posthog-js/react";
 
 export function ProfileImageUpload() {
 	const { user } = useUser();
 	const [isCropperOpen, setIsCropperOpen] = useState(false);
-
+	const posthog = usePostHog();
+	if (!user) return <p>User not found</p>;
 	return (
 		<div>
 			<FormLabel>Profile Picture (Optional)</FormLabel>
@@ -20,7 +23,14 @@ export function ProfileImageUpload() {
 					<ImageCropper
 						isOpen={isCropperOpen}
 						onOpenChange={setIsCropperOpen}
-						onSave={async (file) => void user?.setProfileImage({ file })}
+						onSave={async (file) => {
+							const p = await user?.setProfileImage({ file });
+							await client.update("users", user.id, (u) => {
+								u.profile_image_url = p.publicUrl ?? undefined;
+							});
+							console.log("profile image uploaded");
+							posthog.capture("profile_image_uploaded");
+						}}
 					/>
 				</div>
 			</FormControl>

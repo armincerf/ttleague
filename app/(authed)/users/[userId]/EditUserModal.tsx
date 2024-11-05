@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { User } from "@/triplit/schema";
 import { useUser } from "@clerk/nextjs";
+import { ProfileImageUpload } from "@/app/(noauth)/onboarding/components/ProfileUpload";
 
 interface EditUserModalProps {
 	user: User;
@@ -37,17 +38,17 @@ export function EditUserModal({ user }: EditUserModalProps) {
 					<DialogHeader>
 						<DialogTitle>Edit Profile</DialogTitle>
 						<DialogDescription>
-							Make changes to your profile here (coming soon)
+							Make changes to your profile here
 						</DialogDescription>
 					</DialogHeader>
 
-					{/* Form will go here */}
+					<ProfileImageUpload />
 
 					<DialogFooter>
-						<Button disabled variant="outline" onClick={() => setIsOpen(false)}>
+						<Button variant="outline" onClick={() => setIsOpen(false)}>
 							Cancel
 						</Button>
-						<Button disabled type="submit">
+						<Button onClick={() => window.location.reload()} type="button">
 							Save changes
 						</Button>
 					</DialogFooter>
