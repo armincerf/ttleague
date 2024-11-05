@@ -56,7 +56,7 @@ export default function TopBar({
 													Sign in
 												</button>
 											</SignInButton>
-											<SignUpButton mode="modal">
+											<SignUpButton forceRedirectUrl="/onboarding" mode="modal">
 												<button
 													type="button"
 													className="w-full px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary/10"
