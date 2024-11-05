@@ -32,6 +32,11 @@ function parseJwtExpiration(token: string): number {
 	}
 }
 
+/**
+ * Calculates the delay before a token refresh is needed, using a buffer to account for weirdness in token expiration
+ * @param expirationTime - Token expiration timestamp in milliseconds
+ * @returns Number of milliseconds to wait before refreshing the token, minimum 0
+ */
 function calculateRefreshDelay(expirationTime: number): number {
 	const currentTime = Date.now();
 	return Math.max(0, expirationTime - currentTime - TOKEN_BUFFER_MS);

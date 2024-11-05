@@ -26,7 +26,9 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 		}
 
 		const usedTables = new Set(
-			matches.filter((m) => m.status === "ongoing").map((m) => m.table_number),
+			matches
+				.filter((m) => m.status === "ongoing" || m.status === "pending")
+				.map((m) => m.table_number),
 		);
 		const nextTable =
 			Array.from({ length: freeTables }, (_, i) => i + 1).find(
