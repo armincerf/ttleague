@@ -88,19 +88,23 @@ export function EventCard({
 					</div>
 					<div className="flex items-center space-x-2">
 						<Users className="w-5 h-5 text-muted-foreground" />
-						<Suspense fallback={<Skeleton className="w-20 h-4" />}>
-							<RegisteredUsers
-								eventId={event.id}
-								serverRegistrations={event.registrations}
-								capacity={event.capacity}
-							/>
-						</Suspense>
+						{event.status === "scheduled" && (
+							<Suspense fallback={<Skeleton className="w-20 h-4" />}>
+								<RegisteredUsers
+									eventId={event.id}
+									serverRegistrations={event.registrations}
+									capacity={event.capacity}
+								/>
+							</Suspense>
+						)}
 					</div>
 				</div>
 			</CardContent>
 			<CardFooter>
 				<Button variant="outline" className="w-full" asChild>
-					<Link href={`/events/${event.id}`}>View Event Details</Link>
+					<Link href={`/events/${event.id}`}>
+						{event.status === "completed" ? "View Matches" : "View Details"}
+					</Link>
 				</Button>
 			</CardFooter>
 		</Card>

@@ -103,13 +103,7 @@ function EventCard({
 					</CardDescription>
 					<CardContent>
 						<h2>Results</h2>
-						{serverEvent.matches.map((match) => (
-							<MatchListContent
-								key={match.id}
-								event={serverEvent}
-								status="completed"
-							/>
-						))}
+						<MatchListContent event={serverEvent} status="completed" />
 					</CardContent>
 				</CardHeader>
 			</Card>

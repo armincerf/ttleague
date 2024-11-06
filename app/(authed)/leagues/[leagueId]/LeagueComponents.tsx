@@ -56,7 +56,7 @@ export function EventList({
 			.where(
 				past
 					? ["end_time", "<", new Date().toISOString()]
-					: ["start_time", ">", new Date("2020").toISOString()],
+					: ["start_time", ">", new Date().toISOString()],
 			)
 			.include("club", (rel) => rel("club").build())
 			.include("matches", (rel) =>

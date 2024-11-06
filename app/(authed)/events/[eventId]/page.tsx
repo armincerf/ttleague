@@ -23,7 +23,9 @@ export default async function EventPage({
 
 	return (
 		<div className="container mx-auto pt-8 px-4">
-			<EventRegisteredPlayers serverEvent={event} />
+			{event.status !== "completed" && event.status !== "cancelled" && (
+				<EventRegisteredPlayers serverEvent={event} />
+			)}
 			<EventCard serverEvent={event} />
 			<AdminButton>
 				<AdminEventActions event={event} />

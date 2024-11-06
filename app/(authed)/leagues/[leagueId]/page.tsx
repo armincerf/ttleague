@@ -84,11 +84,6 @@ export default async function LeaguePage({
 
 					<Suspense fallback={<div>Loading in-progress section...</div>}>
 						<InProgressSection leagueId={leagueId} />
-						<Link
-							href={`/leagues/${leagueId}/events/0m9nZwXjpJiYM9A524Kd5/active`}
-						>
-							View active event
-						</Link>
 					</Suspense>
 
 					<Suspense fallback={<div>Loading seasons and events...</div>}>

@@ -49,6 +49,7 @@ import {
 } from "./PaginationComponents";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
+import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 export type User = Entity<typeof schema, "users">;
 
@@ -100,7 +101,7 @@ const columns = [
 			const row = info.row.original;
 			const gamesPlayed = row.wins + row.losses;
 			if (gamesPlayed === 0) return "";
-			return "pending";
+			return "-";
 		},
 	}),
 	columnHelper.accessor("gender", {
@@ -133,11 +134,19 @@ export default function LeaderboardTable({
 
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 	const [globalFilter, setGlobalFilter] = useState("");
-	const [sorting, setSorting] = useState<SortingState>([]);
+	const [sorting, setSorting] = useState<SortingState>([
+		{
+			id: "winRate",
+			desc: true,
+		},
+	]);
 
 	const memoizedColumns = useMemo(() => columns, []);
 
-	const { results, fetching, error } = useQuery(client, client.query("users"));
+	const { results, fetching, error } = useQuery(
+		client,
+		client.query("users").order("wins", "DESC"),
+	);
 
 	const tableData = useMemo(() => {
 		if (fetching) return initialUsers;
@@ -249,14 +258,23 @@ export default function LeaderboardTable({
 										}
 										onClick={header.column.getToggleSortingHandler()}
 									>
-										{flexRender(
-											header.column.columnDef.header,
-											header.getContext(),
-										)}
-										{{
-											asc: " 🔼",
-											desc: " 🔽",
-										}[header.column.getIsSorted() as string] ?? null}
+										<div className="flex items-center gap-1">
+											{flexRender(
+												header.column.columnDef.header,
+												header.getContext(),
+											)}
+											{header.column.getCanSort() && (
+												<span className="text-muted-foreground">
+													{header.column.getIsSorted() === "desc" ? (
+														<ArrowDown className="h-3 w-3" />
+													) : header.column.getIsSorted() === "asc" ? (
+														<ArrowUp className="h-3 w-3" />
+													) : (
+														<ArrowUpDown className="h-3 w-3" />
+													)}
+												</span>
+											)}
+										</div>
 									</TableHead>
 								))}
 							</TableRow>
