@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button";
 import { ComboBox } from "../manual-match-entry/components/ComboBox";
 import type { Game, Match, User } from "@/triplit/schema";
 import { client } from "../adminClient";
+import {
+	QueryClientProvider,
+	QueryClient,
+	useQuery as useTSQuery,
+} from "@tanstack/react-query";
 
 type UserStats = {
 	userId: string;
@@ -76,7 +81,7 @@ function calculateUserStats(
 	return Array.from(statsMap.values());
 }
 
-export function LeaderboardSync() {
+function LeaderboardSyncInner() {
 	const [selectedEventId, setSelectedEventId] = useState("");
 	const [isUpdating, setIsUpdating] = useState(false);
 
@@ -90,9 +95,11 @@ export function LeaderboardSync() {
 		client,
 		client.query("games").where([["match.event_id", "=", selectedEventId]]),
 	);
-	console.log(events, games);
-
-	const { results: users } = useQuery(client, client.query("users"));
+	const { data: users } = useTSQuery({
+		queryKey: ["users"],
+		queryFn: () =>
+			client.fetch(client.query("users").build(), { policy: "remote-only" }),
+	});
 
 	const eventOptions =
 		events?.map((event) => ({
@@ -110,39 +117,40 @@ export function LeaderboardSync() {
 
 		setIsUpdating(true);
 		try {
-			await client.transact(async (tx) => {
-				// Update user stats
-				for (const stats of userStats) {
-					await tx.update("users", stats.userId, (user) => {
+			for (const stats of userStats) {
+				try {
+					await client.http.update("users", stats.userId, (user) => {
 						user.matches_played = stats.matchesPlayed;
 						user.wins = stats.wins;
 						user.losses = stats.losses;
 					});
+				} catch (error) {
+					console.error(`Failed to update user ${stats.userId}:`, error);
 				}
+			}
 
-				// Update match winners
-				for (const match of event.matches) {
-					const player1Wins = match.games.filter(
-						(g) => g.winner === match.player_1,
-					).length;
-					const player2Wins = match.games.filter(
-						(g) => g.winner === match.player_2,
-					).length;
+			// Update match winners
+			for (const match of event.matches) {
+				const player1Wins = match.games.filter(
+					(g) => g.winner === match.player_1,
+				).length;
+				const player2Wins = match.games.filter(
+					(g) => g.winner === match.player_2,
+				).length;
 
-					const matchWinner =
-						player1Wins >= 2
-							? match.player_1
-							: player2Wins >= 2
-								? match.player_2
-								: null;
+				const matchWinner =
+					player1Wins >= 2
+						? match.player_1
+						: player2Wins >= 2
+							? match.player_2
+							: null;
 
-					if (matchWinner) {
-						await tx.update("matches", match.id, (m) => {
-							m.winner = matchWinner;
-						});
-					}
+				if (matchWinner) {
+					await client.http.update("matches", match.id, (m) => {
+						m.winner = matchWinner;
+					});
 				}
-			});
+			}
 		} catch (error) {
 			console.error("Failed to sync leaderboard:", error);
 		} finally {
@@ -192,5 +200,14 @@ export function LeaderboardSync() {
 				</>
 			)}
 		</div>
+	);
+}
+
+const queryClient = new QueryClient();
+export function LeaderboardSync() {
+	return (
+		<QueryClientProvider client={queryClient}>
+			<LeaderboardSyncInner />
+		</QueryClientProvider>
 	);
 }

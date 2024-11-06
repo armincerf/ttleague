@@ -76,11 +76,14 @@ export function MatchScoreCard({
 			.fill(0)
 			.map(createEmptyScore),
 	];
-	console.log(paddedScores);
 
 	const totalGamesWon = paddedScores.reduce(
 		(acc, score) => {
-			if (score.completedAt && score.isValid) {
+			if (
+				(score.player1Points >= 11 &&
+					score.player1Points > score.player2Points) ||
+				(score.player2Points >= 11 && score.player2Points > score.player1Points)
+			) {
 				return {
 					player1:
 						acc.player1 + (score.player1Points > score.player2Points ? 1 : 0),
