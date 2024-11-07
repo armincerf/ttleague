@@ -14,6 +14,8 @@ import { AdminLeagueActions } from "./AdminLeagueActions";
 import LeagueSeasonsOrEvents from "./LeagueSeasons";
 import Link from "next/link";
 
+export const experimental_ppr = true;
+
 function LeagueHeader({
 	league,
 }: { league: NonNullable<Awaited<ReturnType<typeof fetchLeague>>> }) {
@@ -61,6 +63,17 @@ function LeagueHeader({
 
 function LeagueNotFound({ leagueId }: { leagueId: string }) {
 	return <div>League not found: {leagueId}</div>;
+}
+
+export const revalidate = 60;
+
+export const dynamicParams = true;
+
+export async function generateStaticParams() {
+	const leagues = await fetchLeagues();
+	return leagues.map((league) => ({
+		leagueId: league.id,
+	}));
 }
 
 export default async function LeaguePage({

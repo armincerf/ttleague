@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { Triangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { calculateCurrentServer } from "@/lib/scoreboard/utils";
+import { useEffect } from "react";
 
 type LivePlayerScoreProps = {
 	matchId: string;
@@ -55,6 +56,28 @@ export function LivePlayerScore({ matchId, player }: LivePlayerScoreProps) {
 		pointsToWin: 11,
 		playerOneStarts: !swappedSides,
 	});
+
+	useEffect(() => {
+		let wakeLock: WakeLockSentinel | null = null;
+
+		async function requestWakeLock() {
+			try {
+				wakeLock = await navigator.wakeLock.request("screen");
+			} catch (err) {
+				console.error("Wake Lock request failed:", err);
+			}
+		}
+
+		// Request wake lock if the API is available
+		if ("wakeLock" in navigator) {
+			void requestWakeLock();
+		}
+
+		// Cleanup function to release wake lock
+		return () => {
+			void wakeLock?.release();
+		};
+	}, []);
 
 	return (
 		<div className="absolute top-0 left-0 w-full h-full z-[200] bg-white flex flex-col items-center justify-center overflow-hidden">

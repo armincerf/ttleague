@@ -8,11 +8,9 @@ import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { ComboBox } from "./components/ComboBox";
 import { MatchScoreInput, type MatchScore } from "@/components/MatchScoreInput";
-import { TriplitClient } from "@triplit/client";
-import { schema } from "@/triplit/schema";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { client } from "../adminClient";
+import { client } from "@/lib/triplit";
 
 const matchEntrySchema = z.object({
 	eventId: z.string(),
@@ -34,10 +32,7 @@ type MatchEntryFormValues = z.infer<typeof matchEntrySchema>;
 
 export function ManualMatchEntryForm() {
 	const { toast } = useToast();
-	const { results: events } = useQuery(
-		client,
-		client.query("events").where([["status", "=", "active"]]),
-	);
+	const { results: events } = useQuery(client, client.query("events"));
 
 	const { results: users } = useQuery(
 		client,

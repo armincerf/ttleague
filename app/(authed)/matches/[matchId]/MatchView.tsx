@@ -61,6 +61,8 @@ export function MatchView2({ serverMatch }: { serverMatch: Match }) {
 						rating: match.player2.rating ?? 0,
 						avatar: match.player2.profile_image_url,
 					}}
+					leagueName="MK Singles League"
+					eventDate={match.startTime}
 					scores={scores}
 					bestOf={match.best_of ?? 5}
 				/>

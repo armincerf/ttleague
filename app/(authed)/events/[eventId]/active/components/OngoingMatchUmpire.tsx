@@ -44,13 +44,13 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 		currentGames?.[0] && !currentGames[0].completed_at ? currentGames[0] : null;
 	const playerOneScore = currentGame?.player_1_score ?? 0;
 	const playerTwoScore = currentGame?.player_2_score ?? 0;
-	const bestOf = match.best_of;
+	const bestOf = match.best_of ?? 3;
 	const gamesNeededToWin = Math.floor(bestOf / 2) + 1;
 
 	const { data: scores = [] } = useTSQuery({
 		queryKey: ["matchResult", match.id],
-		queryFn: () => fetchMatchScores(match.id),
-		enabled: !!awaitingUmpireConfirmation,
+		queryFn: () => fetchMatchScores(match.id ?? ""),
+		enabled: !!awaitingUmpireConfirmation && !!match.id,
 	});
 
 	useEffect(() => {
@@ -59,14 +59,18 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 				playerTwoGamesWon >= gamesNeededToWin) &&
 			!awaitingUmpireConfirmation
 		) {
-			endMatchAction.executeAction(() =>
-				tournamentService.matchConfirmation.confirmWinner(
+			if (!match.id) return;
+			endMatchAction.executeAction(() => {
+				if (!match.id || !match.player_1 || !match.player_2) {
+					return Promise.reject(new Error("Match ID is required"));
+				}
+				return tournamentService.matchConfirmation.confirmWinner(
 					match.id,
 					playerOneGamesWon === gamesNeededToWin
 						? match.player_1
 						: match.player_2,
-				),
-			);
+				);
+			});
 		}
 	}, [
 		awaitingUmpireConfirmation,
@@ -110,7 +114,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 								const isMatchOver = playerOneWonGame
 									? playerOneGamesWon + 1 >= gamesNeededToWin
 									: playerTwoGamesWon + 1 >= gamesNeededToWin;
-								if (isMatchOver) return;
+								if (isMatchOver || !match.id) return;
 								await client.insert("games", {
 									match_id: match.id,
 									game_number: currentGames[0].game_number + 1,
@@ -138,6 +142,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 								const playerOneWin =
 									state.playerOne.currentScore > state.playerTwo.currentScore;
 								const winnerId = playerOneWin ? match.player_1 : match.player_2;
+								if (!match.id || !winnerId) return;
 								await tournamentService.matchConfirmation.confirmWinner(
 									match.id,
 									winnerId,
@@ -163,55 +168,63 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 					/>
 				</div>
 			)}
-			{awaitingUmpireConfirmation && players && players.length >= 2 && (
-				<div className="bg-green-50 border-2 border-green-300 rounded-xl p-6 w-full max-w-md shadow-lg">
-					<h2 className="text-2xl font-bold mb-4 text-center">Match Ended</h2>
-					<div className="text-center mb-6">
-						<div className="text-xl font-semibold bg-green-100 rounded-lg py-2 px-4 inline-block">
-							Table {match.table_number}
+			{awaitingUmpireConfirmation &&
+				players &&
+				players.length >= 2 &&
+				match.best_of &&
+				match.id && (
+					<div className="bg-green-50 border-2 border-green-300 rounded-xl p-6 w-full max-w-md shadow-lg">
+						<h2 className="text-2xl font-bold mb-4 text-center">Match Ended</h2>
+						<div className="text-center mb-6">
+							<div className="text-xl font-semibold bg-green-100 rounded-lg py-2 px-4 inline-block">
+								Table {match.table_number}
+							</div>
 						</div>
+						<MatchScoreCard
+							table={`Table ${match.table_number}`}
+							umpire={`${user?.firstName} ${user?.lastName}`}
+							player1={{
+								id: players[0].id,
+								name: `${players[0].first_name} ${players[0].last_name}`,
+								division: getDivision(players[0].current_division),
+								rating: 0,
+								avatar: players[0].profile_image_url,
+							}}
+							player2={{
+								id: players[1].id,
+								name: `${players[1].first_name} ${players[1].last_name}`,
+								division: getDivision(players[1].current_division),
+								rating: 0,
+								avatar: players[1].profile_image_url,
+							}}
+							scores={scores}
+							bestOf={match.best_of}
+							leagueName="MK Singles League"
+							eventDate={match.startTime}
+						/>
+						<p>
+							If the players are happy the above score is correct, please
+							confirm and give them a chance to leave the event if they want.
+							When you press the button below everyone on this table will be
+							allocated a new match.
+						</p>
+						<Button
+							className="my-4"
+							onClick={() => {
+								endMatchAction.executeAction(() => {
+									if (!match.id)
+										return Promise.reject(new Error("Match ID is required"));
+									return tournamentService.matchConfirmation.confirmMatchUmpire(
+										match.id,
+										userId,
+									);
+								});
+							}}
+						>
+							Confirm and allocate new matches
+						</Button>
 					</div>
-					<MatchScoreCard
-						table={`Table ${match.table_number}`}
-						umpire={`${user?.firstName} ${user?.lastName}`}
-						player1={{
-							id: players[0].id,
-							name: `${players[0].first_name} ${players[0].last_name}`,
-							division: getDivision(players[0].current_division),
-							rating: players[0].rating ?? 0,
-							avatar: players[0].profile_image_url,
-						}}
-						player2={{
-							id: players[1].id,
-							name: `${players[1].first_name} ${players[1].last_name}`,
-							division: getDivision(players[1].current_division),
-							rating: players[1].rating ?? 0,
-							avatar: players[1].profile_image_url,
-						}}
-						scores={scores}
-						bestOf={match.best_of}
-					/>
-					<p>
-						If the players are happy the above score is correct, please confirm
-						and give them a chance to leave the event if they want. When you
-						press the button below everyone on this table will be allocated a
-						new match.
-					</p>
-					<Button
-						className="my-4"
-						onClick={() =>
-							endMatchAction.executeAction(() =>
-								tournamentService.matchConfirmation.confirmMatchUmpire(
-									match.id,
-									userId,
-								),
-							)
-						}
-					>
-						Confirm and allocate new matches
-					</Button>
-				</div>
-			)}
+				)}
 		</>
 	);
 }

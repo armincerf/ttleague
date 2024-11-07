@@ -14,13 +14,6 @@ import { Skeleton } from "./ui/skeleton";
 import { Suspense } from "react";
 import type { Event } from "@/lib/actions/events";
 
-function hashColor(clubId: string) {
-	const nanoIdToNumber = (nanoId: string) =>
-		Number.parseInt(nanoId.slice(0, 6), 36);
-	const hue = (nanoIdToNumber(clubId) * 30) % 360;
-	return `hsl(${hue}, 70%, 60%)`;
-}
-
 export function EventCard({
 	event,
 }: {
@@ -40,8 +33,6 @@ export function EventCard({
 		draft: "bg-yellow-500",
 		scheduled: "bg-purple-500",
 	};
-
-	const colorHash = hashColor(event.club_id);
 
 	function formatDescription(description: string | undefined): string {
 		return description?.replace("\n", " ") ?? "";
@@ -63,19 +54,6 @@ export function EventCard({
 				</div>
 			</CardHeader>
 			<CardContent>
-				<div className="flex items-center space-x-2 mb-4">
-					{/* <Badge
-						variant="outline"
-						className="text-xs flex items-center"
-						style={{ backgroundColor: colorHash, color: "#fff" }}
-					>
-						<Trophy className="w-3 h-3 mr-1" />
-						Best of {event.best_of}
-					</Badge> */}
-					<Badge variant="secondary" className="text-xs">
-						Status: {event.status}
-					</Badge>
-				</div>
 				<p className="text-muted-foreground mb-4">
 					{formatDescription(event.description)}
 				</p>
@@ -86,9 +64,9 @@ export function EventCard({
 							{event.tables.size} {event.tables.size === 1 ? "table" : "tables"}
 						</span>
 					</div>
-					<div className="flex items-center space-x-2">
-						<Users className="w-5 h-5 text-muted-foreground" />
-						{event.status === "scheduled" && (
+					{event.status === "scheduled" && (
+						<div className="flex items-center space-x-2">
+							<Users className="w-5 h-5 text-muted-foreground" />
 							<Suspense fallback={<Skeleton className="w-20 h-4" />}>
 								<RegisteredUsers
 									eventId={event.id}
@@ -96,8 +74,8 @@ export function EventCard({
 									capacity={event.capacity}
 								/>
 							</Suspense>
-						)}
-					</div>
+						</div>
+					)}
 				</div>
 			</CardContent>
 			<CardFooter>

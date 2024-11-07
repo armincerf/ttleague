@@ -72,10 +72,12 @@ export function EventRegisteredPlayers({
 
 	const { results, fetching } = useQuery(
 		client,
-		client
-			.query("event_registrations")
-			.where("event_id", "=", eventId)
-			.include("user"),
+		client.query("event_registrations").where("event_id", "=", eventId),
+	);
+	const registeredUserIds = results?.map((r) => r.user_id) ?? [];
+	const { results: users } = useQuery(
+		client,
+		client.query("users").where("id", "in", registeredUserIds),
 	);
 	const registrations = results ?? [];
 
@@ -85,7 +87,7 @@ export function EventRegisteredPlayers({
 	const players =
 		R.pipe(
 			event?.registrations ?? [],
-			R.map((r) => r.user),
+			R.map((r) => users?.find((u) => u.id === r.user_id)),
 			R.uniqueBy((u) => u?.id),
 		).filter(Boolean) ?? [];
 	const playerCount = players.length;

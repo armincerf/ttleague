@@ -1,6 +1,11 @@
+"use client";
+
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-interface Player {
+import { ShareMatchButton } from "./ShareMatchButton";
+import { useRef } from "react";
+
+export interface Player {
 	id: string;
 	name: string;
 	division: string;
@@ -27,6 +32,9 @@ interface MatchProps {
 	umpire?: string;
 	table?: string;
 	bestOf: number;
+	leagueName: string;
+	eventName?: string;
+	eventDate?: Date;
 }
 
 interface PlayerCardProps {
@@ -68,7 +76,12 @@ export function MatchScoreCard({
 	isCanceled,
 	umpire,
 	table,
+	leagueName,
+	eventName,
+	eventDate,
 }: MatchProps) {
+	const cardRef = useRef<HTMLDivElement>(null);
+
 	const gamesNeededToWin = Math.ceil(bestOf / 2);
 	const paddedScores = [
 		...scores,
@@ -101,17 +114,38 @@ export function MatchScoreCard({
 		totalGamesWon.player2 >= gamesNeededToWin;
 
 	return (
-		<div className="w-full max-w-2xl bg-white rounded-lg shadow-md overflow-hidden my-4">
-			{/* Match Info Header - restructured to match example */}
+		<div
+			ref={cardRef}
+			className="w-full max-w-2xl bg-white rounded-lg shadow-md overflow-hidden my-4"
+		>
+			{/* Match Info Header - now with share button */}
 			<div className="px-4 py-2 bg-gray-50">
-				<div className="flex justify-between">
+				<div className="flex justify-between items-center">
 					<div className="flex items-center space-x-4">
 						<span className="MatchDescription">Match</span>
 						{umpire && (
 							<span className="MatchInfo-umpire">Umpire: {umpire}</span>
 						)}
 					</div>
-					{table && <div>{table}</div>}
+					<div className="flex items-center gap-2">
+						{table && <div>{table}</div>}
+						{matchIsComplete && (
+							<ShareMatchButton
+								winner={
+									totalGamesWon.player1 > totalGamesWon.player2
+										? player1.name
+										: player2.name
+								}
+								player1={player1}
+								player2={player2}
+								totalGamesWon={totalGamesWon}
+								cardRef={cardRef}
+								leagueName={leagueName}
+								eventName={eventName}
+								eventDate={eventDate}
+							/>
+						)}
+					</div>
 				</div>
 			</div>
 

@@ -137,7 +137,7 @@ export default function LeaderboardTable({
 	const [sorting, setSorting] = useState<SortingState>([
 		{
 			id: "winRate",
-			desc: true,
+			desc: false,
 		},
 	]);
 

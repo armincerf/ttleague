@@ -13,17 +13,7 @@ import { fetchMatchScores } from "@/lib/matches/queries";
 import { calculateCurrentServer } from "@/lib/scoreboard/utils";
 
 type OngoingMatchPlayerProps = {
-	match: TournamentMatch & {
-		players: Array<
-			| (Partial<User> & {
-					id: string;
-					profile_image_url: string | undefined;
-					first_name: string;
-					last_name: string;
-			  })
-			| undefined
-		>;
-	};
+	match: TournamentMatch;
 	tournamentId: string;
 	userId: string;
 };
@@ -43,13 +33,13 @@ export function OngoingMatchPlayer({
 
 	const { data = [] } = useTSQuery({
 		queryKey: ["matchResult", match.id],
-		queryFn: () => fetchMatchScores(match.id),
-		enabled: !!matchEnded,
+		queryFn: () => fetchMatchScores(match.id ?? ""),
+		enabled: !!matchEnded && !!match.id,
 	});
 
 	return (
 		<div className="p-4">
-			{!matchEnded && (
+			{!matchEnded && match.id && (
 				<LivePlayerScore
 					matchId={match.id}
 					userId={userId}
@@ -62,55 +52,65 @@ export function OngoingMatchPlayer({
 					}}
 				/>
 			)}
-			{matchEnded && players && players.length >= 2 && (
-				<div className="text-sm text-gray-600 text-center">
-					<h1 className="text-2xl font-bold mb-4">Match ended</h1>
-					<MatchScoreCard
-						table={`Table ${match.table_number}`}
-						player1={{
-							id: match.player_1,
-							name: `${players[0].first_name} ${players[0].last_name}`,
-							division: getDivision(players[0].current_division),
-							rating: players[0].rating ?? 0,
-							avatar: players[0].profile_image_url,
-						}}
-						player2={{
-							id: match.player_2,
-							name: `${players[1].first_name} ${players[1].last_name}`,
-							division: getDivision(players[1].current_division),
-							rating: players[1].rating ?? 0,
-							avatar: players[1].profile_image_url,
-						}}
-						scores={data}
-						bestOf={match.best_of}
-					/>
-					{!hasClickedRest ? (
-						<>
-							<p>
-								If you're done playing for now, click below before the umpire
-								submits the scores.
+			{matchEnded &&
+				players &&
+				match.player_1 &&
+				match.player_2 &&
+				match.best_of &&
+				players.length >= 2 && (
+					<div className="text-sm text-gray-600 text-center">
+						<h1 className="text-2xl font-bold mb-4">Match ended</h1>
+						<MatchScoreCard
+							table={`Table ${match.table_number}`}
+							leagueName="MK Singles League"
+							eventDate={match.startTime}
+							player1={{
+								id: match.player_1,
+								name: `${players[0].first_name} ${players[0].last_name}`,
+								division: getDivision(players[0].current_division),
+								rating: 0,
+								avatar: players[0].profile_image_url,
+							}}
+							player2={{
+								id: match.player_2,
+								name: `${players[1].first_name} ${players[1].last_name}`,
+								division: getDivision(players[1].current_division),
+								rating: 0,
+								avatar: players[1].profile_image_url,
+							}}
+							scores={data}
+							bestOf={match.best_of}
+						/>
+						{!hasClickedRest ? (
+							<>
+								<p>
+									If you're done playing for now, click below before the umpire
+									submits the scores.
+								</p>
+								<Button
+									loading={donePlayingAction.isLoading}
+									variant="destructive"
+									className="mt-4"
+									onClick={() =>
+										donePlayingAction.executeAction(async () => {
+											await tournamentService.removePlayer(
+												tournamentId,
+												userId,
+											);
+											setHasClickedRest(true);
+										})
+									}
+								>
+									I need a rest
+								</Button>
+							</>
+						) : (
+							<p className="mt-4 text-green-600">
+								You won't be assigned another match. Enjoy your rest!
 							</p>
-							<Button
-								loading={donePlayingAction.isLoading}
-								variant="destructive"
-								className="mt-4"
-								onClick={() =>
-									donePlayingAction.executeAction(async () => {
-										await tournamentService.removePlayer(tournamentId, userId);
-										setHasClickedRest(true);
-									})
-								}
-							>
-								I need a rest
-							</Button>
-						</>
-					) : (
-						<p className="mt-4 text-green-600">
-							You won't be assigned another match. Enjoy your rest!
-						</p>
-					)}
-				</div>
-			)}
+						)}
+					</div>
+				)}
 		</div>
 	);
 }
