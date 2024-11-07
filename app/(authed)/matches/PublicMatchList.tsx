@@ -43,10 +43,20 @@ export default function PublicMatchList({
 						<TableRow key={match.id}>
 							<TableCell>{match.event?.name}</TableCell>
 							<TableCell>
-								{match.player1?.first_name} {match.player1?.last_name}
+								<Link
+									href={`/users/${match.player1?.id}`}
+									className="text-blue-500 underline sm:no-underline sm:hover:underline"
+								>
+									{match.player1?.first_name} {match.player1?.last_name}
+								</Link>
 							</TableCell>
 							<TableCell>
-								{match.player2?.first_name} {match.player2?.last_name}
+								<Link
+									href={`/users/${match.player2?.id}`}
+									className="text-blue-500 underline sm:no-underline sm:hover:underline"
+								>
+									{match.player2?.first_name} {match.player2?.last_name}
+								</Link>
 							</TableCell>
 							<TableCell>{score}</TableCell>
 							<TableCell>

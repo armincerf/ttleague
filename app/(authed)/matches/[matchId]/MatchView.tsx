@@ -63,6 +63,7 @@ export function MatchView2({ serverMatch }: { serverMatch: Match }) {
 					}}
 					leagueName="MK Singles League"
 					eventDate={match.startTime}
+					isManuallyCreated={match.manually_created}
 					scores={scores}
 					bestOf={match.best_of ?? 5}
 				/>

@@ -123,6 +123,15 @@ const columns = [
 			return <span className="text-gray-600">-</span>;
 		},
 	}),
+	columnHelper.accessor("isManuallyCreated", {
+		header: "Manual",
+		cell: (info) =>
+			info.getValue() ? (
+				<span className="text-amber-600">Yes</span>
+			) : (
+				<span className="text-gray-600">No</span>
+			),
+	}),
 ];
 
 interface MatchHistoryTableProps {
@@ -252,6 +261,7 @@ export default function MatchHistoryTable({
 													table={row.original.table}
 													leagueName="MK Singles League"
 													eventDate={row.original.date}
+													isManuallyCreated={row.original.isManuallyCreated}
 													umpire={
 														row.original.umpire
 															? `${row.original.umpire.first_name} ${row.original.umpire.last_name}`

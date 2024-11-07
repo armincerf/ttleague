@@ -201,6 +201,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 							bestOf={match.best_of}
 							leagueName="MK Singles League"
 							eventDate={match.startTime}
+							isManuallyCreated={match.manually_created}
 						/>
 						<p>
 							If the players are happy the above score is correct, please

@@ -64,6 +64,7 @@ export function OngoingMatchPlayer({
 							table={`Table ${match.table_number}`}
 							leagueName="MK Singles League"
 							eventDate={match.startTime}
+							isManuallyCreated={match.manually_created}
 							player1={{
 								id: match.player_1,
 								name: `${players[0].first_name} ${players[0].last_name}`,

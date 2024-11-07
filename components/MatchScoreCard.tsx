@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ShareMatchButton } from "./ShareMatchButton";
 import { useRef } from "react";
+import Link from "next/link";
 
 export interface Player {
 	id: string;
@@ -35,6 +36,7 @@ interface MatchProps {
 	leagueName: string;
 	eventName?: string;
 	eventDate?: Date;
+	isManuallyCreated?: boolean;
 }
 
 interface PlayerCardProps {
@@ -46,7 +48,9 @@ function PlayerCard({ player }: PlayerCardProps) {
 		<div className="bg-white rounded-lg px-2 py-4">
 			<div className="flex items-center justify-between">
 				<div className="flex flex-row items-center space-x-2">
-					<div className="font-semibold">{player.name}</div>
+					<Link href={`/users/${player.id}`}>
+						<div className="font-semibold">{player.name}</div>
+					</Link>
 					<div className="text-sm text-gray-600">{player.division}</div>
 				</div>
 				{player.avatar && (
@@ -79,6 +83,7 @@ export function MatchScoreCard({
 	leagueName,
 	eventName,
 	eventDate,
+	isManuallyCreated,
 }: MatchProps) {
 	const cardRef = useRef<HTMLDivElement>(null);
 
@@ -126,9 +131,14 @@ export function MatchScoreCard({
 						{umpire && (
 							<span className="MatchInfo-umpire">Umpire: {umpire}</span>
 						)}
+						{isManuallyCreated && (
+							<span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">
+								Manually Created
+							</span>
+						)}
 					</div>
 					<div className="flex items-center gap-2">
-						{table && <div>{table}</div>}
+						{table && <div>Table {table}</div>}
 						{matchIsComplete && (
 							<ShareMatchButton
 								winner={
@@ -212,12 +222,20 @@ export function MatchScoreCard({
 
 			{/* Optional: Add match completion status */}
 			{matchIsComplete && (
-				<div className="px-4 py-2 bg-green-50 text-sm text-green-700">
-					Winner:{" "}
-					{totalGamesWon.player1 > totalGamesWon.player2
-						? player1.name
-						: player2.name}
-				</div>
+				<Link
+					href={`/users/${
+						totalGamesWon.player1 > totalGamesWon.player2
+							? player1.id
+							: player2.id
+					}`}
+				>
+					<div className="px-4 py-2 bg-green-50 text-sm text-green-700">
+						Winner:{" "}
+						{totalGamesWon.player1 > totalGamesWon.player2
+							? player1.name
+							: player2.name}
+					</div>
+				</Link>
 			)}
 
 			{/* Match Status */}

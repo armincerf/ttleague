@@ -21,6 +21,7 @@ export type Match = {
 	ratingChange: number;
 	table?: string;
 	umpire?: User | null;
+	isManuallyCreated?: boolean;
 };
 
 async function fetchUser(userId: string) {
@@ -113,6 +114,7 @@ async function fetchUserMatches(userId: string): Promise<Match[]> {
 				ratingChange: match.ranking_score_delta,
 				table: match.table_number.toString(),
 				umpire: match.umpireUser,
+				isManuallyCreated: !!match.manually_created,
 			} as const;
 		})
 		.filter(Boolean);
