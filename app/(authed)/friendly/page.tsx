@@ -15,7 +15,7 @@ const getUsers = async () => {
 	return httpClient.fetch(query);
 };
 
-export const revalidate = 60;
+export const runtime = "edge";
 
 export default async function FriendlyPage() {
 	const users = await getUsers();

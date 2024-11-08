@@ -2,6 +2,8 @@ import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { MessageCircle } from "lucide-react";
 
+export const runtime = "edge";
+
 export default async function ConversationId() {
 	const { userId } = await auth();
 	if (!userId) {

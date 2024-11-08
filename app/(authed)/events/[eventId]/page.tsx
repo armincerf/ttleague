@@ -4,6 +4,8 @@ import { AdminButton } from "../../../../components/AdminButton";
 import { AdminEventActions } from "./AdminEventActions";
 import EventCard from "./EventCard";
 
+export const runtime = "edge";
+
 function EventNotFound() {
 	return <div>Event not found</div>;
 }

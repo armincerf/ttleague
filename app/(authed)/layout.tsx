@@ -14,7 +14,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<ClerkProvider>
+		<ClerkProvider dynamic>
 			<div className="flex flex-col h-[100dvh]">
 				<TopBar />
 				<main className="pb-safe-area-inset-bottom md:container w-full mx-auto overflow-y-auto h-[calc(100%-128px)] relative">

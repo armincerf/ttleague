@@ -3,6 +3,7 @@ import MatchView from "../MatchView";
 import { fetchMatch } from "@/lib/actions/matches";
 import { notFound } from "next/navigation";
 
+export const runtime = "edge";
 export default async function MatchFormPage({
 	params,
 }: {

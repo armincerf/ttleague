@@ -2,6 +2,7 @@ import { fetchMatches } from "@/lib/actions/matches";
 import PublicMatchList from "./PublicMatchList";
 import PageLayout from "@/components/PageLayout";
 
+export const runtime = "edge";
 export default async function MatchesPage() {
 	const matches = await fetchMatches("recent");
 

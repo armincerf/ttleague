@@ -119,21 +119,12 @@ async function fetchUserMatches(userId: string): Promise<Match[]> {
 		})
 		.filter(Boolean);
 }
-
-// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
-export const revalidate = 60;
-
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-	const users = await fetchUsers();
-	return users.map((user) => ({ userId: user.id }));
-}
-
 interface UserPageProps {
 	params: Promise<{ userId: string }>;
 }
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
 export default async function UserPage({ params }: UserPageProps) {
 	try {
 		const { userId } = await params;

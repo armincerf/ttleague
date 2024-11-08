@@ -4,18 +4,7 @@ import { fetchLeague, fetchLeagues } from "@/lib/actions/leagues";
 import { fetchEvents } from "@/lib/actions/events";
 import { notFound } from "next/navigation";
 
-// Next.js will invalidate the cache when a request comes in, at most once every 60 seconds.
-export const revalidate = 60;
-
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-	const leagues = await fetchLeagues();
-	return leagues.map((league) => ({
-		leagueId: league.id,
-	}));
-}
-
+export const runtime = "edge";
 export default async function LeagueEventsPage({
 	params,
 }: {

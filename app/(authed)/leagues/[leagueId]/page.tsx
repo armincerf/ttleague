@@ -15,6 +15,7 @@ import LeagueSeasonsOrEvents from "./LeagueSeasons";
 import Link from "next/link";
 
 export const experimental_ppr = true;
+export const runtime = "edge";
 
 function LeagueHeader({
 	league,
@@ -63,17 +64,6 @@ function LeagueHeader({
 
 function LeagueNotFound({ leagueId }: { leagueId: string }) {
 	return <div>League not found: {leagueId}</div>;
-}
-
-export const revalidate = 60;
-
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-	const leagues = await fetchLeagues();
-	return leagues.map((league) => ({
-		leagueId: league.id,
-	}));
 }
 
 export default async function LeaguePage({

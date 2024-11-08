@@ -36,6 +36,7 @@ function EventDetails({
 	);
 }
 
+export const runtime = "edge";
 export default async function NextEventPage({
 	params,
 }: {

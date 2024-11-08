@@ -1,6 +1,8 @@
 import { Conversation, UnauthChatView } from "@/components/Conversation";
 import { auth } from "@clerk/nextjs/server";
 
+export const runtime = "edge";
+
 export default async function ConversationPage({
 	params,
 }: {

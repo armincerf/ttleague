@@ -1,6 +1,8 @@
 import MatchView from "./MatchView";
 import { fetchMatch } from "@/lib/actions/matches";
 
+export const runtime = "edge";
+
 export default async function MatchPage({
 	params,
 }: {

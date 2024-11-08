@@ -23,6 +23,8 @@ async function OnboardingPage() {
 		</div>
 	);
 }
+
+export const runtime = "edge";
 export default async function OnboardingPageWrapper() {
 	return (
 		<Suspense fallback={<div>Loading onboarding...</div>}>

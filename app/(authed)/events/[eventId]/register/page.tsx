@@ -30,6 +30,7 @@ function calculateLevels(
 	};
 }
 
+export const runtime = "edge";
 export default async function EventRegistrationPage({
 	params,
 }: {
