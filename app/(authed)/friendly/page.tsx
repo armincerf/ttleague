@@ -4,8 +4,12 @@ import UsersList from "@/components/UsersList";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import WIPAlertBanner from "@/components/WIPAlertBanner";
+import { unstable_cacheTag as cacheTag } from "next/cache";
 
-const getUsers = async () => {
+export async function getUsers() {
+	"use cache";
+	cacheTag("friendly-page");
+
 	const query = httpClient
 		.query("users")
 		.order("first_name", "ASC")
@@ -13,9 +17,7 @@ const getUsers = async () => {
 		.build();
 
 	return httpClient.fetch(query);
-};
-
-export const runtime = "edge";
+}
 
 export default async function FriendlyPage() {
 	const users = await getUsers();

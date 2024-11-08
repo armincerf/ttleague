@@ -11,11 +11,11 @@ import { Scoreboard } from "./Scoreboard";
 import { RemainingMatches } from "./RemainingMatches";
 import { useTournament } from "@/lib/tournamentManager/hooks/useTournament";
 import { Input } from "../ui/input";
-import { useEffect, useState, useCallback } from "react";
-
-const eventId = "";
-
-export function TournamentManager() {
+import { useState, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+function TournamentManagerInner() {
+	const query = useSearchParams();
+	const eventId = query.get("eventId");
 	const { state: tournamentState, service } = useTournament();
 
 	const { results: allUsersNotInTournament = [] } = useQuery(
@@ -57,8 +57,14 @@ export function TournamentManager() {
 	if (!tournamentState)
 		return (
 			<div>
-				<Button onClick={() => service.createTournament(eventId)}>
-					Create Tournament
+				<Button
+					disabled={!eventId}
+					onClick={() => {
+						if (!eventId) return;
+						return service.createTournament(eventId);
+					}}
+				>
+					{eventId ? "Create Tournament" : "No Event ID"}
 				</Button>
 			</div>
 		);
@@ -178,5 +184,13 @@ export function TournamentManager() {
 				</div>
 			</div>
 		</div>
+	);
+}
+
+export function TournamentManager() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<TournamentManagerInner />
+		</Suspense>
 	);
 }

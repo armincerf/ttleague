@@ -1,9 +1,12 @@
 import { fetchMatches } from "@/lib/actions/matches";
 import PublicMatchList from "./PublicMatchList";
 import PageLayout from "@/components/PageLayout";
+import { unstable_cacheLife as cacheLife } from "next/cache";
 
-export const runtime = "edge";
 export default async function MatchesPage() {
+	"use cache";
+	cacheLife("seconds");
+
 	const matches = await fetchMatches("recent");
 
 	return (

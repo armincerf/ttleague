@@ -1,10 +1,9 @@
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { MessageCircle } from "lucide-react";
+import { Suspense } from "react";
 
-export const runtime = "edge";
-
-export default async function ConversationId() {
+async function ChatInner() {
 	const { userId } = await auth();
 	if (!userId) {
 		return (
@@ -22,5 +21,13 @@ export default async function ConversationId() {
 				</div>
 			</div>
 		</section>
+	);
+}
+
+export default async function ChatPage() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<ChatInner />
+		</Suspense>
 	);
 }

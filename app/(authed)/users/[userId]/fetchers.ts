@@ -1,0 +1,118 @@
+import { httpClient } from "@/lib/triplitServerClient";
+import type { MatchScore } from "@/components/MatchScoreCard";
+import { or } from "@triplit/client";
+import type { User } from "@/triplit/schema";
+import { unstable_cacheTag as cacheTag } from "next/cache";
+
+export type Match = {
+	id: string;
+	date: Date;
+	opponent: User;
+	player: User;
+	scores: MatchScore[];
+	bestOf: number;
+	result: "win" | "loss";
+	ratingChange: number;
+	table?: string;
+	umpire?: User | null;
+	isManuallyCreated?: boolean;
+};
+
+export async function fetchUser(userId: string) {
+	"use cache";
+	cacheTag("user-page");
+	const user = await httpClient.fetchById("users", userId);
+	if (!user) {
+		console.error("User not found", userId);
+	}
+	return user;
+}
+
+export async function fetchUserMatches(userId: string): Promise<Match[]> {
+	"use cache";
+	cacheTag("user-page");
+	const matches = await httpClient.fetch(
+		httpClient
+			.query("matches")
+			.where([
+				or([
+					["player1.id", "=", userId],
+					["player2.id", "=", userId],
+				]),
+			])
+			.include("player1")
+			.include("player2")
+			.include("umpireUser")
+			.include("games")
+			.order("created_at", "DESC")
+			.build(),
+	);
+
+	// Calculate actual stats from matches
+	const stats = matches.reduce(
+		(acc, match) => {
+			const isWinner = match.winner === userId;
+			return {
+				matchesPlayed: acc.matchesPlayed + 1,
+				wins: acc.wins + (isWinner ? 1 : 0),
+				losses: acc.losses + (isWinner ? 0 : 1),
+			};
+		},
+		{
+			matchesPlayed: 0,
+			wins: 0,
+			losses: 0,
+		},
+	);
+
+	// Compare and update if different
+	const user = await httpClient.fetchById("users", userId);
+	if (
+		user &&
+		(user.matches_played !== stats.matchesPlayed ||
+			user.wins !== stats.wins ||
+			user.losses !== stats.losses)
+	) {
+		await httpClient.update("users", userId, (user) => {
+			user.matches_played = stats.matchesPlayed;
+			user.wins = stats.wins;
+			user.losses = stats.losses;
+		});
+		console.warn("Updated user stats due to mismatch:", {
+			old: user,
+			new: stats,
+		});
+	}
+
+	return matches
+		?.map((match) => {
+			const isPlayer1 = match.player_1 === userId;
+			const opponent = isPlayer1 ? match.player2 : match.player1;
+			const player = isPlayer1 ? match.player1 : match.player2;
+			const matchScores = match.games.map((game) => ({
+				player1Points: isPlayer1 ? game.player_1_score : game.player_2_score,
+				player2Points: isPlayer1 ? game.player_2_score : game.player_1_score,
+				isValid: true,
+				startedAt: new Date(game.created_at),
+				completedAt: game.completed_at
+					? new Date(game.completed_at)
+					: undefined,
+			})) satisfies MatchScore[];
+			if (matchScores.length === 0 || !player || !opponent) return null;
+
+			return {
+				id: match.id,
+				date: new Date(match.created_at),
+				opponent,
+				player,
+				scores: matchScores,
+				bestOf: match.best_of,
+				result: match.winner === userId ? "win" : "loss",
+				ratingChange: match.ranking_score_delta,
+				table: match.table_number.toString(),
+				umpire: match.umpireUser,
+				isManuallyCreated: !!match.manually_created,
+			} as const;
+		})
+		.filter(Boolean);
+}

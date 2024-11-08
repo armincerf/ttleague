@@ -1,3 +1,9 @@
+import { Suspense } from "react";
+
 export default function MatchPage() {
-	return <div>Placeholder page</div>;
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<div>Placeholder page</div>
+		</Suspense>
+	);
 }

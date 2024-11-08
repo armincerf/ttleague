@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
 	title: "MK Table Tennis League - Sign Up",
@@ -12,10 +13,12 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<ClerkProvider>
-			<main className="h-[100dvh] bg-gray-100 flex flex-col items-center justify-center">
-				{children}
-			</main>
-		</ClerkProvider>
+		<Suspense fallback={<div>Loading...</div>}>
+			<ClerkProvider>
+				<main className="h-[100dvh] bg-gray-100 flex flex-col items-center justify-center">
+					{children}
+				</main>
+			</ClerkProvider>
+		</Suspense>
 	);
 }

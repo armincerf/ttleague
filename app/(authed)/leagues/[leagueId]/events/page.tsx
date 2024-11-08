@@ -3,8 +3,6 @@ import { EventCard } from "@/components/EventCard";
 import { fetchLeague, fetchLeagues } from "@/lib/actions/leagues";
 import { fetchEvents } from "@/lib/actions/events";
 import { notFound } from "next/navigation";
-
-export const runtime = "edge";
 export default async function LeagueEventsPage({
 	params,
 }: {

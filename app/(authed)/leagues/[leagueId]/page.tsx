@@ -3,20 +3,14 @@ import PageLayout from "@/components/PageLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import FAQDialogButton from "./FAQDialogButton";
-import RegisteredPlayersList from "./RegisteredPlayersList";
-import LeagueRegistrationButton from "./LeagueRegistrationButton";
 import ClubLocationLink from "@/components/ClubLocationLink";
-import { fetchLeague, fetchLeagues } from "@/lib/actions/leagues";
+import { fetchLeague } from "@/lib/actions/leagues";
 import logger from "@/lib/logging";
 import InProgressSection from "./InProgressSection";
 import { AdminButton } from "@/components/AdminButton";
 import { AdminLeagueActions } from "./AdminLeagueActions";
 import LeagueSeasonsOrEvents from "./LeagueSeasons";
-import Link from "next/link";
-
-export const experimental_ppr = true;
-export const runtime = "edge";
-
+import { unstable_cacheLife as cacheLife } from "next/cache";
 function LeagueHeader({
 	league,
 }: { league: NonNullable<Awaited<ReturnType<typeof fetchLeague>>> }) {
@@ -71,6 +65,8 @@ export default async function LeaguePage({
 }: {
 	params: Promise<{ leagueId: string }>;
 }) {
+	"use cache";
+	cacheLife("seconds");
 	const { leagueId } = await params;
 
 	try {

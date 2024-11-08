@@ -35,8 +35,6 @@ function EventDetails({
 		</div>
 	);
 }
-
-export const runtime = "edge";
 export default async function NextEventPage({
 	params,
 }: {

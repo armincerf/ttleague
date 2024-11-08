@@ -1,13 +1,15 @@
+import { Suspense } from "react";
 import MatchView from "./MatchView";
 import { fetchMatch } from "@/lib/actions/matches";
-
-export const runtime = "edge";
-
+import { unstable_cacheLife as cacheLife } from "next/cache";
 export default async function MatchPage({
 	params,
 }: {
 	params: Promise<{ matchId: string }>;
 }) {
+	"use cache";
+	cacheLife("seconds");
+
 	const { matchId } = await params;
 	const match = await fetchMatch(matchId);
 
@@ -17,7 +19,9 @@ export default async function MatchPage({
 
 	return (
 		<div className="flex flex-col items-center pt-2 h-full">
-			<MatchView serverMatch={match} />
+			<Suspense fallback={<div>Loading...</div>}>
+				<MatchView serverMatch={match} />
+			</Suspense>
 		</div>
 	);
 }
