@@ -1,7 +1,6 @@
 import LeaderboardTable from "@/components/LeaderboardTable";
 import PageLayout from "@/components/PageLayout";
 import WIPAlertBanner from "@/components/WIPAlertBanner";
-import { unstable_cacheTag as cacheTag } from "next/cache";
 import { httpClient } from "@/lib/triplitServerClient";
 
 async function getInitialUsers() {
@@ -15,9 +14,6 @@ async function getInitialUsers() {
 }
 
 async function LeaderboardPage() {
-	"use cache";
-	cacheTag("leaderboard-page");
-
 	const initialUsers = await getInitialUsers();
 
 	return (

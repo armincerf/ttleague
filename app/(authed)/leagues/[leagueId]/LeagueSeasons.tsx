@@ -25,9 +25,8 @@ function SeasonsContent({ leagueId }: { leagueId: string }) {
 	);
 }
 
-function EventsContent({ leagueId }: { leagueId: string }) {
-	const events = use(fetchEvents(leagueId));
-	console.log("useevents", events);
+async function EventsContent({ leagueId }: { leagueId: string }) {
+	const events = await fetchEvents(leagueId);
 	const currentDate = new Date();
 	const upcomingEvents = events
 		.filter((e) => new Date(e.start_time) > currentDate)

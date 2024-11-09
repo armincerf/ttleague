@@ -10,7 +10,6 @@ import InProgressSection from "./InProgressSection";
 import { AdminButton } from "@/components/AdminButton";
 import { AdminLeagueActions } from "./AdminLeagueActions";
 import LeagueSeasonsOrEvents from "./LeagueSeasons";
-import { unstable_cacheLife as cacheLife } from "next/cache";
 function LeagueHeader({
 	league,
 }: { league: NonNullable<Awaited<ReturnType<typeof fetchLeague>>> }) {
@@ -65,8 +64,6 @@ export default async function LeaguePage({
 }: {
 	params: Promise<{ leagueId: string }>;
 }) {
-	"use cache";
-	cacheLife("seconds");
 	const { leagueId } = await params;
 
 	try {

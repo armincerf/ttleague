@@ -31,7 +31,7 @@ interface MatchProps {
 	isCarriedOver?: boolean;
 	isCanceled?: boolean;
 	umpire?: string;
-	table?: string;
+	tableNumber?: number;
 	bestOf: number;
 	leagueName: string;
 	eventName?: string;
@@ -49,13 +49,20 @@ function PlayerCard({ player }: PlayerCardProps) {
 			<div className="flex items-center justify-between">
 				<div className="flex flex-row items-center space-x-2">
 					<Link href={`/users/${player.id}`}>
-						<div className="font-semibold">{player.name}</div>
+						<div className="font-semibold underline">{player.name}</div>
 					</Link>
 					<div className="text-sm text-gray-600">{player.division}</div>
 				</div>
-				{player.avatar && (
-					<Image src={player.avatar} alt={player.name} width={20} height={20} />
-				)}
+				<div className="hidden md:block">
+					{player.avatar && (
+						<Image
+							src={player.avatar}
+							alt={player.name}
+							width={20}
+							height={20}
+						/>
+					)}
+				</div>
 			</div>
 		</div>
 	);
@@ -79,7 +86,7 @@ export function MatchScoreCard({
 	isCarriedOver,
 	isCanceled,
 	umpire,
-	table,
+	tableNumber,
 	leagueName,
 	eventName,
 	eventDate,
@@ -138,7 +145,9 @@ export function MatchScoreCard({
 						)}
 					</div>
 					<div className="flex items-center gap-2">
-						{table && <div>Table {table}</div>}
+						<div className="hidden md:block">
+							{tableNumber && <div>Table {tableNumber}</div>}
+						</div>
 						{matchIsComplete && (
 							<ShareMatchButton
 								winner={
@@ -186,7 +195,6 @@ export function MatchScoreCard({
 						</div>
 					</div>
 
-					{/* Game Points */}
 					<div className="flex flex-1">
 						{paddedScores.map((score, index) => (
 							<div
@@ -220,7 +228,6 @@ export function MatchScoreCard({
 				<PlayerCard player={player2} />
 			</div>
 
-			{/* Optional: Add match completion status */}
 			{matchIsComplete && (
 				<Link
 					href={`/users/${

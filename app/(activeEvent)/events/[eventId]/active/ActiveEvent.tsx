@@ -6,7 +6,7 @@ import { PendingMatchPlayer } from "./components/PendingMatchPlayer";
 import { PendingMatchUmpire } from "./components/PendingMatchUmpire";
 import { OngoingMatchPlayer } from "./components/OngoingMatchPlayer";
 import { OngoingMatchUmpire } from "./components/OngoingMatchUmpire";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,12 +16,16 @@ function ActiveEvent({ eventId }: { eventId: string }) {
 	const userId = user?.id || "";
 	const { loading, state } = usePlayerTournament(userId);
 
-	if (loading || !userId) {
+	if (loading) {
 		return (
 			<div className="flex justify-center items-center h-screen">
 				loading...
 			</div>
 		);
+	}
+
+	if (!userId) {
+		return <div>You must be logged in to view this page</div>;
 	}
 
 	if (state?.currentRole === "waiting" || (!state?.currentMatch && state?.id)) {

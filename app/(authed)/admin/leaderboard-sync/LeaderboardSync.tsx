@@ -205,6 +205,7 @@ function LeaderboardSyncInner() {
 
 const queryClient = new QueryClient();
 export function LeaderboardSync() {
+	if (typeof window === "undefined") return null;
 	return (
 		<QueryClientProvider client={queryClient}>
 			<LeaderboardSyncInner />

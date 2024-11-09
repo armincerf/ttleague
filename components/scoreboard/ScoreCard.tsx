@@ -143,15 +143,14 @@ export function ScoreCard({
 	function handleClick() {
 		if (isCorrectionsMode || isFlipping) return;
 
+		send({ type: "INCREMENT_SCORE", playerId: player.id });
 		if (prefersReducedMotion) {
-			send({ type: "INCREMENT_SCORE", playerId: player.id });
 			return;
 		}
 
 		setIsFlipping(true);
 		setNextScore(score + 1);
 		setTimeout(() => {
-			send({ type: "INCREMENT_SCORE", playerId: player.id });
 			setIsFlipping(false);
 			setIsResetting(false);
 			setCurrentScore(score + 1);

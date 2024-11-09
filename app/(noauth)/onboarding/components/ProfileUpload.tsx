@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { FormLabel, FormControl } from "@/components/ui/form";
 import { ImageCropper } from "@/components/form/ImageCropper";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { client } from "@/lib/triplit";
 import { usePostHog } from "posthog-js/react";
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { InvitePlayersModal } from "@/components/InvitePlayersModal";
 import { useRouter } from "next/navigation";
 import { client } from "@/lib/triplit";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { usePostHog } from "posthog-js/react";
 
 export function SignUpButton({ eventId }: { eventId: string }) {

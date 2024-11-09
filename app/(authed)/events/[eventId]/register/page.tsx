@@ -8,7 +8,6 @@ import { getDivision, leagueDivisionsSchema } from "@/lib/ratingSystem";
 import { fetchEvent, fetchEvents } from "@/lib/actions/events";
 import { fetchUser } from "@/lib/actions/users";
 import { formatDate } from "date-fns";
-import { unstable_cacheLife as cacheLife } from "next/cache";
 const sortedLeagueDivisions = leagueDivisionsSchema.options.reverse();
 
 function calculateLevels(
@@ -34,9 +33,6 @@ export default async function EventRegistrationPage({
 }: {
 	params: Promise<{ leagueId: string; eventId: string }>;
 }) {
-	"use cache";
-	cacheLife("seconds");
-
 	const { userId } = await auth();
 	if (!userId) notFound();
 

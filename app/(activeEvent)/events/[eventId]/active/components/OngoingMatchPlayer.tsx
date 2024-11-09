@@ -29,7 +29,8 @@ export function OngoingMatchPlayer({
 		actionName: "Done Playing",
 	});
 	const players = match.players.filter(Boolean);
-	const me = players.find((p) => p?.id === userId);
+	const playerOne = players.find((p) => p?.id === match.player_1);
+	const playerTwo = players.find((p) => p?.id === match.player_2);
 
 	const { data = [] } = useTSQuery({
 		queryKey: ["matchResult", match.id],
@@ -37,21 +38,11 @@ export function OngoingMatchPlayer({
 		enabled: !!matchEnded && !!match.id,
 	});
 
+	const isP1 = match.player_1 === userId;
+
 	return (
 		<div className="p-4">
-			{!matchEnded && match.id && (
-				<LivePlayerScore
-					matchId={match.id}
-					userId={userId}
-					player={{
-						id: userId,
-						scoreKey:
-							match.player_1 === userId ? "player_1_score" : "player_2_score",
-						name: `${me?.first_name} ${me?.last_name}`,
-						avatar: me?.profile_image_url,
-					}}
-				/>
-			)}
+			{!matchEnded && match.id && <LivePlayerScore match={match} isP1={isP1} />}
 			{matchEnded &&
 				players &&
 				match.player_1 &&
@@ -61,7 +52,7 @@ export function OngoingMatchPlayer({
 					<div className="text-sm text-gray-600 text-center">
 						<h1 className="text-2xl font-bold mb-4">Match ended</h1>
 						<MatchScoreCard
-							table={`Table ${match.table_number}`}
+							tableNumber={match.table_number}
 							leagueName="MK Singles League"
 							eventDate={match.startTime}
 							isManuallyCreated={match.manually_created}

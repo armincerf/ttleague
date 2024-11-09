@@ -134,7 +134,7 @@ const migrateCollection = async (
 				}
 			});
 			// wait 10 seconds
-			await new Promise((resolve) => setTimeout(resolve, 10000));
+			await new Promise((resolve) => setTimeout(resolve, 100));
 
 			console.log(`Completed migration of ${collectionName}`);
 		}

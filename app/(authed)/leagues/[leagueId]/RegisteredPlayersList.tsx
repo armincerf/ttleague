@@ -22,7 +22,7 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { AvatarGroup } from "@/components/ui/avatar-group";
 
 function PlayerAvatar({

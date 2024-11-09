@@ -1,15 +1,11 @@
 import { Suspense } from "react";
 import MatchView from "./MatchView";
 import { fetchMatch } from "@/lib/actions/matches";
-import { unstable_cacheLife as cacheLife } from "next/cache";
 export default async function MatchPage({
 	params,
 }: {
 	params: Promise<{ matchId: string }>;
 }) {
-	"use cache";
-	cacheLife("seconds");
-
 	const { matchId } = await params;
 	const match = await fetchMatch(matchId);
 

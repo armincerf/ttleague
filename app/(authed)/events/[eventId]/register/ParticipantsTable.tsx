@@ -11,7 +11,7 @@ import {
 	TableRow,
 } from "@/components/ui/table";
 import { getDivision, leagueDivisionsSchema } from "@/lib/ratingSystem";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 
 const sortedLeagueDivisions = leagueDivisionsSchema.options.reverse();
 

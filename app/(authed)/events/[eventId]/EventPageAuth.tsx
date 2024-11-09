@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import dynamic from "next/dynamic";
 import MatchListSkeleton from "./MatchListSkeleton";
 import type { Event } from "@/lib/actions/events";

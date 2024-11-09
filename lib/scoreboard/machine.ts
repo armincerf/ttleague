@@ -42,6 +42,7 @@ export interface ScoreboardCallbacks {
 	onPlayerOneStartsChange?: (playerOneStarts: boolean) => Promise<void>;
 	onGameComplete?: (state: ScoreboardContext) => Promise<void>;
 	onMatchComplete?: (state: ScoreboardContext) => Promise<void>;
+	onResetMatch?: (state: ScoreboardContext) => Promise<void>;
 }
 
 const isWinningScore = ({ context }: { context: ScoreboardContext }) =>
@@ -143,6 +144,10 @@ export const createScoreboardMachine = (
 					callbacks.onPlayerOneStartsChange?.(event.starts);
 				}
 			},
+			notifyResetMatch: ({ context }) => {
+				console.log("resetMatch", context, callbacks);
+				callbacks.onResetMatch?.(context);
+			},
 			notifyGameComplete: ({ context }) => {
 				const winner = getWinner(context);
 				if (winner !== null) {
@@ -171,6 +176,7 @@ export const createScoreboardMachine = (
 				// After or at midpoint: swapped is true
 				return { sidesSwapped: maxScore >= midPoint };
 			}),
+
 			checkMatchPoint: assign(({ context }) => {
 				// Clear match point if either player is below the threshold
 				if (
@@ -233,17 +239,17 @@ export const createScoreboardMachine = (
 					INCREMENT_SCORE: {
 						actions: [
 							assign(updatePlayerScore),
-							"notifyScoreChange",
 							"checkMidGameSwap",
 							"checkMatchPoint",
+							"notifyScoreChange",
 						],
 					},
 					SET_SCORE: {
 						actions: [
 							assign(updatePlayerScore),
-							"notifyScoreChange",
 							"checkMidGameSwap",
 							"checkMatchPoint",
+							"notifyScoreChange",
 						],
 					},
 					SET_PLAYER_ONE_STARTS: {
@@ -316,20 +322,23 @@ export const createScoreboardMachine = (
 					},
 					RESET_MATCH: {
 						target: "playing",
-						actions: assign(({ context }) => ({
-							playerOne: {
-								...context.playerOne,
-								gamesWon: 0,
-								currentScore: 0,
-								matchPoint: false,
-							},
-							playerTwo: {
-								...context.playerTwo,
-								gamesWon: 0,
-								currentScore: 0,
-								matchPoint: false,
-							},
-						})),
+						actions: [
+							assign(({ context }) => ({
+								playerOne: {
+									...context.playerOne,
+									gamesWon: 0,
+									currentScore: 0,
+									matchPoint: false,
+								},
+								playerTwo: {
+									...context.playerTwo,
+									gamesWon: 0,
+									currentScore: 0,
+									matchPoint: false,
+								},
+							})),
+							"notifyResetMatch",
+						],
 					},
 					SET_PLAYER_ONE_STARTS: {
 						actions: [

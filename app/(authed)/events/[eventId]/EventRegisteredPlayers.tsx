@@ -22,7 +22,7 @@ import { client } from "@/lib/triplit";
 import type { AvatarUser } from "@/components/ui/avatar-group";
 import { useLoadingState } from "@/hooks/useLoadingState";
 import { AvatarGroup } from "@/components/ui/avatar-group";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import type { Event } from "@/lib/actions/events";
 
 function PlayerAvatar({ player }: { player: AvatarUser }) {

@@ -257,7 +257,7 @@ export default function MatchHistoryTable({
 													}}
 													scores={row.original.scores}
 													bestOf={row.original.bestOf}
-													table={row.original.table}
+													tableNumber={row.original.tableNumber}
 													leagueName="MK Singles League"
 													eventDate={row.original.date}
 													isManuallyCreated={row.original.isManuallyCreated}

@@ -71,8 +71,7 @@ export function EventList({
 			);
 	}, [past]);
 	const { results: clientEvents } = useQuery(client, query);
-	console.log("clientEvents", clientEvents);
-	const leagueEvents = clientEvents ?? events;
+	const leagueEvents = (clientEvents?.length ?? 0) > 0 ? clientEvents : events;
 	return (
 		<div className="mt-8">
 			<div className="flex justify-between items-center mb-4">
@@ -84,7 +83,7 @@ export function EventList({
 				)}
 			</div>
 			<div className="grid grid-cols-1 md:grid-cols-2 gap-6 auto-rows-fr">
-				{leagueEvents.map((event) => (
+				{leagueEvents?.map((event) => (
 					<EventCard key={event.id} event={event} />
 				))}
 			</div>

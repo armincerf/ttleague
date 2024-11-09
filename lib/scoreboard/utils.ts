@@ -74,11 +74,14 @@ export function calculateCurrentServer({
 	pointsToWin,
 	playerOneStarts,
 }: {
-	playerOne: PlayerWithGames;
-	playerTwo: PlayerWithGames;
+	playerOne?: PlayerWithGames;
+	playerTwo?: PlayerWithGames;
 	pointsToWin: number;
 	playerOneStarts: boolean;
 }): string {
+	if (!playerOne || !playerTwo) {
+		return "";
+	}
 	const totalScore = playerOne.currentScore + playerTwo.currentScore;
 	const totalGames = playerOne.gamesWon + playerTwo.gamesWon;
 	const isOddGame = totalGames % 2 === 1;
@@ -86,6 +89,11 @@ export function calculateCurrentServer({
 		? !playerOneStarts
 		: playerOneStarts;
 
+	console.log("servingPlayer", {
+		effectivePlayerOneStarts,
+		playerOneStarts,
+		isOddGame,
+	});
 	// Handle deuce scenario
 	if (shouldAlternateEveryPoint({ playerOne, playerTwo, pointsToWin })) {
 		return (totalScore % 2 === 0) === effectivePlayerOneStarts

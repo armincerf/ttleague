@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { revalidateEvent, type Event } from "@/lib/actions/events";
 import { client } from "@/lib/triplit";
 import type { Match } from "@/triplit/schema";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { useQueryOne } from "@triplit/react";
 import { addMinutes, subMinutes } from "date-fns";
 import {

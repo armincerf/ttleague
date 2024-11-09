@@ -70,6 +70,7 @@ export function ScoreboardProvider({
 	const machine = createScoreboardMachine({
 		onScoreChange: stateProvider?.updateScore,
 		onGameComplete: stateProvider?.onGameComplete,
+		onResetMatch: stateProvider?.onResetMatch,
 	});
 	return (
 		<ScoreboardMachineContext.Provider

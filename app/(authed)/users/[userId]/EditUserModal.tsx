@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import type { User } from "@/triplit/schema";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { ProfileImageUpload } from "@/app/(noauth)/onboarding/components/ProfileUpload";
 
 interface EditUserModalProps {

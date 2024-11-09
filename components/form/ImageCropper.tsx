@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import Cropper from "react-easy-crop";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { useDropzone } from "react-dropzone";
 import { FileIcon, UploadIcon } from "lucide-react";
 import { FormControl } from "@/components/ui/form";

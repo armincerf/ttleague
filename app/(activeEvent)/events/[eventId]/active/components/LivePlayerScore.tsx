@@ -6,55 +6,54 @@ import { Triangle } from "lucide-react";
 import { motion } from "framer-motion";
 import { calculateCurrentServer } from "@/lib/scoreboard/utils";
 import { useEffect } from "react";
+import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
 
 type LivePlayerScoreProps = {
-	matchId: string;
-	userId: string;
-	player: {
-		scoreKey: "player_1_score" | "player_2_score";
-		name: string;
-		avatar?: string;
-		id: string;
-	};
+	match: TournamentMatch | null;
+	isP1: boolean;
 };
 
-export function LivePlayerScore({ matchId, player }: LivePlayerScoreProps) {
+export function LivePlayerScore({ match, isP1 }: LivePlayerScoreProps) {
 	const { results: games } = useQuery(
 		client,
 		client
 			.query("games")
-			.where([["match_id", "=", matchId]])
+			.where([["match_id", "=", match?.id ?? ""]])
 			.select(["sides_swapped", "player_1_score", "player_2_score", "winner"])
 			.order("started_at", "DESC"),
 	);
 	const currentGame = games?.[0];
-
-	const currentScore = currentGame?.[player.scoreKey] ?? 0;
-	const gamesWon = games?.filter((game) => game.winner === player.id).length;
-	const isP1 = player.scoreKey === "player_1_score";
 	const swappedSides = !!currentGame?.sides_swapped;
 
-	// left if p1, right if p2. swapped if swappedSides is true
-	const side = (isP1 ? !swappedSides : swappedSides) ? "left" : "right";
+	const playerOneGamesWon = games?.filter(
+		(g) => g.winner === match?.player_1,
+	).length;
+	const playerTwoGamesWon = games?.filter(
+		(g) => g.winner === match?.player_2,
+	).length;
+	const side = isP1 ? "left" : "right";
+	const playerOne = match?.players.find((p) => p?.id === match?.player_1);
+	const playerTwo = match?.players.find((p) => p?.id === match?.player_2);
+	const playerOneCurrentScore = currentGame?.player_1_score ?? 0;
+	const playerTwoCurrentScore = currentGame?.player_2_score ?? 0;
+	// The device on the left always shows player 1 unless the sides are swapped
+	const visiblePlayerIsP1 = isP1 !== swappedSides;
+	const currentScore = visiblePlayerIsP1
+		? playerOneCurrentScore
+		: playerTwoCurrentScore;
 	const servingPlayer = calculateCurrentServer({
 		playerOne: {
-			firstName: isP1 ? player.name : undefined,
-			currentScore: currentGame?.player_1_score ?? 0,
-			gamesWon:
-				(isP1
-					? gamesWon
-					: games?.filter((g) => g.winner === player.id).length) ?? 0,
+			currentScore: playerOneCurrentScore,
+			gamesWon: playerOneGamesWon ?? 0,
+			firstName: playerOne?.first_name ?? "",
 		},
 		playerTwo: {
-			firstName: !isP1 ? player.name : undefined,
-			currentScore: currentGame?.player_2_score ?? 0,
-			gamesWon:
-				(!isP1
-					? gamesWon
-					: games?.filter((g) => g.winner === player.id).length) ?? 0,
+			currentScore: playerTwoCurrentScore,
+			gamesWon: playerTwoGamesWon ?? 0,
+			firstName: playerTwo?.first_name ?? "",
 		},
 		pointsToWin: 11,
-		playerOneStarts: !swappedSides,
+		playerOneStarts: true,
 	});
 
 	useEffect(() => {
@@ -78,6 +77,13 @@ export function LivePlayerScore({ matchId, player }: LivePlayerScoreProps) {
 			void wakeLock?.release();
 		};
 	}, []);
+	const gamesWon = visiblePlayerIsP1 ? playerOneGamesWon : playerTwoGamesWon;
+	const name = visiblePlayerIsP1
+		? playerOne?.first_name
+		: playerTwo?.first_name;
+	const avatar = visiblePlayerIsP1
+		? playerOne?.profile_image_url
+		: playerTwo?.profile_image_url;
 
 	return (
 		<div className="absolute top-0 left-0 w-full h-full z-[200] bg-white flex flex-col items-center justify-center overflow-hidden">
@@ -93,14 +99,14 @@ export function LivePlayerScore({ matchId, player }: LivePlayerScoreProps) {
 			)}
 			<div
 				className={cn(
-					"absolute top-0 -mt-20 font-bold",
-					currentScore < 10 ? "text-[60vh]" : "text-[40vh]",
+					"absolute top-0 font-bold",
+					currentScore < 10 ? "text-[60vh]" : "text-[40vh] top-20",
 				)}
 			>
 				{currentScore}
 			</div>
 			<div className="flex items-center gap-2 mt-4 absolute bottom-4">
-				{servingPlayer === player.name && (
+				{servingPlayer === name && (
 					<motion.div
 						initial={{ x: -30, opacity: 0 }}
 						animate={{ x: 0, opacity: 1 }}
@@ -110,12 +116,12 @@ export function LivePlayerScore({ matchId, player }: LivePlayerScoreProps) {
 						<Triangle className="w-8 h-8 rotate-90 text-red-500 fill-red-500 opacity-80" />
 					</motion.div>
 				)}
-				{player.avatar && (
+				{avatar && (
 					<Avatar>
-						<AvatarImage src={player.avatar} alt={player.name} />
+						<AvatarImage src={avatar} alt={name} />
 					</Avatar>
 				)}
-				<span className="text-lg font-medium">{player.name}</span>
+				<span className="text-lg font-medium">{name}</span>
 			</div>
 		</div>
 	);

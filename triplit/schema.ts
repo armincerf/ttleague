@@ -265,6 +265,9 @@ export const schema = {
 			...defaultPermissions,
 			user: {
 				...userReadOnly,
+				delete: {
+					filter: [true],
+				},
 				insert: {
 					filter: [true],
 				},

@@ -1,6 +1,5 @@
 import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
-
 export async function fetchLeague(leagueId: string) {
 	const start = performance.now();
 	try {

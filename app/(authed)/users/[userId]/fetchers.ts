@@ -2,7 +2,6 @@ import { httpClient } from "@/lib/triplitServerClient";
 import type { MatchScore } from "@/components/MatchScoreCard";
 import { or } from "@triplit/client";
 import type { User } from "@/triplit/schema";
-import { unstable_cacheTag as cacheTag } from "next/cache";
 
 export type Match = {
 	id: string;
@@ -13,14 +12,12 @@ export type Match = {
 	bestOf: number;
 	result: "win" | "loss";
 	ratingChange: number;
-	table?: string;
+	tableNumber?: number;
 	umpire?: User | null;
 	isManuallyCreated?: boolean;
 };
 
 export async function fetchUser(userId: string) {
-	"use cache";
-	cacheTag("user-page");
 	const user = await httpClient.fetchById("users", userId);
 	if (!user) {
 		console.error("User not found", userId);
@@ -29,8 +26,6 @@ export async function fetchUser(userId: string) {
 }
 
 export async function fetchUserMatches(userId: string): Promise<Match[]> {
-	"use cache";
-	cacheTag("user-page");
 	const matches = await httpClient.fetch(
 		httpClient
 			.query("matches")
@@ -109,7 +104,7 @@ export async function fetchUserMatches(userId: string): Promise<Match[]> {
 				bestOf: match.best_of,
 				result: match.winner === userId ? "win" : "loss",
 				ratingChange: match.ranking_score_delta,
-				table: match.table_number.toString(),
+				tableNumber: match.table_number,
 				umpire: match.umpireUser,
 				isManuallyCreated: !!match.manually_created,
 			} as const;

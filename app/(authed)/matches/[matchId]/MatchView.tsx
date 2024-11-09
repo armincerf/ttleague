@@ -46,7 +46,7 @@ export function MatchView2({ serverMatch }: { serverMatch: Match }) {
 			<div className="text-sm text-gray-600 text-center md:scale-150">
 				<h1 className="text-2xl font-bold mb-4">Match Details</h1>
 				<MatchScoreCard
-					table={`Table ${match.table_number}`}
+					tableNumber={match.table_number}
 					player1={{
 						id: match.player1.id,
 						name: `${match.player1.first_name} ${match.player1.last_name}`,

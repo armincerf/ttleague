@@ -2,7 +2,7 @@ import { client } from "@/lib/triplit";
 import { useQuery, useQueryOne } from "@triplit/react";
 import { Button } from "@/components/ui/button";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import type { User, Match } from "@/triplit/schema";
 import { useEffect, useState } from "react";
 import { Scoreboard } from "@/components/tournamentManager/Scoreboard";
@@ -80,6 +80,9 @@ export function WaitingPage({
 		<div className="flex flex-col items-center justify-center p-4 space-y-6">
 			<div className="text-center space-y-2">
 				<h2 className="text-2xl font-semibold">Welcome to {event?.name}</h2>
+				<p className="text-gray-600">
+					You're logged in as {user?.firstName} {user?.lastName}
+				</p>
 			</div>
 
 			<div
@@ -178,7 +181,7 @@ export function WaitingPage({
 								{player.first_name} {player.last_name}
 								{player.isResting && (
 									<span className="ml-2 text-sm text-yellow-600">
-										(Taking a break)
+										(Inactive)
 									</span>
 								)}
 							</span>

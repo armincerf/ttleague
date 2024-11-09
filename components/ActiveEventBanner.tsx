@@ -1,7 +1,7 @@
 "use client";
 
 import { client } from "@/lib/triplit";
-import { useUser } from "@clerk/nextjs";
+import { useUser } from "@/lib/hooks/useUser";
 import { useQueryOne } from "@triplit/react";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";

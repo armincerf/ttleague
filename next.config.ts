@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 export default {
-	experimental: {
-		dynamicIO: true,
-	},
 	typescript: {
 		ignoreBuildErrors: true,
 	},

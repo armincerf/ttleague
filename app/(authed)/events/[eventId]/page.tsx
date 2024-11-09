@@ -3,7 +3,6 @@ import { EventRegisteredPlayers } from "./EventRegisteredPlayers";
 import { AdminButton } from "../../../../components/AdminButton";
 import { AdminEventActions } from "./AdminEventActions";
 import EventCard from "./EventCard";
-import { unstable_cacheLife as cacheLife } from "next/cache";
 
 function EventNotFound() {
 	return <div>Event not found</div>;
@@ -14,9 +13,6 @@ export default async function EventPage({
 }: {
 	params: Promise<{ eventId: string; leagueId: string }>;
 }) {
-	"use cache";
-	cacheLife("seconds");
-
 	const { eventId } = await params;
 
 	const event = await fetchEvent(eventId);

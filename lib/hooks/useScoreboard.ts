@@ -17,6 +17,7 @@ export interface StateProvider {
 	updateGame?: (gameState: Partial<ScoreboardContext>) => Promise<void>;
 	onGameComplete?: (state: ScoreboardContext) => Promise<void>;
 	onMatchComplete?: (state: ScoreboardContext) => Promise<void>;
+	onResetMatch?: (state: ScoreboardContext) => Promise<void>;
 	onExternalUpdate?: (
 		callback: (state: Partial<ScoreboardContext>) => void,
 	) => () => void;

@@ -1,6 +1,6 @@
 import { toast } from "@/hooks/use-toast";
 import type { TriplitClient } from "@triplit/client";
-import type { schema, ActiveTournament, Event } from "@/triplit/schema";
+import type { schema, ActiveTournament, Event, Game } from "@/triplit/schema";
 import { createMatchGenerator } from "../utils/matchUtils";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createMatchConfirmation } from "../utils/matchConfirmationUtils";
@@ -17,6 +17,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 		async createTournament(eventId: string) {
 			marky.mark("createTournament");
 			const tournament = await client.insert("active_tournaments", {
+				id: `tournament-${eventId}`,
 				event_id: eventId,
 				status: "idle",
 				player_ids: new Set<string>(),
@@ -32,6 +33,26 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 
 			marky.stop("createTournament");
 			return tournament.output;
+		},
+
+		async resetMatch(games: Game[]) {
+			marky.mark("resetMatch");
+			console.log("resetMatch", games);
+			await client.transact(async (tx) => {
+				for (const game of games) {
+					if (game.completed_at) {
+						console.log("deleting game", game.id);
+						await tx.delete("games", game.id);
+					} else {
+						console.log("resetting game", game.id);
+						await tx.update("games", game.id, (g) => {
+							g.player_1_score = 0;
+							g.player_2_score = 0;
+						});
+					}
+				}
+			});
+			marky.stop("resetMatch");
 		},
 
 		async resetTournament(tournamentId: string, matchIds: string[]) {

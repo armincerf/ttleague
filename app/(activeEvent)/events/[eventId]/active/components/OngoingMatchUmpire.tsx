@@ -1,18 +1,17 @@
 import { MatchScoreCard } from "@/components/MatchScoreCard";
 import Scoreboard from "@/components/scoreboard/Scoreboard";
 import { Button } from "@/components/ui/button";
+import { TbDeviceMobileRotated } from "react-icons/tb";
 import { useAsyncAction } from "@/lib/hooks/useAsyncAction";
 import { getDivision } from "@/lib/ratingSystem";
-import { getWinner } from "@/lib/scoreboard/utils";
-import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
 import { client } from "@/lib/triplit";
-import type { User } from "@/triplit/schema";
-import { useUser } from "@clerk/nextjs";
 import { useQuery, useQueryOne } from "@triplit/react";
 import { useEffect } from "react";
 import { fetchMatchScores } from "@/lib/matches/queries";
 import { useQuery as useTSQuery } from "@tanstack/react-query";
+import { useUser } from "@/lib/hooks/useUser";
+import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
 
 type OngoingMatchUmpireProps = {
 	match: TournamentMatch;
@@ -83,89 +82,104 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 		gamesNeededToWin,
 	]);
 	return (
-		<>
+		<div className="p-2 flex flex-col gap-4 items-center h-full justify-center">
 			{!awaitingUmpireConfirmation && playerOne?.id && playerTwo?.id && (
-				<div className="bg-green-50 border-2 border-green-300 rounded-xl p-6 w-full shadow-lg">
-					<h2 className="text-2xl font-bold mb-4 text-center">Active Match</h2>
+				<div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-6 py-20 w-full shadow-lg">
+					<h2 className="text-5xl font-bold mb-4 text-center">Umpire Duty</h2>
 					<div className="text-center mb-6">
-						<div className="text-xl font-semibold bg-green-100 rounded-lg py-2 px-4 inline-block">
+						<div className="text-3xl font-semibold bg-blue-100 rounded-lg py-2 px-4 inline-block">
 							Table {match.table_number}
 						</div>
 					</div>
-					<Scoreboard
-						persistState={false}
-						showTopBar={false}
-						stateProvider={{
-							onGameComplete: async (state) => {
-								const playerOneScore = state.playerOne.currentScore;
-								const playerTwoScore = state.playerTwo.currentScore;
-								if (!currentGames || currentGames.length === 0) return;
-								await client.update("games", currentGames[0].id, (game) => {
-									game.player_1_score = playerOneScore;
-									game.player_2_score = playerTwoScore;
-									game.updated_at = new Date();
-									game.updated_by = userId;
-									game.winner =
-										playerOneScore > playerTwoScore
-											? match.player_1
-											: match.player_2;
-								});
-								const playerOneWonGame = playerOneScore > playerTwoScore;
-								const isMatchOver = playerOneWonGame
-									? playerOneGamesWon + 1 >= gamesNeededToWin
-									: playerTwoGamesWon + 1 >= gamesNeededToWin;
-								if (isMatchOver || !match.id) return;
-								await client.insert("games", {
-									match_id: match.id,
-									game_number: currentGames[0].game_number + 1,
-									player_1_score: 0,
-									player_2_score: 0,
-									updated_by: userId,
-									sides_swapped: !state.sidesSwapped,
-								});
-							},
-							updateScore: async (playerId, score, sidesSwapped) => {
-								console.log("updateScore", playerId, score);
-								if (!currentGames || currentGames.length === 0) return;
-								await client.update("games", currentGames[0].id, (game) => {
-									game.sides_swapped = sidesSwapped;
-									if (playerId === match.player_1) {
-										game.player_1_score = score;
-									} else if (playerId === match.player_2) {
-										game.player_2_score = score;
-									}
-									game.updated_at = new Date();
-									game.updated_by = userId;
-								});
-							},
-							onMatchComplete: async (state) => {
-								const playerOneWin =
-									state.playerOne.currentScore > state.playerTwo.currentScore;
-								const winnerId = playerOneWin ? match.player_1 : match.player_2;
-								if (!match.id || !winnerId) return;
-								await tournamentService.matchConfirmation.confirmWinner(
-									match.id,
-									winnerId,
-								);
-							},
-						}}
-						player1={{
-							id: playerOne.id,
-							firstName: playerOne.first_name,
-							lastName: playerOne.last_name,
-							gamesWon: playerOneGamesWon,
-							currentScore: playerOneScore,
-							matchPoint: false,
-						}}
-						player2={{
-							id: playerTwo.id,
-							firstName: playerTwo.first_name,
-							lastName: playerTwo.last_name,
-							gamesWon: playerTwoGamesWon,
-							currentScore: playerTwoScore,
-							matchPoint: false,
-						}}
-					/>
+					<div className="portrait:block landscape:hidden">
+						<h2 className="text-center text-lg font-semibold">
+							Please rotate your device to landscape mode to record scores
+						</h2>
+						<TbDeviceMobileRotated className="w-16 h-16 mx-auto" />
+					</div>
+					<div className="portrait:hidden landscape:block">
+						<Scoreboard
+							showSettings={false}
+							persistState={false}
+							showTopBar={false}
+							stateProvider={{
+								onGameComplete: async (state) => {
+									const playerOneScore = state.playerOne.currentScore;
+									const playerTwoScore = state.playerTwo.currentScore;
+									if (!currentGames || currentGames.length === 0) return;
+									await client.update("games", currentGames[0].id, (game) => {
+										game.player_1_score = playerOneScore;
+										game.player_2_score = playerTwoScore;
+										game.updated_at = new Date();
+										game.updated_by = userId;
+										game.winner =
+											playerOneScore > playerTwoScore
+												? match.player_1
+												: match.player_2;
+									});
+									const playerOneWonGame = playerOneScore > playerTwoScore;
+									const isMatchOver = playerOneWonGame
+										? playerOneGamesWon + 1 >= gamesNeededToWin
+										: playerTwoGamesWon + 1 >= gamesNeededToWin;
+									if (isMatchOver || !match.id) return;
+									await client.insert("games", {
+										match_id: match.id,
+										game_number: currentGames[0].game_number + 1,
+										player_1_score: 0,
+										player_2_score: 0,
+										updated_by: userId,
+										sides_swapped: !state.sidesSwapped,
+									});
+								},
+								updateScore: async (playerId, score, sidesSwapped) => {
+									console.log("updateScore", playerId, score);
+									if (!currentGames || currentGames.length === 0) return;
+									await client.update("games", currentGames[0].id, (game) => {
+										game.sides_swapped = sidesSwapped;
+										if (playerId === match.player_1) {
+											game.player_1_score = score;
+										} else if (playerId === match.player_2) {
+											game.player_2_score = score;
+										}
+										game.updated_at = new Date();
+										game.updated_by = userId;
+									});
+								},
+								onMatchComplete: async (state) => {
+									const playerOneWin =
+										state.playerOne.currentScore > state.playerTwo.currentScore;
+									const winnerId = playerOneWin
+										? match.player_1
+										: match.player_2;
+									if (!match.id || !winnerId) return;
+									await tournamentService.matchConfirmation.confirmWinner(
+										match.id,
+										winnerId,
+									);
+								},
+								onResetMatch: async () => {
+									if (!currentGames || currentGames?.length === 0) return;
+									await tournamentService.resetMatch(currentGames);
+								},
+							}}
+							player1={{
+								id: playerOne.id,
+								firstName: playerOne.first_name,
+								lastName: playerOne.last_name,
+								gamesWon: playerOneGamesWon,
+								currentScore: playerOneScore,
+								matchPoint: false,
+							}}
+							player2={{
+								id: playerTwo.id,
+								firstName: playerTwo.first_name,
+								lastName: playerTwo.last_name,
+								gamesWon: playerTwoGamesWon,
+								currentScore: playerTwoScore,
+								matchPoint: false,
+							}}
+						/>
+					</div>
 				</div>
 			)}
 			{awaitingUmpireConfirmation &&
@@ -173,15 +187,15 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 				players.length >= 2 &&
 				match.best_of &&
 				match.id && (
-					<div className="bg-green-50 border-2 border-green-300 rounded-xl p-6 w-full max-w-md shadow-lg">
+					<div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-6 w-full max-w-md shadow-lg">
 						<h2 className="text-2xl font-bold mb-4 text-center">Match Ended</h2>
 						<div className="text-center mb-6">
-							<div className="text-xl font-semibold bg-green-100 rounded-lg py-2 px-4 inline-block">
+							<div className="text-xl font-semibold bg-blue-100 rounded-lg py-2 px-4 inline-block">
 								Table {match.table_number}
 							</div>
 						</div>
 						<MatchScoreCard
-							table={`Table ${match.table_number}`}
+							tableNumber={match.table_number}
 							umpire={`${user?.firstName} ${user?.lastName}`}
 							player1={{
 								id: players[0].id,
@@ -203,29 +217,28 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 							eventDate={match.startTime}
 							isManuallyCreated={match.manually_created}
 						/>
-						<p>
+						<p className="text-gray-600 text-sm mt-4 mb-6">
 							If the players are happy the above score is correct, please
 							confirm and give them a chance to leave the event if they want.
 							When you press the button below everyone on this table will be
 							allocated a new match.
 						</p>
 						<Button
-							className="my-4"
+							className="w-full text-lg py-6"
 							onClick={() => {
-								endMatchAction.executeAction(() => {
-									if (!match.id)
-										return Promise.reject(new Error("Match ID is required"));
-									return tournamentService.matchConfirmation.confirmMatchUmpire(
+								if (!match.id) return;
+								endMatchAction.executeAction(() =>
+									tournamentService.matchConfirmation.confirmMatchUmpire(
 										match.id,
 										userId,
-									);
-								});
+									),
+								);
 							}}
 						>
 							Confirm and allocate new matches
 						</Button>
 					</div>
 				)}
-		</>
+		</div>
 	);
 }

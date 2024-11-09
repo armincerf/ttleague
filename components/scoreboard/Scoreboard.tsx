@@ -31,6 +31,7 @@ interface ScoreboardProps {
 	loading?: boolean;
 	persistState?: boolean;
 	showTopBar?: boolean;
+	showSettings?: boolean;
 }
 
 export default function Scoreboard({
@@ -40,6 +41,7 @@ export default function Scoreboard({
 	stateProvider,
 	loading = false,
 	showTopBar = false,
+	showSettings = true,
 }: ScoreboardProps) {
 	function handlePlayersSubmit(newPlayer1: Player, newPlayer2: Player) {
 		console.log("handlePlayersSubmit", newPlayer1, newPlayer2);
@@ -58,6 +60,7 @@ export default function Scoreboard({
 				loading={loading}
 				onPlayersSubmit={handlePlayersSubmit}
 				showTopBar={showTopBar}
+				enableSettings={showSettings}
 				initialPlayer1={
 					initialPlayer1 || {
 						firstName: user?.result?.first_name,
@@ -89,12 +92,14 @@ function ScoreboardContent({
 	showTopBar,
 	initialPlayer1,
 	initialPlayer2,
+	enableSettings = true,
 }: {
 	loading: boolean;
 	onPlayersSubmit: (player1: Player, player2: Player) => void;
 	showTopBar?: boolean;
 	initialPlayer1?: Player;
 	initialPlayer2?: Player;
+	enableSettings?: boolean;
 }) {
 	const [isLandscape, setIsLandscape] = useState(false);
 	const [showSettings, setShowSettings] = useState(false);
@@ -144,15 +149,17 @@ function ScoreboardContent({
 	return (
 		<div className={`relative p-0 m-0 ${impact.variable} w-full h-full`}>
 			{showTopBar && !isLandscape && <TopBar />}
-			<button
-				type="button"
-				onClick={() => setShowSettings(true)}
-				className={cn(
-					"absolute bottom-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 z-[100]",
-				)}
-			>
-				<SettingsIcon className="w-6 h-6" />
-			</button>
+			{enableSettings && (
+				<button
+					type="button"
+					onClick={() => setShowSettings(true)}
+					className={cn(
+						"absolute bottom-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 z-[100]",
+					)}
+				>
+					<SettingsIcon className="w-6 h-6" />
+				</button>
+			)}
 			<div className="font-sans">
 				{isGameOver && (
 					<div className="fixed inset-0 z-[100] bg-black/50 flex items-center justify-center">
@@ -197,22 +204,24 @@ function ScoreboardContent({
 					/>
 				)}
 
-				<SettingsModal
-					isOpen={showSettings}
-					onClose={() => setShowSettings(false)}
-					settings={{
-						bestOf: context.bestOf,
-						pointsToWin: context.pointsToWin,
-						playerOneStarts: context.playerOneStarts,
-						sidesSwapped: context.sidesSwapped,
-						disableAnimations: context.disableAnimations,
-					}}
-					players={{
-						player1: context.playerOne,
-						player2: context.playerTwo,
-					}}
-					onPlayersSubmit={onPlayersSubmit}
-				/>
+				{enableSettings && (
+					<SettingsModal
+						isOpen={showSettings}
+						onClose={() => setShowSettings(false)}
+						settings={{
+							bestOf: context.bestOf,
+							pointsToWin: context.pointsToWin,
+							playerOneStarts: context.playerOneStarts,
+							sidesSwapped: context.sidesSwapped,
+							disableAnimations: context.disableAnimations,
+						}}
+						players={{
+							player1: context.playerOne,
+							player2: context.playerTwo,
+						}}
+						onPlayersSubmit={onPlayersSubmit}
+					/>
+				)}
 			</div>
 		</div>
 	);
