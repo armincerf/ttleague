@@ -1,7 +1,6 @@
 import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import PostHogPageView from "./PostHogPageView";
 import { PHProvider } from "./providers";
 import { Suspense } from "react";
@@ -82,7 +81,6 @@ function RootLayout({
 					</Suspense>
 					{children}
 					<Toaster />
-					<SpeedInsights />
 				</body>
 			</PHProvider>
 		</html>

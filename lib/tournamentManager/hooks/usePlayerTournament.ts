@@ -59,23 +59,27 @@ export function usePlayerTournament(playerId: string) {
 			id: tournamentState.id,
 			players: players.filter(Boolean),
 			playerIds: tournamentState.players,
-			currentMatch: {
-				...currentMatch,
-				players: [
-					players?.find((p) => p.id === currentMatch?.player_1),
-					players?.find((p) => p.id === currentMatch?.player_2),
-				],
-				umpire: players?.find((p) => p.id === currentMatch?.umpire),
-				table: currentMatch?.table_number,
-			},
-			nextMatch: {
-				id: upcomingMatches?.[0]?.id,
-				players: [
-					players?.find((p) => p.id === upcomingMatches?.[0]?.player_1),
-					players?.find((p) => p.id === upcomingMatches?.[0]?.player_2),
-				],
-				umpire: players?.find((p) => p.id === upcomingMatches?.[0]?.umpire),
-			},
+			currentMatch: currentMatch
+				? {
+						...currentMatch,
+						players: [
+							players?.find((p) => p.id === currentMatch?.player_1),
+							players?.find((p) => p.id === currentMatch?.player_2),
+						],
+						umpire: players?.find((p) => p.id === currentMatch?.umpire),
+						table: currentMatch?.table_number,
+					}
+				: null,
+			nextMatch: upcomingMatches?.[0]
+				? {
+						id: upcomingMatches?.[0]?.id,
+						players: [
+							players?.find((p) => p.id === upcomingMatches?.[0]?.player_1),
+							players?.find((p) => p.id === upcomingMatches?.[0]?.player_2),
+						],
+						umpire: players?.find((p) => p.id === upcomingMatches?.[0]?.umpire),
+					}
+				: null,
 			currentRole,
 		},
 	} as const;

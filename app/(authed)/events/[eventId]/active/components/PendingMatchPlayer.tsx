@@ -7,17 +7,7 @@ import {
 } from "@/lib/tournamentManager/hooks/useTournament";
 
 interface PendingMatchPlayerProps {
-	match: TournamentMatch & {
-		players?: Array<
-			| {
-					id: string;
-					profile_image_url: string | undefined;
-					first_name: string;
-					last_name: string;
-			  }
-			| undefined
-		>;
-	};
+	match?: TournamentMatch | null;
 	userId: string;
 }
 
@@ -27,8 +17,9 @@ export function PendingMatchPlayer({ userId, match }: PendingMatchPlayerProps) {
 	const initialConfirmAction = useAsyncAction({
 		actionName: "Initial match confirmation",
 	});
-	const hasConfirmedInitialMatch = match.playersConfirmed.has(userId);
-	const bothPlayersConfirmed = match.playersConfirmed.size === 2;
+	if (!match) return null;
+	const hasConfirmedInitialMatch = match.playersConfirmed?.has(userId);
+	const bothPlayersConfirmed = match.playersConfirmed?.size === 2;
 	const umpireConfirmed = match.umpireConfirmed;
 
 	return (
@@ -63,13 +54,15 @@ export function PendingMatchPlayer({ userId, match }: PendingMatchPlayerProps) {
 			{!hasConfirmedInitialMatch && (
 				<Button
 					loading={initialConfirmAction.isLoading}
+					disabled={!match.id}
 					onClick={() => {
-						initialConfirmAction.executeAction(() =>
-							tournamentService.matchConfirmation.confirmInitialMatch(
+						initialConfirmAction.executeAction(async () => {
+							if (!match.id) return;
+							void tournamentService.matchConfirmation.confirmInitialMatch(
 								match.id,
 								userId,
-							),
-						);
+							);
+						});
 					}}
 					className="mt-4"
 				>

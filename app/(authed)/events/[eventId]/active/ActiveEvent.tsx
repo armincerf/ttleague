@@ -34,9 +34,9 @@ function ActiveEvent({ eventId }: { eventId: string }) {
 		);
 	}
 
-	const isMatchOngoing = state?.currentMatch.status === "ongoing";
+	const isMatchOngoing = state?.currentMatch?.status === "ongoing";
 
-	if (state?.currentRole === "umpiring") {
+	if (state?.currentRole === "umpiring" && state?.currentMatch) {
 		return isMatchOngoing ? (
 			<OngoingMatchUmpire match={state.currentMatch} userId={userId} />
 		) : (
@@ -51,7 +51,7 @@ function ActiveEvent({ eventId }: { eventId: string }) {
 			userId={userId}
 		/>
 	) : (
-		<PendingMatchPlayer userId={userId} match={state.currentMatch} />
+		<PendingMatchPlayer userId={userId} match={state?.currentMatch} />
 	);
 }
 

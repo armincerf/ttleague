@@ -24,10 +24,9 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { MatchScoreCard, type MatchScore } from "./MatchScoreCard";
-import type { User } from "@/triplit/schema";
+import { MatchScoreCard } from "./MatchScoreCard";
 import { getDivision } from "@/lib/ratingSystem";
-import type { Match } from "@/app/(authed)/users/[userId]/page";
+import type { Match } from "@/app/(authed)/users/[userId]/fetchers";
 
 const columnHelper = createColumnHelper<Match>();
 
