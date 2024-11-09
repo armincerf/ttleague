@@ -1,0 +1,3 @@
+beta.ttrankings.com {
+    reverse_proxy 192.168.50.244:6920
+}

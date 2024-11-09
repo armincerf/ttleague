@@ -7,8 +7,6 @@ import { PendingMatchUmpire } from "./components/PendingMatchUmpire";
 import { OngoingMatchPlayer } from "./components/OngoingMatchPlayer";
 import { OngoingMatchUmpire } from "./components/OngoingMatchUmpire";
 import { useUser } from "@/lib/hooks/useUser";
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function ActiveEvent({ eventId }: { eventId: string }) {

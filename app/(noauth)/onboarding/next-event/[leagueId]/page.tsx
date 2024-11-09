@@ -136,7 +136,7 @@ export default async function NextEventPage({
 							variant="outline"
 							className="text-primary border-primary hover:bg-primary/10 text-wrap"
 						>
-							Sorry, can't make it
+							Not right now
 						</Button>
 					</Link>
 				</div>

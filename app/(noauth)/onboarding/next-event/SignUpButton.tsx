@@ -14,22 +14,32 @@ export function SignUpButton({ eventId }: { eventId: string }) {
 	const { user } = useUser();
 	const posthog = usePostHog();
 
-	const handleComplete = async () => {
+	const handleSignUp = async () => {
 		if (!user) {
 			console.error("No user found");
 			return;
 		}
+
 		posthog?.capture("signup_button_clicked", {
 			eventId,
 			distinctId: user.id,
 		});
-		setShowInviteModal(false);
+
 		await client.insert("event_registrations", {
+			id: `${user.id}-${eventId}`,
 			user_id: user.id,
 			event_id: eventId,
 			league_id: "mk-ttl-singles",
 			confidence_level: 10,
 		});
+
+		console.log("Sign up complete");
+
+		setShowInviteModal(true);
+	};
+
+	const handleInviteComplete = () => {
+		setShowInviteModal(false);
 		router.push("/leagues/mk-ttl-singles");
 	};
 
@@ -42,7 +52,7 @@ export function SignUpButton({ eventId }: { eventId: string }) {
 		<>
 			<Button
 				className="bg-tt-blue hover:bg-tt-blue/90 text-white px-8"
-				onClick={() => setShowInviteModal(true)}
+				onClick={handleSignUp}
 			>
 				Sign me up!
 			</Button>
@@ -51,7 +61,7 @@ export function SignUpButton({ eventId }: { eventId: string }) {
 				userId={user.id}
 				isOpen={showInviteModal}
 				onClose={() => setShowInviteModal(false)}
-				onComplete={handleComplete}
+				onComplete={handleInviteComplete}
 			/>
 		</>
 	);

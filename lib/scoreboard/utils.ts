@@ -89,11 +89,6 @@ export function calculateCurrentServer({
 		? !playerOneStarts
 		: playerOneStarts;
 
-	console.log("servingPlayer", {
-		effectivePlayerOneStarts,
-		playerOneStarts,
-		isOddGame,
-	});
 	// Handle deuce scenario
 	if (shouldAlternateEveryPoint({ playerOne, playerTwo, pointsToWin })) {
 		return (totalScore % 2 === 0) === effectivePlayerOneStarts

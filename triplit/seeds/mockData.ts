@@ -4,7 +4,7 @@ import type { schema, Event, User } from "../schema";
 
 const realClerkUsers = [
 	{
-		id: "user_2nkVcjC0FmzEjOPgDuu4t8kisEe",
+		id: "user_2ocT2uhXsjsoVmcnyI5SuFey7pK",
 		email: "alx@juxt.pro",
 		first_name: "Alex",
 		last_name: "Davis",

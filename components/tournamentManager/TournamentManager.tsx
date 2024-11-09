@@ -13,6 +13,7 @@ import { useTournament } from "@/lib/tournamentManager/hooks/useTournament";
 import { Input } from "../ui/input";
 import { useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 function TournamentManagerInner() {
 	const query = useSearchParams();
 	const eventId = query.get("eventId");
@@ -187,10 +188,13 @@ function TournamentManagerInner() {
 	);
 }
 
+const queryClient = new QueryClient();
 export function TournamentManager() {
 	return (
 		<Suspense fallback={<div>Loading...</div>}>
-			<TournamentManagerInner />
+			<QueryClientProvider client={queryClient}>
+				<TournamentManagerInner />
+			</QueryClientProvider>
 		</Suspense>
 	);
 }

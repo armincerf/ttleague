@@ -94,8 +94,9 @@ export function LandscapeScoreboard({
 						correctionsMode={isCorrectionsMode}
 						onToggle={() => send({ type: "TOGGLE_CORRECTIONS_MODE" })}
 						onReset={() => {
-							send({ type: "SET_SCORE", playerId: "player1", score: 0 });
-							send({ type: "SET_SCORE", playerId: "player2", score: 0 });
+							console.log("reset game");
+							send({ type: "SET_SCORE", playerId: player1.id, score: 0 });
+							send({ type: "SET_SCORE", playerId: player2.id, score: 0 });
 						}}
 						onResetMatch={() => send({ type: "RESET_MATCH" })}
 					/>

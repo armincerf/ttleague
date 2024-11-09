@@ -8,8 +8,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
-const TOKEN_BUFFER_MS = 60_000; // 1 minute buffer
-
 const tokenPayloadSchema = z.object({
 	exp: z.number(),
 });
@@ -39,7 +37,7 @@ function parseJwtExpiration(token: string): number {
  */
 function calculateRefreshDelay(expirationTime: number): number {
 	const currentTime = Date.now();
-	return Math.max(0, expirationTime - currentTime - TOKEN_BUFFER_MS);
+	return Math.max(0, expirationTime - currentTime);
 }
 
 function setupTokenRefreshTimer(
@@ -220,6 +218,7 @@ export function useTokenCheck() {
 			await updateClientToken(token ?? process.env.NEXT_PUBLIC_TRIPLIT_TOKEN);
 
 			if (token) {
+				cleanup?.();
 				cleanup = setupTokenRefreshTimer(token, refreshToken);
 			}
 		}

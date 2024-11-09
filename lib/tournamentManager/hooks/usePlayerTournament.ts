@@ -5,7 +5,6 @@ import { useTournament } from "./useTournament";
 
 export function usePlayerTournament(playerId: string) {
 	const { state: tournamentState } = useTournament();
-	console.log("tournamentState", tournamentState);
 
 	const matches = tournamentState?.matches;
 	const activeMatches = matches?.filter(
@@ -39,6 +38,7 @@ export function usePlayerTournament(playerId: string) {
 				"first_name",
 				"last_name",
 				"profile_image_url",
+				"gender",
 				"current_tournament_priority",
 				"current_division",
 			]),

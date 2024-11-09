@@ -60,12 +60,9 @@ export async function fetchNextEvent(leagueId: string) {
 		.sort((a, b) => a.start_time.getTime() - b.start_time.getTime())?.[0];
 	if (!nextEvent || Array.isArray(nextEvent)) return null;
 
-	const firstThreePlayerIds = nextEvent?.registrations
-		?.slice(0, 3)
-		.map((reg) => reg.user_id);
-	const players = await httpClient.fetch(
-		httpClient.query("users").where("id", "in", firstThreePlayerIds).build(),
-	);
+	const players = nextEvent.registrations
+		.map((reg) => reg.user)
+		.filter(Boolean);
 
 	return {
 		...nextEvent,

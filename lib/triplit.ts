@@ -7,4 +7,11 @@ export const client = new TriplitClient({
 	storage: "memory",
 	autoConnect: false,
 	schema,
+	experimental: {
+		entityCache: {
+			capacity: 10000,
+		},
+	},
 });
+
+client.connect();

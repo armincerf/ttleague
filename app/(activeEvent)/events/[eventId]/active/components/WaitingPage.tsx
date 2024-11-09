@@ -14,32 +14,70 @@ import {
 	DialogTrigger,
 } from "@/components/ui/dialog";
 import { Standings } from "@/components/Standings";
+import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+import { isToday } from "date-fns";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { useRouter, useSearchParams } from "next/navigation";
 
-function filterUnplayedPlayers(
+function processPlayers(
 	players: (User & {
 		matches: Match[];
 	})[],
 	userId: string,
 	waitingPlayerIds: Set<string>,
 ) {
-	return players
-		.filter((player) => {
-			if (player.id === userId) return false;
+	const playersInMatch = players.filter((player) =>
+		player.matches?.some((match) => !match.winner),
+	);
+	return players.map((player) => {
+		const inMatch = playersInMatch.some((p) => p.id === player.id);
+		const currentMatch = playersInMatch
+			.find((p) => p.id === player.id)
+			?.matches.find((m) => !m.winner);
+		const matchTable = currentMatch?.table_number;
+		const isUmpiring = currentMatch?.umpire === player.id;
 
-			// Include players with no matches array or empty matches
-			if (!player.matches?.length) return true;
-
-			// Check if there's no match between current user and this player
-			return !player.matches.some(
-				(match) =>
-					(match.player_1 === userId && match.player_2 === player.id) ||
-					(match.player_2 === userId && match.player_1 === player.id),
-			);
-		})
-		.map((player) => ({
+		return {
 			...player,
-			isResting: !waitingPlayerIds.has(player.id),
-		}));
+			inMatch: inMatch && !isUmpiring,
+			isUmpiring,
+			matchTable,
+			isResting: !waitingPlayerIds.has(player.id) && !inMatch && !isUmpiring,
+		};
+	});
+}
+
+function getPlayerStats(
+	currentPlayer: User & { matches: Match[] },
+	againstPlayerId: string,
+) {
+	const matchesAgainst = currentPlayer.matches.filter(
+		(match) =>
+			(match.player_1 === againstPlayerId ||
+				match.player_2 === againstPlayerId) &&
+			isToday(new Date(match.created_at)),
+	);
+
+	const wins = matchesAgainst.filter(
+		(match) => match.winner === currentPlayer.id,
+	).length;
+	const losses = matchesAgainst.filter(
+		(match) => match.winner === againstPlayerId,
+	).length;
+
+	return {
+		todayMatches: matchesAgainst.length,
+		todayWins: wins,
+		todayLosses: losses,
+		overallWins: currentPlayer.wins,
+		overallLosses: currentPlayer.losses,
+		overallPlayed: currentPlayer.matches_played,
+	};
 }
 
 export function WaitingPage({
@@ -63,9 +101,12 @@ export function WaitingPage({
 			.where(["events.event_id", "=", eventId])
 			.include("matches"),
 	);
+	const router = useRouter();
+	const searchParams = useSearchParams();
 
 	const { user } = useUser();
-	const userId = user?.id;
+	const userId = searchParams.get("overrideUser") ?? user?.id;
+	const currentUser = players?.find((p) => p.id === userId);
 
 	if (!userId) {
 		return "loading...";
@@ -73,7 +114,7 @@ export function WaitingPage({
 
 	const unplayedPlayers =
 		players && waitingPlayerIds
-			? filterUnplayedPlayers(players, userId, waitingPlayerIds)
+			? processPlayers(players, userId, waitingPlayerIds)
 			: [];
 
 	return (
@@ -81,7 +122,7 @@ export function WaitingPage({
 			<div className="text-center space-y-2">
 				<h2 className="text-2xl font-semibold">Welcome to {event?.name}</h2>
 				<p className="text-gray-600">
-					You're logged in as {user?.firstName} {user?.lastName}
+					You're logged in as {currentUser?.first_name} {currentUser?.last_name}
 				</p>
 			</div>
 
@@ -135,6 +176,11 @@ export function WaitingPage({
 										tournament.player_ids.delete(userId);
 									},
 								);
+								toast({
+									title: "You're no longer waiting to play",
+									description:
+										"You'll be notified when you're assigned to play or umpire a match.",
+								});
 							} else {
 								await client.update(
 									"active_tournaments",
@@ -150,6 +196,11 @@ export function WaitingPage({
 							}
 						} catch (error) {
 							console.error("Error updating player status:", error);
+							toast({
+								title: "Error updating player status",
+								description: "Please try again later",
+								variant: "destructive",
+							});
 						} finally {
 							setLoading(false);
 						}
@@ -159,33 +210,116 @@ export function WaitingPage({
 				</Button>
 			</div>
 			<div className="w-full max-w-md">
-				<h3 className="text-xl font-semibold mb-4">
-					Players You Haven't Played Yet
-				</h3>
+				<h3 className="text-xl font-semibold mb-4">Players</h3>
 				<div className="space-y-2">
 					{unplayedPlayers.map((player) => (
-						<div
-							key={player.id}
-							className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50"
-						>
-							{player.profile_image_url ? (
-								<img
-									src={player.profile_image_url}
-									alt={`${player.first_name}'s profile`}
-									className="w-10 h-10 rounded-full object-cover"
-								/>
-							) : (
-								<div className="w-10 h-10 rounded-full bg-gray-200" />
-							)}
-							<span>
-								{player.first_name} {player.last_name}
-								{player.isResting && (
-									<span className="ml-2 text-sm text-yellow-600">
-										(Inactive)
+						<Popover key={player.id}>
+							<PopoverTrigger asChild>
+								<div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+									{player.profile_image_url ? (
+										<img
+											src={player.profile_image_url}
+											alt={`${player.first_name}'s profile`}
+											className="w-10 h-10 rounded-full object-cover"
+										/>
+									) : (
+										<div className="w-10 h-10 rounded-full bg-gray-200" />
+									)}
+									<span>
+										{player.first_name} {player.last_name}
+										{(player.inMatch || player.isResting) && (
+											<span
+												className={cn(
+													"ml-2 text-sm",
+													player.inMatch
+														? "text-yellow-600"
+														: player.isUmpiring
+															? "text-blue-600"
+															: "text-gray-600",
+												)}
+											>
+												{player.inMatch
+													? `(Playing at Table ${player.matchTable})`
+													: player.isUmpiring
+														? `(Umpiring at Table ${player.matchTable})`
+														: "(Resting)"}
+											</span>
+										)}
 									</span>
+								</div>
+							</PopoverTrigger>
+							<PopoverContent className="w-64">
+								{userId && (
+									<div className="space-y-2">
+										<h4 className="font-semibold">
+											{player.first_name} {player.last_name}
+										</h4>
+										{(() => {
+											if (!players) return null;
+											const currentPlayer = players.find(
+												(p) => p.id === userId,
+											);
+											if (!currentPlayer) return null;
+											const stats = getPlayerStats(currentPlayer, player.id);
+											return (
+												<>
+													{process.env.NODE_ENV === "development" &&
+														userId !== player.id && (
+															<button
+																className="text-blue-500 text-sm"
+																onClick={() => {
+																	router.push(
+																		`/events/${eventId}/active?overrideUser=${player.id}`,
+																	);
+																}}
+																type="button"
+															>
+																Impersonate
+															</button>
+														)}
+													<div className="space-y-4">
+														<div className="space-y-2">
+															<h5 className="text-sm font-medium text-gray-500">
+																Matches Today
+															</h5>
+															<p>Played: {stats.todayMatches}</p>
+															<p className="text-green-600">
+																Wins: {stats.todayWins}
+															</p>
+															<p className="text-red-600">
+																Losses: {stats.todayLosses}
+															</p>
+														</div>
+														<div className="space-y-2">
+															<h5 className="text-sm font-medium text-gray-500">
+																Overall Stats
+															</h5>
+															<p>Played: {stats.overallPlayed}</p>
+															<p className="text-green-600">
+																Wins: {stats.overallWins}
+															</p>
+															<p className="text-red-600">
+																Losses: {stats.overallLosses}
+															</p>
+															{stats.overallPlayed > 0 && (
+																<p className="text-gray-600">
+																	Win Rate:{" "}
+																	{Math.round(
+																		(stats.overallWins / stats.overallPlayed) *
+																			100,
+																	)}
+																	%
+																</p>
+															)}
+														</div>
+													</div>
+												</>
+											);
+										})()}
+									</div>
 								)}
-							</span>
-						</div>
+							</PopoverContent>
+						</Popover>
 					))}
 				</div>
 			</div>
@@ -193,15 +327,19 @@ export function WaitingPage({
 			<div className="w-full max-w-md flex justify-center">
 				<Dialog>
 					<DialogTrigger asChild>
-						<Button variant="outline">View Tournament Standings</Button>
+						<Button variant="outline">View Current Standings</Button>
 					</DialogTrigger>
 					<DialogContent className="max-w-3xl">
 						<DialogHeader>
-							<DialogTitle>Tournament Standings</DialogTitle>
+							<DialogTitle>Current Standings</DialogTitle>
 						</DialogHeader>
 						<Standings
 							players={players ?? []}
-							matches={players?.flatMap((p) => p.matches) ?? []}
+							matches={
+								players
+									?.flatMap((p) => p.matches)
+									.filter((m) => isToday(new Date(m.created_at))) ?? []
+							}
 						/>
 					</DialogContent>
 				</Dialog>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
 	useReactTable,
 	getCoreRowModel,
@@ -50,6 +50,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { useUser } from "@/lib/hooks/useUser";
 
 export type User = Entity<typeof schema, "users">;
 
@@ -147,6 +148,28 @@ export default function LeaderboardTable({
 		client,
 		client.query("users").order("wins", "DESC"),
 	);
+	const { user } = useUser();
+
+	useEffect(() => {
+		if (results) {
+			if (user) {
+				const triplitUser = results.find((result) => result.id === user.id);
+				if (!triplitUser) {
+					client.insert("users", {
+						id: user.id,
+						email: user.primaryEmailAddress?.emailAddress ?? "",
+						first_name: user.firstName ?? "",
+						last_name: user.lastName ?? "",
+						rating: 0,
+						matches_played: 0,
+						wins: 0,
+						losses: 0,
+						no_shows: 0,
+					});
+				}
+			}
+		}
+	}, [results, user]);
 
 	const tableData = useMemo(() => {
 		if (fetching) return initialUsers;

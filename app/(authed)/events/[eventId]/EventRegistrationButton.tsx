@@ -160,12 +160,16 @@ export default function EventRegistrationButton({
 		<>
 			{eventRegistration ? (
 				<Button
-					className="w-full"
-					onClick={handleUnregister}
+					className="w-1/2"
+					onClick={() =>
+						window.confirm(
+							"Are you sure you want to drop out of this event?",
+						) && handleUnregister()
+					}
 					variant="destructive"
 					disabled={isPending}
 				>
-					Unregister
+					Drop Out
 				</Button>
 			) : userId ? (
 				<Button

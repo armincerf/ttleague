@@ -26,13 +26,12 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				total_rounds: 1,
 			});
 
-			toast({
-				title: "Tournament Created",
-				description: "New tournament has been created",
-			});
-
 			marky.stop("createTournament");
 			return tournament.output;
+		},
+
+		async removeMatchUmpire(matchId: string) {
+			await client.delete("matches", matchId);
 		},
 
 		async resetMatch(games: Game[]) {
@@ -40,7 +39,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 			console.log("resetMatch", games);
 			await client.transact(async (tx) => {
 				for (const game of games) {
-					if (game.completed_at) {
+					if (game.completed_at || game.winner) {
 						console.log("deleting game", game.id);
 						await tx.delete("games", game.id);
 					} else {
