@@ -3,7 +3,7 @@ import { AlertTriangle } from "lucide-react";
 
 export default function WIPAlertBanner() {
 	return (
-		<Alert variant="warning" className="max-w-2xl mb-2 -mt-4">
+		<Alert variant="warning" className="max-w-2xl my-2">
 			<AlertTriangle className="h-4 w-4" />
 			<AlertTitle>Work in Progress</AlertTitle>
 			<AlertDescription>

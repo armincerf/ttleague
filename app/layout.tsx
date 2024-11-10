@@ -74,7 +74,7 @@ function RootLayout({
 			</head>
 			<PHProvider>
 				<body
-					className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-y-auto h-screen`}
+					className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-y-auto h-screen relative`}
 					style={{ height: "100dvh" }}
 				>
 					<Suspense fallback={null}>

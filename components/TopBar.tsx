@@ -23,7 +23,7 @@ export default function TopBar({
 
 	return (
 		<>
-			<header className="bg-white shadow-sm absolute top-0 z-50 w-full">
+			<header className="bg-white shadow-sm fixed top-0 z-50 w-full">
 				<div className="container mx-auto px-4 h-16 flex items-center">
 					<div className="w-[100px] flex items-center">
 						{isLoaded && isSignedIn ? (
