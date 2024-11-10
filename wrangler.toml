@@ -2,8 +2,6 @@
 name = "ttleague"
 compatibility_date = "2024-09-23"
 compatibility_flags = [ "nodejs_compat" ]
-assets = { directory = ".worker-next/assets", binding = "ASSETS" }
-main = ".worker-next/index.mjs"
 
 [env.production.vars]
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsudHRyYW5raW5ncy5jb20k"
