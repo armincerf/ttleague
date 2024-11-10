@@ -5,6 +5,8 @@ import PostHogPageView from "./PostHogPageView";
 import { PHProvider } from "./providers";
 import { Suspense } from "react";
 
+export const runtime = "edge";
+
 const geistSans = localFont({
 	src: "./fonts/GeistVF.woff",
 	variable: "--font-geist-sans",

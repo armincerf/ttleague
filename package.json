@@ -9,7 +9,7 @@
 		"triplit-seed": "./bin/triplit-seed-local.sh",
 		"triplit-dev": "run-p triplit-start-server triplit-push-schema",
 		"dev": "run-p app triplit-dev",
-		"build": "next build",
+		"build": "bun run triplit-push-schema && next build",
 		"build:worker": "cloudflare",
 		"dev:worker": "wrangler dev --port 8771",
 		"preview:worker": "bun run build:worker && bun run dev:worker",
