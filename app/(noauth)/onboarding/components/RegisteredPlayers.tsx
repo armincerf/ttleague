@@ -19,7 +19,7 @@ export default function RegisteredPlayers({
 
 			<h3 className="font-semibold mb-2 relative">Already Registered</h3>
 			<TooltipProvider>
-				<div className="flex flex-wrap -space-x-2 hover:space-x-1 transition-all duration-300">
+				<div className="flex flex-wrap -space-x-2 transition-all duration-300">
 					{players.map((player) => (
 						<Tooltip key={player.name}>
 							<TooltipTrigger>

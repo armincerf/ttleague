@@ -12,7 +12,6 @@ import { fetchMatchScores } from "@/lib/matches/queries";
 import { useQuery as useTSQuery } from "@tanstack/react-query";
 import { useUser } from "@/lib/hooks/useUser";
 import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
-import { ChooseServer } from "./ChooseServer";
 
 type OngoingMatchUmpireProps = {
 	match: TournamentMatch;
@@ -108,14 +107,6 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 
 	return (
 		<div className="p-2 flex flex-col gap-4 items-center justify-center">
-			{showChooseServer && playerOne && playerTwo && (
-				<ChooseServer
-					initialServerChosen={false}
-					player1={playerOne}
-					player2={playerTwo}
-					onServerChosen={handleServerChosen}
-				/>
-			)}
 			{!awaitingUmpireConfirmation && playerOne?.id && playerTwo?.id && (
 				<div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-6 py-20 w-full shadow-lg">
 					<h2 className="text-5xl font-bold mb-4 text-center">Umpire Duty</h2>
@@ -140,15 +131,30 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 									const playerOneScore = state.playerOne.currentScore;
 									const playerTwoScore = state.playerTwo.currentScore;
 									if (!currentGames || currentGames.length === 0) return;
+									const winner =
+										playerOneScore > playerTwoScore
+											? match.player_1
+											: match.player_2;
 									await client.update("games", currentGames[0].id, (game) => {
 										game.player_1_score = playerOneScore;
 										game.player_2_score = playerTwoScore;
 										game.updated_at = new Date();
 										game.updated_by = userId;
-										game.winner =
-											playerOneScore > playerTwoScore
-												? match.player_1
-												: match.player_2;
+										game.winner = winner;
+									});
+									await client.update("matches", match.id, (m) => {
+										const oldPlayerOneScore = m.player_1_score ?? 0;
+										const oldPlayerTwoScore = m.player_2_score ?? 0;
+										m.player_1_score =
+											winner === match.player_1
+												? oldPlayerOneScore + 1
+												: oldPlayerOneScore;
+										m.player_2_score =
+											winner === match.player_2
+												? oldPlayerTwoScore + 1
+												: oldPlayerTwoScore;
+										m.updated_at = new Date();
+										m.updated_by = userId;
 									});
 									const playerOneWonGame = playerOneScore > playerTwoScore;
 									const isMatchOver = playerOneWonGame
@@ -268,7 +274,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 								);
 							}}
 						>
-							Confirm and allocate new matches
+							Confirm scores
 						</Button>
 					</div>
 				)}

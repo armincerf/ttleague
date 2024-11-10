@@ -98,6 +98,7 @@ const columns = [
 	),
 	columnHelper.accessor("rating", {
 		header: "Pts",
+		enableHiding: true,
 		cell: (info) => {
 			const row = info.row.original;
 			const gamesPlayed = row.wins + row.losses;
@@ -130,7 +131,7 @@ export default function LeaderboardTable({
 	const router = useRouter();
 	const [{ pageIndex, pageSize }, setPagination] = useState({
 		pageIndex: 0,
-		pageSize: 10,
+		pageSize: 50,
 	});
 
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
@@ -197,6 +198,7 @@ export default function LeaderboardTable({
 			sorting,
 			columnVisibility: {
 				gender: false,
+				rating: false,
 			},
 		},
 		onPaginationChange: setPagination,
@@ -320,42 +322,44 @@ export default function LeaderboardTable({
 					</TableBody>
 				</Table>
 			</div>
-			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:space-x-4 pb-6">
+			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:space-x-4 pb-2 sm:pb-6">
 				<div className="text-sm text-muted-foreground">
 					Showing {table.getRowModel().rows.length} of {tableData.length}{" "}
 					players
 					{fetching && " (updating...)"}
 				</div>
-				<Pagination className="w-full md:w-auto">
-					<PaginationContent className="w-full justify-between">
-						<PaginationItem>
-							<PaginationPrevious
-								onClick={() =>
-									table.getCanPreviousPage() && table.previousPage()
-								}
-								disabled={!table.getCanPreviousPage()}
-							/>
-						</PaginationItem>
-						<div className="flex-1 flex justify-center items-center">
-							<CompactPaginationNumbers
-								currentPage={table.getState().pagination.pageIndex}
-								totalPages={table.getPageCount()}
-								onPageChange={table.setPageIndex}
-							/>
-							<PaginationNumbers
-								currentPage={table.getState().pagination.pageIndex}
-								totalPages={table.getPageCount()}
-								onPageChange={table.setPageIndex}
-							/>
-						</div>
-						<PaginationItem>
-							<PaginationNext
-								onClick={() => table.getCanNextPage() && table.nextPage()}
-								disabled={!table.getCanNextPage()}
-							/>
-						</PaginationItem>
-					</PaginationContent>
-				</Pagination>
+				{table.getPageCount() > 1 && (
+					<Pagination className="w-full md:w-auto">
+						<PaginationContent className="w-full justify-between">
+							<PaginationItem>
+								<PaginationPrevious
+									onClick={() =>
+										table.getCanPreviousPage() && table.previousPage()
+									}
+									disabled={!table.getCanPreviousPage()}
+								/>
+							</PaginationItem>
+							<div className="flex-1 flex justify-center items-center">
+								<CompactPaginationNumbers
+									currentPage={table.getState().pagination.pageIndex}
+									totalPages={table.getPageCount()}
+									onPageChange={table.setPageIndex}
+								/>
+								<PaginationNumbers
+									currentPage={table.getState().pagination.pageIndex}
+									totalPages={table.getPageCount()}
+									onPageChange={table.setPageIndex}
+								/>
+							</div>
+							<PaginationItem>
+								<PaginationNext
+									onClick={() => table.getCanNextPage() && table.nextPage()}
+									disabled={!table.getCanNextPage()}
+								/>
+							</PaginationItem>
+						</PaginationContent>
+					</Pagination>
+				)}
 			</div>
 		</>
 	);
@@ -424,7 +428,7 @@ function LeaderboardSkeleton({ columns, rows }: LeaderboardSkeletonProps) {
 					</TableBody>
 				</Table>
 			</div>
-			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:space-x-4 pb-6">
+			<div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:space-x-4 sm:pb-6 pb-2">
 				<Skeleton className="h-6 w-[200px]" />
 				<Skeleton className="h-10 w-full md:w-[300px]" />
 			</div>

@@ -36,7 +36,6 @@ async function maybeCreateTournament(
 			throw new Error("Failed to create tournament");
 		}
 
-		await tournamentService.addPlayer(tournament.id, userId);
 		handleGoToEvent();
 	} catch (error) {
 		console.error("Error setting up tournament:", error);

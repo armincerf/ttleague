@@ -74,7 +74,8 @@ function RootLayout({
 			</head>
 			<PHProvider>
 				<body
-					className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+					className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-y-auto h-screen`}
+					style={{ height: "100dvh" }}
 				>
 					<Suspense fallback={null}>
 						<PostHogPageView />

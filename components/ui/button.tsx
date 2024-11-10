@@ -34,32 +34,84 @@ const buttonVariants = cva(
 	},
 );
 
-export interface ButtonProps
-	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-		VariantProps<typeof buttonVariants> {
-	asChild?: boolean;
-	loading?: boolean;
+export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> &
+	VariantProps<typeof buttonVariants> & {
+		asChild?: boolean;
+		loading?: boolean;
+		actionName?: string;
+	};
+
+type ReactTextNode = string | number;
+type TextExtractable =
+	| ReactTextNode
+	| { props: { children?: React.ReactNode } };
+
+function isTextNode(node: unknown): node is ReactTextNode {
+	return typeof node === "string" || typeof node === "number";
+}
+
+function isReactElement(
+	node: unknown,
+): node is { props: { children?: React.ReactNode } } {
+	return node !== null && typeof node === "object" && "props" in node;
+}
+
+function extractTextFromChildren(children: unknown): string {
+	if (!children) return "";
+	if (isTextNode(children)) return String(children);
+
+	if (Array.isArray(children)) {
+		return children
+			.map((child) => extractTextFromChildren(child))
+			.filter(Boolean)
+			.join(" ");
+	}
+
+	if (isReactElement(children)) {
+		return extractTextFromChildren(children.props.children);
+	}
+
+	return "";
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 	(
-		{ className, variant, size, asChild = false, loading = false, ...props },
+		{
+			className,
+			variant,
+			size,
+			asChild = false,
+			loading = false,
+			actionName,
+			children,
+			...props
+		},
 		ref,
 	) => {
 		const Comp = asChild ? Slot : "button";
+		const extractedText = extractTextFromChildren(children);
+		const finalActionName =
+			actionName ??
+			(extractedText
+				? extractedText.toLowerCase().replace(/\s+/g, "_")
+				: undefined);
+
 		return (
 			<Comp
 				className={cn(
 					buttonVariants({ variant, size, className }),
 					loading && "opacity-50 cursor-wait",
 				)}
+				data-ph-capture="clicked"
+				data-ph-action-name={finalActionName}
 				disabled={loading || props.disabled}
 				ref={ref}
 				{...props}
-			/>
+			>
+				{children}
+			</Comp>
 		);
 	},
 );
-Button.displayName = "Button";
 
 export { Button, buttonVariants };

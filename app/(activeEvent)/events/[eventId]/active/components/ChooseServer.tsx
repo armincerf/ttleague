@@ -54,7 +54,7 @@ export function ChooseServer({
 	}
 
 	return (
-		<div className="relative bg-blue-50 border-2 border-blue-300 rounded-xl p-6 w-full max-w-md shadow-lg">
+		<div className="relative bg-pink-50 border-2 border-pink-300 rounded-xl p-6 w-full max-w-md shadow-lg">
 			<h2 className="text-2xl font-bold mb-4 text-center">Choose Server</h2>
 			<p className="text-gray-600 mb-6 text-center">
 				Select which player will serve first

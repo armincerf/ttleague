@@ -35,22 +35,6 @@ export function EventPageAuth({ event }: Props) {
 
 	const matches = event.matches;
 
-	const userMatches = matches.filter(
-		(match) => match.player_1 === userId || match.player_2 === userId,
-	);
-	const nextMatch = userMatches.find((match) => match.status === "pending");
-	const nextOpponent =
-		nextMatch && nextMatch?.player_1 === userId
-			? nextMatch.player2
-			: nextMatch?.player1;
-	const nextTable = nextMatch?.table_number;
-	const tableMatches = matches.filter(
-		(match) => match.table_number === nextTable,
-	);
-	const tableMatchInProgress = tableMatches.some(
-		(match) => match.status === "confirmed" && !match.winner,
-	);
-
 	const { result: myEventRegistration } = useQueryOne(
 		client,
 		client.query("event_registrations").where([

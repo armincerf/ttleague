@@ -1,9 +1,11 @@
-import { UmpireIcon, UmpireMaleIcon } from "@/components/svgs/UmpireIcons";
+import { UmpireIcon } from "@/components/svgs/UmpireIcons";
 import { Button } from "@/components/ui/button";
 import { useAsyncAction } from "@/lib/hooks/useAsyncAction";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
 import { client } from "@/lib/triplit";
 import { useQuery, useQueryOne } from "@triplit/react";
+import { ChooseServer } from "./ChooseServer";
+import { useState } from "react";
 
 interface PendingMatchUmpireProps {
 	match: {
@@ -35,6 +37,7 @@ export function PendingMatchUmpire({ match, userId }: PendingMatchUmpireProps) {
 		client,
 		client.query("users").select(["gender"]).where("id", "=", userId),
 	);
+	const [serverId, setServerId] = useState<string | null>(null);
 
 	return (
 		<div className="p-2 flex flex-col gap-4 items-center justify-center h-full">
@@ -69,6 +72,14 @@ export function PendingMatchUmpire({ match, userId }: PendingMatchUmpireProps) {
 							</span>
 						</div>
 					))}
+					{players?.[0] && players?.[1] && (
+						<ChooseServer
+							initialServerChosen={false}
+							player1={players?.[0]}
+							player2={players?.[1]}
+							onServerChosen={(id) => setServerId(id)}
+						/>
+					)}
 				</div>
 				<Button
 					className="w-full text-lg py-6 mt-6"
@@ -79,6 +90,7 @@ export function PendingMatchUmpire({ match, userId }: PendingMatchUmpireProps) {
 							tournamentService.matchConfirmation.confirmInitialMatchUmpire(
 								match.id,
 								userId,
+								serverId ?? "",
 							),
 						);
 					}}

@@ -51,10 +51,15 @@ export function FeatureRequestDialog({
 					onChange={(e) => setFeedback(e.target.value)}
 				/>
 				<DialogFooter className="flex justify-end gap-2">
-					<Button variant="outline" onClick={onClose}>
+					<Button actionName={`${featureName}_not_important`} onClick={onClose}>
 						👎 Not important
 					</Button>
-					<Button onClick={handleSubmit}>👍 I want this!</Button>
+					<Button
+						actionName={`${featureName}_important`}
+						onClick={handleSubmit}
+					>
+						👍 I want this!
+					</Button>
 				</DialogFooter>
 			</DialogContent>
 		</Dialog>

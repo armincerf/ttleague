@@ -44,8 +44,6 @@ export default function OnboardingForm() {
 	const searchParams = new URLSearchParams(
 		typeof window !== "undefined" ? window.location.search : "",
 	);
-	const { getToken } = useAuth();
-
 	const form = useForm({
 		defaultValues: {
 			email:
@@ -65,12 +63,16 @@ export default function OnboardingForm() {
 				formValues: value,
 			});
 			if (!user) {
+				posthog?.capture("onboarding_form_submitted_no_user");
 				return;
 			}
 			try {
 				const result = await createUser(value);
 
 				if (!result.success) {
+					posthog?.capture("onboarding_form_submitted_error", {
+						error: result.error,
+					});
 					console.error("Error creating user:", result.error);
 					toast({
 						variant: "destructive",
@@ -80,9 +82,14 @@ export default function OnboardingForm() {
 				}
 
 				if (result.success) {
+					console.log("onboarding_form_submitted_success");
+					posthog?.capture("onboarding_form_submitted_success");
 					router.push("/onboarding/next-event/mk-ttl-singles");
 				}
 			} catch (error) {
+				posthog?.capture("onboarding_form_submitted_error", {
+					error: error,
+				});
 				console.error("Error during onboarding:", error);
 				toast({
 					variant: "destructive",

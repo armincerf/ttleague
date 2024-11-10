@@ -89,6 +89,7 @@ export const schema = {
 					or([
 						["player_1", "=", "$id"],
 						["player_2", "=", "$id"],
+						["umpire", "=", "$id"],
 					]),
 				],
 			}),
@@ -112,6 +113,7 @@ export const schema = {
 			},
 			anonymous: {
 				read: { filter: [true] },
+				insert: { filter: [true] },
 			},
 		},
 	},
@@ -198,6 +200,7 @@ export const schema = {
 				},
 			},
 			anonymous: {
+				insert: { filter: [true] },
 				read: { filter: [true] },
 			},
 		},
@@ -208,6 +211,8 @@ export const schema = {
 			id: S.Id(),
 			player_1: S.String(),
 			player_2: S.String(),
+			player_1_score: S.Optional(S.Number({ default: 0 })),
+			player_2_score: S.Optional(S.Number({ default: 0 })),
 			umpire: S.Optional(S.String()),
 			best_of: S.Number({ default: 3 }),
 			manually_created: S.Boolean(),

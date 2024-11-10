@@ -5,6 +5,9 @@ import Image from "next/image";
 import { ShareMatchButton } from "./ShareMatchButton";
 import { useRef } from "react";
 import Link from "next/link";
+import { useQueryOne } from "@triplit/react";
+import { client } from "@/lib/triplit";
+import { getDivision } from "@/lib/ratingSystem";
 
 export interface Player {
 	id: string;
@@ -259,5 +262,60 @@ export function MatchScoreCard({
 				</div>
 			)}
 		</div>
+	);
+}
+
+export function AutoMatchScoreCard({
+	matchId,
+	playerOneId,
+}: {
+	matchId: string;
+	playerOneId: string;
+}) {
+	const { result: match } = useQueryOne(
+		client,
+		client
+			.query("matches")
+			.where("id", "=", matchId)
+			.include("games")
+			.include("player1")
+			.include("player2")
+			.include("umpireUser")
+			.include("event"),
+	);
+	if (!match) return null;
+	const playerOne =
+		playerOneId === match.player_1 ? match.player1 : match.player2;
+	const playerTwo =
+		playerOneId === match.player_1 ? match.player2 : match.player1;
+	if (!playerOne || !playerTwo) return null;
+	const games = match.games.sort((a, b) => a.game_number - b.game_number);
+
+	return (
+		<MatchScoreCard
+			player1={{
+				id: playerOne.id,
+				name: `${playerOne.first_name} ${playerOne.last_name}`,
+				division: getDivision(playerOne?.current_division),
+				rating: 0,
+			}}
+			player2={{
+				id: playerTwo.id,
+				name: `${playerTwo.first_name} ${playerTwo.last_name}`,
+				division: getDivision(playerTwo?.current_division),
+				rating: 0,
+			}}
+			scores={games.map((game) => ({
+				player1Points: game.player_1_score,
+				player2Points: game.player_2_score,
+				startedAt: game.created_at,
+				completedAt: game.completed_at,
+				isValid: true,
+			}))}
+			leagueName={""}
+			bestOf={match.best_of}
+			eventName={match.event?.name ?? ""}
+			eventDate={match.event?.start_time}
+		/>
 	);
 }

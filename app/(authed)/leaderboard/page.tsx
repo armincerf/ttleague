@@ -1,6 +1,5 @@
 import LeaderboardTable from "@/components/LeaderboardTable";
 import PageLayout from "@/components/PageLayout";
-import WIPAlertBanner from "@/components/WIPAlertBanner";
 import { httpClient } from "@/lib/triplitServerClient";
 
 async function getInitialUsers() {
@@ -18,8 +17,7 @@ async function LeaderboardPage() {
 
 	return (
 		<PageLayout>
-			<WIPAlertBanner />
-			<h1 className="text-3xl font-bold mb-6">Leaderboard</h1>
+			<h1 className="text-xl font-bold mb-2">Leaderboard</h1>
 			<LeaderboardTable initialUsers={initialUsers} />
 		</PageLayout>
 	);

@@ -7,10 +7,69 @@ import { useConnectionStatus, useEntity, useQuery } from "@triplit/react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { jwtDecode } from "jwt-decode";
+import { usePostHog } from "posthog-js/react";
 
 const tokenPayloadSchema = z.object({
+	azp: z.string(),
 	exp: z.number(),
+	iat: z.number(),
+	iss: z.string(),
+	jti: z.string(),
+	nbf: z.number(),
+	sid: z.string().optional(),
+	sub: z.string(),
+	type: z.union([z.literal("user"), z.literal("admin")]),
 });
+
+type TokenPayload = z.infer<typeof tokenPayloadSchema>;
+
+function parseTokenPayload(
+	token: string,
+	router: ReturnType<typeof useRouter>,
+	posthog: ReturnType<typeof usePostHog>,
+): TokenPayload | null {
+	try {
+		const decoded = jwtDecode(token);
+		const result = tokenPayloadSchema.safeParse(decoded);
+
+		if (!result.success) {
+			console.error("Invalid token payload:", result.error);
+			return null;
+		}
+		setTimeout(async () => {
+			if (
+				posthog._isIdentified() ||
+				client.syncEngine.connectionStatus !== "OPEN"
+			) {
+				return;
+			}
+
+			let user = await client.fetchById("users", result.data.sub);
+			if (!user) {
+				const remoteUser = await client.fetchById("users", result.data.sub, {
+					policy: "remote-first",
+				});
+				console.log("remoteUser", remoteUser, result.data.sub);
+				if (!remoteUser) {
+					posthog.reset();
+					router.push("/onboarding");
+					return;
+				}
+				user = remoteUser;
+			}
+			posthog.identify(user.id, {
+				...user,
+				name: `${user.first_name} ${user.last_name}`,
+			});
+		}, 1000);
+
+		return result.data;
+	} catch (error) {
+		console.error("Failed to parse token:", error);
+		return null;
+	}
+}
 
 type TokenCleanup = () => void;
 
@@ -155,17 +214,20 @@ export function useAdminActionListener() {
 }
 
 export function useCheckForOnboarding() {
-	const [isOnboarding, setIsOnboarding] = useState(false);
+	const [isOnboarding, setIsOnboarding] = useState<boolean | undefined>(
+		undefined,
+	);
+	const [loading, setLoading] = useState(true);
 	const { userId } = useAuth();
 	const router = useRouter();
 	const pathname = usePathname();
 	const { result: user } = useEntity(client, "users", userId ?? "");
-	const [loading, setLoading] = useState(true);
 
 	useEffect(() => {
-		setTimeout(() => {
+		const timer = setTimeout(() => {
 			setLoading(false);
 		}, 1000);
+		return () => clearTimeout(timer);
 	}, []);
 
 	useEffect(() => {
@@ -178,35 +240,37 @@ export function useCheckForOnboarding() {
 			return;
 		}
 
-		console.log("user", user);
 		const missingFields = requiredOnboardingFields.some(
 			(field) => !user?.[field],
 		);
 		setIsOnboarding(missingFields);
-		console.log("missingFields", missingFields, user);
 
 		if (missingFields) {
 			router.push("/onboarding");
 		}
 	}, [router, pathname, user, loading, userId]);
 
-	return { isOnboarding };
+	return { isOnboarding: loading ? undefined : isOnboarding };
 }
 
 export function useTokenCheck() {
 	const { getToken } = useAuth();
 
 	useEffect(() => {
-		setTimeout(() => {
+		const timer = setTimeout(() => {
 			if (client.syncEngine.connectionStatus !== "OPEN") {
 				client.reset();
-				setTimeout(() => {
+				const connectTimer = setTimeout(() => {
 					client.connect();
 				}, 1000);
+				return () => clearTimeout(connectTimer);
 			}
 		}, 10000);
+		return () => clearTimeout(timer);
 	}, []);
 
+	const router = useRouter();
+	const posthog = usePostHog();
 	useEffect(() => {
 		let cleanup: TokenCleanup;
 		if (process.env.NODE_ENV !== "development") {
@@ -214,8 +278,10 @@ export function useTokenCheck() {
 		}
 
 		async function refreshToken() {
-			const token = await getToken();
+			const token = await getToken({ template: "Triplit" });
 			await updateClientToken(token ?? process.env.NEXT_PUBLIC_TRIPLIT_TOKEN);
+			const parsedToken = parseTokenPayload(token ?? "", router, posthog);
+			console.log("parsedToken", parsedToken);
 
 			if (token) {
 				cleanup?.();
@@ -228,5 +294,5 @@ export function useTokenCheck() {
 		return () => {
 			cleanup?.();
 		};
-	}, [getToken]);
+	}, [getToken, router, posthog]);
 }

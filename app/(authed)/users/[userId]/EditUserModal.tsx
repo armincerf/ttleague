@@ -23,7 +23,7 @@ export function EditUserModal({ user }: EditUserModalProps) {
 	const { user: currentUser } = useUser();
 
 	return (
-		<div className="sticky z-20 top-8 right-8 translate-x-8 -translate-y-8">
+		<div className="absolute z-20 top-8 right-8 translate-x-8 -translate-y-8">
 			{currentUser?.id === user.id && (
 				<Button
 					onClick={() => setIsOpen(true)}

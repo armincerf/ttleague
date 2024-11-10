@@ -5,7 +5,6 @@ import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
 import { useUser } from "@/lib/hooks/useUser";
 import type { User, Match } from "@/triplit/schema";
 import { useEffect, useState } from "react";
-import { Scoreboard } from "@/components/tournamentManager/Scoreboard";
 import {
 	Dialog,
 	DialogContent,
@@ -23,6 +22,18 @@ import {
 	PopoverTrigger,
 } from "@/components/ui/popover";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { InfoIcon } from "lucide-react";
+import {
+	AutoMatchScoreCard,
+	MatchScoreCard,
+} from "@/components/MatchScoreCard";
+import { TodayMatches } from "@/components/TodayMatches";
 
 function processPlayers(
 	players: (User & {
@@ -34,32 +45,49 @@ function processPlayers(
 	const playersInMatch = players.filter((player) =>
 		player.matches?.some((match) => !match.winner),
 	);
-	return players.map((player) => {
-		const inMatch = playersInMatch.some((p) => p.id === player.id);
-		const currentMatch = playersInMatch
-			.find((p) => p.id === player.id)
-			?.matches.find((m) => !m.winner);
-		const matchTable = currentMatch?.table_number;
-		const isUmpiring = currentMatch?.umpire === player.id;
+	return players
+		.filter((player) => player.id !== userId)
+		.map((player) => {
+			const inMatch = playersInMatch.some((p) => p.id === player.id);
+			const currentMatch = playersInMatch
+				.find((p) => p.id === player.id)
+				?.matches.find((m) => !m.winner);
+			const matchTable = currentMatch?.table_number;
+			const isUmpiring = currentMatch?.umpire === player.id;
 
-		return {
-			...player,
-			inMatch: inMatch && !isUmpiring,
-			isUmpiring,
-			matchTable,
-			isResting: !waitingPlayerIds.has(player.id) && !inMatch && !isUmpiring,
-		};
-	});
+			const score = currentMatch
+				? {
+						playerScore:
+							currentMatch.player_1 === player.id
+								? (currentMatch.player_1_score ?? 0)
+								: (currentMatch.player_2_score ?? 0),
+						opponentScore:
+							currentMatch.player_1 === player.id
+								? (currentMatch.player_2_score ?? 0)
+								: (currentMatch.player_1_score ?? 0),
+					}
+				: undefined;
+
+			return {
+				...player,
+				inMatch: inMatch && !isUmpiring,
+				isUmpiring,
+				matchTable,
+				score,
+				currentMatch,
+				isResting: !waitingPlayerIds.has(player.id) && !inMatch && !isUmpiring,
+			};
+		});
 }
 
 function getPlayerStats(
 	currentPlayer: User & { matches: Match[] },
-	againstPlayerId: string,
+	againstPlayer: User & { matches: Match[] },
 ) {
 	const matchesAgainst = currentPlayer.matches.filter(
 		(match) =>
-			(match.player_1 === againstPlayerId ||
-				match.player_2 === againstPlayerId) &&
+			(match.player_1 === againstPlayer.id ||
+				match.player_2 === againstPlayer.id) &&
 			isToday(new Date(match.created_at)),
 	);
 
@@ -67,17 +95,46 @@ function getPlayerStats(
 		(match) => match.winner === currentPlayer.id,
 	).length;
 	const losses = matchesAgainst.filter(
-		(match) => match.winner === againstPlayerId,
+		(match) => match.winner === againstPlayer.id,
+	).length;
+
+	const todayMatches = againstPlayer.matches.filter((match) =>
+		isToday(new Date(match.created_at)),
+	);
+	const todayWins = todayMatches.filter(
+		(match) => match.winner === againstPlayer.id,
+	).length;
+	const todayLosses = todayMatches.filter(
+		(match) => match.winner && match.winner !== againstPlayer.id,
 	).length;
 
 	return {
-		todayMatches: matchesAgainst.length,
-		todayWins: wins,
-		todayLosses: losses,
-		overallWins: currentPlayer.wins,
-		overallLosses: currentPlayer.losses,
-		overallPlayed: currentPlayer.matches_played,
+		h2hMatches: matchesAgainst.length,
+		h2hWins: wins,
+		h2hLosses: losses,
+		todayMatches: todayMatches.length,
+		todayWins: todayWins,
+		todayLosses: todayLosses,
+		overallWins: againstPlayer.wins,
+		overallLosses: againstPlayer.losses,
+		overallPlayed: againstPlayer.matches_played,
 	};
+}
+
+function HeaderTooltip({
+	content,
+	children,
+}: { content: string; children: React.ReactNode }) {
+	return (
+		<TooltipProvider>
+			<Tooltip>
+				<TooltipTrigger asChild>{children}</TooltipTrigger>
+				<TooltipContent>
+					<p>{content}</p>
+				</TooltipContent>
+			</Tooltip>
+		</TooltipProvider>
+	);
 }
 
 export function WaitingPage({
@@ -107,6 +164,22 @@ export function WaitingPage({
 	const { user } = useUser();
 	const userId = searchParams.get("overrideUser") ?? user?.id;
 	const currentUser = players?.find((p) => p.id === userId);
+	const waiting = waitingPlayerIds?.has(userId ?? "");
+	useEffect(() => {
+		if (!waiting) {
+			return;
+		}
+		const interval = setInterval(() => {
+			const randomDelay = Math.floor(Math.random() * (15000 - 5000) + 5000);
+			setTimeout(() => {
+				tournamentService.generateNextMatch({ tournamentId, silent: true });
+			}, randomDelay);
+		}, 15000);
+
+		return () => {
+			clearInterval(interval);
+		};
+	}, [tournamentId, waiting]);
 
 	if (!userId) {
 		return "loading...";
@@ -128,12 +201,12 @@ export function WaitingPage({
 
 			<div
 				className={`border rounded-lg p-4 max-w-md ${
-					waitingPlayerIds?.has(userId)
+					waiting
 						? "bg-yellow-50 border-yellow-200"
 						: "bg-gray-50 border-gray-200"
 				}`}
 			>
-				{waitingPlayerIds?.has(userId) ? (
+				{waiting ? (
 					<>
 						<h3 className="text-xl font-semibold mb-2 text-yellow-800">
 							Waiting for Assignment
@@ -160,7 +233,7 @@ export function WaitingPage({
 				<Button
 					variant="outline"
 					className={
-						waitingPlayerIds?.has(userId)
+						waiting
 							? "border-yellow-500 text-yellow-700 hover:bg-yellow-50"
 							: "border-green-500 text-green-700 hover:bg-green-50"
 					}
@@ -168,7 +241,7 @@ export function WaitingPage({
 					onClick={async () => {
 						setLoading(true);
 						try {
-							if (waitingPlayerIds?.has(userId)) {
+							if (waiting) {
 								await client.update(
 									"active_tournaments",
 									tournamentId,
@@ -206,7 +279,7 @@ export function WaitingPage({
 						}
 					}}
 				>
-					{waitingPlayerIds?.has(userId) ? "Take a Break" : "Ready to Play"}
+					{waiting ? "Take a Break" : "Ready to Play"}
 				</Button>
 			</div>
 			<div className="w-full max-w-md">
@@ -215,7 +288,23 @@ export function WaitingPage({
 					{unplayedPlayers.map((player) => (
 						<Popover key={player.id}>
 							<PopoverTrigger asChild>
-								<div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer">
+								<div
+									className={cn(
+										"flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 cursor-pointer",
+										{
+											"bg-yellow-50 border-yellow-200":
+												player.inMatch || player.isUmpiring,
+											"bg-gray-50 border-gray-200": !(
+												player.inMatch || player.isUmpiring
+											),
+											"bg-green-50 border-green-200":
+												!player.inMatch &&
+												!player.isUmpiring &&
+												!player.isResting,
+											"opacity-70": player.isResting,
+										},
+									)}
+								>
 									{player.profile_image_url ? (
 										<img
 											src={player.profile_image_url}
@@ -227,7 +316,9 @@ export function WaitingPage({
 									)}
 									<span>
 										{player.first_name} {player.last_name}
-										{(player.inMatch || player.isResting) && (
+										{(player.inMatch ||
+											player.isResting ||
+											player.isUmpiring) && (
 											<span
 												className={cn(
 													"ml-2 text-sm",
@@ -239,16 +330,28 @@ export function WaitingPage({
 												)}
 											>
 												{player.inMatch
-													? `(Playing at Table ${player.matchTable})`
+													? `(Table ${player.matchTable})`
 													: player.isUmpiring
 														? `(Umpiring at Table ${player.matchTable})`
 														: "(Resting)"}
 											</span>
 										)}
+										{player.inMatch && !player.isUmpiring && player.score && (
+											<span className="pl-2 text-bold underline">
+												{player.score.playerScore} -{" "}
+												{player.score.opponentScore}
+											</span>
+										)}
 									</span>
 								</div>
 							</PopoverTrigger>
-							<PopoverContent className="w-64">
+							<PopoverContent className="w-full">
+								{player.inMatch && player.currentMatch && (
+									<AutoMatchScoreCard
+										matchId={player.currentMatch.id}
+										playerOneId={player.id}
+									/>
+								)}
 								{userId && (
 									<div className="space-y-2">
 										<h4 className="font-semibold">
@@ -260,7 +363,7 @@ export function WaitingPage({
 												(p) => p.id === userId,
 											);
 											if (!currentPlayer) return null;
-											const stats = getPlayerStats(currentPlayer, player.id);
+											const stats = getPlayerStats(currentPlayer, player);
 											return (
 												<>
 													{process.env.NODE_ENV === "development" &&
@@ -277,40 +380,100 @@ export function WaitingPage({
 																Impersonate
 															</button>
 														)}
-													<div className="space-y-4">
-														<div className="space-y-2">
-															<h5 className="text-sm font-medium text-gray-500">
-																Matches Today
-															</h5>
-															<p>Played: {stats.todayMatches}</p>
-															<p className="text-green-600">
-																Wins: {stats.todayWins}
-															</p>
-															<p className="text-red-600">
-																Losses: {stats.todayLosses}
-															</p>
-														</div>
-														<div className="space-y-2">
-															<h5 className="text-sm font-medium text-gray-500">
-																Overall Stats
-															</h5>
-															<p>Played: {stats.overallPlayed}</p>
-															<p className="text-green-600">
-																Wins: {stats.overallWins}
-															</p>
-															<p className="text-red-600">
-																Losses: {stats.overallLosses}
-															</p>
-															{stats.overallPlayed > 0 && (
-																<p className="text-gray-600">
-																	Win Rate:{" "}
-																	{Math.round(
-																		(stats.overallWins / stats.overallPlayed) *
-																			100,
-																	)}
-																	%
-																</p>
-															)}
+													<div className="space-y-3">
+														<div className="grid grid-cols-3 divide-x divide-gray-200">
+															<div className="px-4 first:pl-0 last:pr-0">
+																<HeaderTooltip
+																	content={`Head to head record against ${player.first_name} ${player.last_name}`}
+																>
+																	<h5 className="font-medium text-gray-500 mb-1 border-b border-gray-200 pb-1 cursor-help">
+																		H2H
+																	</h5>
+																</HeaderTooltip>
+																<div className="grid grid-cols-2 gap-2">
+																	<div>
+																		<span className="text-gray-500 text-xs">
+																			W
+																		</span>
+																		<div className="text-green-600 text-lg font-semibold">
+																			{stats.h2hWins}
+																		</div>
+																	</div>
+																	<div>
+																		<span className="text-gray-500 text-xs">
+																			L
+																		</span>
+																		<div className="text-red-600 text-lg font-semibold">
+																			{stats.h2hLosses}
+																		</div>
+																	</div>
+																</div>
+															</div>
+															<div className="px-4 first:pl-0 last:pr-0">
+																<HeaderTooltip
+																	content={`${player?.first_name} ${player?.last_name}'s total matches won and lost today`}
+																>
+																	<h5 className="font-medium text-gray-500 mb-1 border-b border-gray-200 pb-1 cursor-help">
+																		Today
+																	</h5>
+																</HeaderTooltip>
+																<div className="grid grid-cols-2 gap-2">
+																	<div>
+																		<span className="text-gray-500 text-xs">
+																			W
+																		</span>
+																		<div className="text-green-600 text-lg font-semibold">
+																			{stats.todayWins}
+																		</div>
+																	</div>
+																	<div>
+																		<span className="text-gray-500 text-xs">
+																			L
+																		</span>
+																		<div className="text-red-600 text-lg font-semibold">
+																			{stats.todayLosses}
+																		</div>
+																	</div>
+																</div>
+															</div>
+															<div className="px-4 first:pl-0 last:pr-0">
+																<HeaderTooltip
+																	content={`${player?.first_name} ${player?.last_name}'s all-time record`}
+																>
+																	<h5 className="font-medium text-gray-500 mb-1 border-b border-gray-200 pb-1 cursor-help">
+																		Overall
+																	</h5>
+																</HeaderTooltip>
+																<div className="grid grid-cols-2 gap-2">
+																	<div>
+																		<span className="text-gray-500 text-xs">
+																			W
+																		</span>
+																		<div className="text-green-600 text-lg font-semibold">
+																			{stats.overallWins}
+																		</div>
+																	</div>
+																	<div>
+																		<span className="text-gray-500 text-xs">
+																			L
+																		</span>
+																		<div className="text-red-600 text-lg font-semibold">
+																			{stats.overallLosses}
+																		</div>
+																	</div>
+																</div>
+																{stats.overallPlayed > 0 && (
+																	<div className="text-gray-600 text-xs mt-1">
+																		(
+																		{Math.round(
+																			(stats.overallWins /
+																				stats.overallPlayed) *
+																				100,
+																		)}
+																		%)
+																	</div>
+																)}
+															</div>
 														</div>
 													</div>
 												</>
@@ -324,7 +487,7 @@ export function WaitingPage({
 				</div>
 			</div>
 
-			<div className="w-full max-w-md flex justify-center">
+			<div className="w-full max-w-md flex justify-center gap-2">
 				<Dialog>
 					<DialogTrigger asChild>
 						<Button variant="outline">View Current Standings</Button>
@@ -341,6 +504,18 @@ export function WaitingPage({
 									.filter((m) => isToday(new Date(m.created_at))) ?? []
 							}
 						/>
+					</DialogContent>
+				</Dialog>
+
+				<Dialog>
+					<DialogTrigger asChild>
+						<Button variant="outline">Today's Matches</Button>
+					</DialogTrigger>
+					<DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+						<DialogHeader>
+							<DialogTitle>Today's Matches</DialogTitle>
+						</DialogHeader>
+						<TodayMatches />
 					</DialogContent>
 				</Dialog>
 			</div>

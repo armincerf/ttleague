@@ -154,22 +154,24 @@ export function LivePlayerScore({ match, isP1 }: LivePlayerScoreProps) {
 				{currentScore}
 			</div>
 			<div className="flex items-center gap-2 mt-4 absolute bottom-4">
-				{servingPlayer === name && (
+				{servingPlayer === name ? (
 					<motion.div
 						initial={{ x: -30, opacity: 0 }}
 						animate={{ x: 0, opacity: 1 }}
 						transition={{ duration: 0.3, ease: "easeInOut", delay: 0.4 }}
-						className="flex justify-center w-8"
+						className="flex justify-center w-16"
 					>
-						<Triangle className="w-8 h-8 rotate-90 text-red-500 fill-red-500 opacity-80" />
+						<Triangle className="w-16 h-16 rotate-90 text-red-500 fill-red-500 opacity-80" />
 					</motion.div>
+				) : (
+					<div className="flex justify-center w-16 h-16" />
 				)}
 				{avatar && (
 					<Avatar>
 						<AvatarImage src={avatar} alt={name} />
 					</Avatar>
 				)}
-				<span className="text-lg font-medium">{name}</span>
+				<span className="text-3xl font-medium">{name}</span>
 			</div>
 		</div>
 	);

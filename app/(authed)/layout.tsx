@@ -16,17 +16,15 @@ export default function RootLayout({
 	return (
 		<Suspense fallback={<div>Loading auth content...</div>}>
 			<ClerkProvider>
-				<div className="flex flex-col h-[100dvh]">
-					<TopBar />
-					<main className="pb-safe-area-inset-bottom md:container w-full mx-auto overflow-y-auto h-[calc(100%-128px)] relative">
-						{children}
-					</main>
-					<Suspense fallback={<div>Loading auth content...</div>}>
-						<ClerkProvider dynamic>
-							<BottomNav />
-						</ClerkProvider>
-					</Suspense>
-				</div>
+				<TopBar />
+				<main className="pb-safe-area-inset-bottom mt-[64px] md:container w-full mx-auto relative">
+					{children}
+				</main>
+				<Suspense fallback={<div>Loading auth content...</div>}>
+					<ClerkProvider dynamic>
+						<BottomNav />
+					</ClerkProvider>
+				</Suspense>
 			</ClerkProvider>
 		</Suspense>
 	);

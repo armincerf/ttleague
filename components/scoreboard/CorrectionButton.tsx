@@ -98,13 +98,13 @@ export function CorrectionButton({
 						type="button"
 						onClick={() =>
 							confirmation.confirm(
-								"You are about to reset the entire match. Are you sure?",
+								"This will delete the match and all associated games. Are you sure?",
 								onResetMatch,
 							)
 						}
 						className="bg-red-500 text-white px-4 py-3 text-lg rounded-none hover:bg-red-500 uppercase"
 					>
-						reset match
+						Delete match
 					</button>
 				</div>
 			) : (

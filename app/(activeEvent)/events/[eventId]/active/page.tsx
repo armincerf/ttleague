@@ -1,3 +1,4 @@
+import PageLayout from "@/components/PageLayout";
 import ActiveEventNoSSR from "./ActiveEventNoSSR";
 
 export default async function ActiveEventWrapper({
@@ -6,5 +7,9 @@ export default async function ActiveEventWrapper({
 	params: Promise<{ eventId: string }>;
 }) {
 	const { eventId } = await params;
-	return <ActiveEventNoSSR eventId={eventId} />;
+	return (
+		<PageLayout>
+			<ActiveEventNoSSR eventId={eventId} />
+		</PageLayout>
+	);
 }

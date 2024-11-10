@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { CorrectionButton } from "./CorrectionButton";
 import { ScoreCard, SetCounter } from "./ScoreCard";
 import type { LandscapeOrPortraitScoreboardProps } from "@/lib/scoreboard/types";
@@ -63,24 +63,11 @@ export function LandscapeScoreboard({
 				transition={{ duration: 0.2 }}
 			>
 				<div className="flex justify-between items-start mb-4 gap-2 h-[75%] ">
-					<AnimatePresence mode="popLayout" initial={false}>
-						{scoreboardItems.map(({ id, component, className }) => (
-							<motion.div
-								key={id}
-								layout
-								initial={false}
-								animate={{ opacity: 1 }}
-								className={className}
-								transition={{
-									type: "spring",
-									bounce: 0.2,
-									duration: 0.6,
-								}}
-							>
-								{component}
-							</motion.div>
-						))}
-					</AnimatePresence>
+					{scoreboardItems.map(({ id, component, className }) => (
+						<div key={id} className={className}>
+							{component}
+						</div>
+					))}
 				</div>
 
 				<div

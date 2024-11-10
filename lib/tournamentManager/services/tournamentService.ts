@@ -39,17 +39,10 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 			console.log("resetMatch", games);
 			await client.transact(async (tx) => {
 				for (const game of games) {
-					if (game.completed_at || game.winner) {
-						console.log("deleting game", game.id);
-						await tx.delete("games", game.id);
-					} else {
-						console.log("resetting game", game.id);
-						await tx.update("games", game.id, (g) => {
-							g.player_1_score = 0;
-							g.player_2_score = 0;
-						});
-					}
+					console.log("deleting game", game.id);
+					await tx.delete("games", game.id);
 				}
+				await tx.delete("matches", games[0].match_id);
 			});
 			marky.stop("resetMatch");
 		},

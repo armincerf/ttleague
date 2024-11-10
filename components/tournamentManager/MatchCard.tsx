@@ -104,7 +104,11 @@ export function MatchCard({
 				<Button
 					onClick={() =>
 						umpireInitialConfirmAction.executeAction(() =>
-							matchConfirmation.confirmInitialMatchUmpire(match.id, umpire.id),
+							matchConfirmation.confirmInitialMatchUmpire(
+								match.id,
+								umpire.id,
+								match.player_1,
+							),
 						)
 					}
 					variant="secondary"

@@ -36,7 +36,7 @@ export async function createUser(
 			email: formData.email,
 			first_name: formData.firstName,
 			last_name: formData.lastName,
-			rating: initialRating(formData.currentLeagueDivision),
+			rating: 0,
 			current_division: formData.currentLeagueDivision,
 			registered_league_ids: new Set(["mk-ttl-singles"]),
 			matches_played: 0,

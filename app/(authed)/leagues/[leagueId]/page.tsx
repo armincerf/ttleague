@@ -15,7 +15,7 @@ function LeagueHeader({
 }: { league: NonNullable<Awaited<ReturnType<typeof fetchLeague>>> }) {
 	return (
 		<>
-			<div className="relative h-[40vh] w-full mb-8">
+			<div className="relative h-[20vh] sm:h-[40vh] w-full mb-8">
 				<div className="absolute inset-0">
 					<Image
 						src={league.logo_image_url}
