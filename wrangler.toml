@@ -2,6 +2,7 @@
 name = "ttleague"
 compatibility_date = "2024-09-23"
 compatibility_flags = [ "nodejs_compat" ]
+pages_build_output_dir = ".vercel/output/static"
 
 [env.production.vars]
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = "pk_live_Y2xlcmsudHRyYW5raW5ncy5jb20k"
@@ -13,7 +14,3 @@ TRIPLIT_EXTERNAL_JWT_SECRET = "-----BEGIN PUBLIC KEY-----MIIBIjANBgkqhkiG9w0BAQE
 [[kv_namespaces]]
 binding = "ttrankings"
 id = "17fa3836af5a4d679f1dbd67446d50f6"
-
-[observability]
-enabled = true
-head_sampling_rate = 1

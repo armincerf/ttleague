@@ -9,7 +9,7 @@
 		"triplit-seed": "./bin/triplit-seed-local.sh",
 		"triplit-dev": "run-p triplit-start-server triplit-push-schema",
 		"dev": "run-p app triplit-dev",
-		"build": "bun run triplit-push-schema && next build",
+		"build": "next build",
 		"pages:build": "bunx @cloudflare/next-on-pages",
 		"preview": "bun run pages:build && wrangler pages dev",
 		"deploy": "bun run pages:build && wrangler pages deploy",
