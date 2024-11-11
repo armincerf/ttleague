@@ -3,8 +3,9 @@ import logger from "@/lib/logging";
 export async function fetchLeague(leagueId: string) {
 	const start = performance.now();
 	try {
-		const league = await httpClient.fetchOne(
-			httpClient
+		const client = httpClient();
+		const league = await client.fetchOne(
+			client
 				.query("leagues")
 				.where("id", "=", leagueId)
 				.include("clubs")
@@ -28,7 +29,8 @@ export async function fetchLeague(leagueId: string) {
 export async function fetchLeagues() {
 	const start = performance.now();
 	try {
-		return await httpClient.fetch(httpClient.query("leagues").build());
+		const client = httpClient();
+		return await client.fetch(client.query("leagues").build());
 	} catch (error) {
 		logger.error({ error }, "Error fetching leagues");
 		throw error;
@@ -41,8 +43,9 @@ export async function fetchLeagues() {
 export async function fetchSeasons(leagueId: string) {
 	const start = performance.now();
 	try {
-		return await httpClient.fetch(
-			httpClient.query("seasons").where("league_id", "=", leagueId).build(),
+		const client = httpClient();
+		return await client.fetch(
+			client.query("seasons").where("league_id", "=", leagueId).build(),
 		);
 	} catch (error) {
 		logger.error({ leagueId, error }, "Error fetching seasons");

@@ -25,6 +25,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				updated_at: new Date(),
 				total_rounds: 1,
 			});
+			console.log("created tournament", tournament);
 
 			marky.stop("createTournament");
 			return tournament.output;

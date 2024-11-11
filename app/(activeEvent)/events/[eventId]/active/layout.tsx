@@ -14,13 +14,13 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<Suspense fallback={<div>Loading auth content...</div>}>
+		<Suspense fallback={<div>Loading....</div>}>
 			<ClerkProvider>
 				<TopBar />
 				<main className="pb-safe-area-inset-bottom md:container w-full mx-auto relative overflow-y-auto h-[100dvh]">
 					{children}
 				</main>
-				<Suspense fallback={<div>Loading auth content...</div>}>
+				<Suspense fallback={<div>Loading...</div>}>
 					<ClerkProvider dynamic>
 						<BottomNav />
 					</ClerkProvider>

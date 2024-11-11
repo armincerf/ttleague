@@ -4,6 +4,7 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/components/ui/dialog";
+import { ImageGallery } from "@/components/ImageGallery";
 
 type HelpModalProps = {
 	isOpen: boolean;
@@ -11,6 +12,13 @@ type HelpModalProps = {
 };
 
 export function HelpModal({ isOpen, onClose }: HelpModalProps) {
+	const images = [
+		"/TTRankings-Explainer.001.jpeg",
+		"/TTRankings-Explainer.002.jpeg",
+		"/TTRankings-Explainer.003.jpeg",
+		"/TTRankings-Explainer.004.jpeg",
+	];
+
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
 			<DialogContent className="sm:max-w-[425px]">
@@ -19,6 +27,13 @@ export function HelpModal({ isOpen, onClose }: HelpModalProps) {
 				</DialogHeader>
 
 				<div className="space-y-6">
+					<section>
+						<h3 className="font-semibold mb-2">
+							How It Works (tap image to enlarge)
+						</h3>
+						<ImageGallery images={images} />
+					</section>
+
 					<section>
 						<h3 className="font-semibold mb-2">What We Do</h3>
 						<ul className="list-disc pl-4 space-y-2 text-sm">

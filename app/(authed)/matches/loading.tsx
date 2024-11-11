@@ -22,6 +22,7 @@ function MatchesLoadingSkeleton() {
 			</TableHeader>
 			<TableBody>
 				{Array.from({ length: 5 }).map((_, i) => (
+					// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 					<TableRow key={i}>
 						<TableCell>
 							<Skeleton className="h-4 w-[100px]" />

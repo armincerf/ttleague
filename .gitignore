@@ -46,3 +46,8 @@ next-env.d.ts
 .dev.vars
 .wrangler
 .worker-next
+
+*.key
+*.key.pub
+triplit/.data/*
+.triplit-migration-config.json

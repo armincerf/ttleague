@@ -3,7 +3,8 @@ import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
 
 export function buildMatchesQuery(eventId: string | "recent") {
-	const query = httpClient
+	const client = httpClient();
+	const query = client
 		.query("matches")
 		.include("player1")
 		.include("player2")
@@ -23,7 +24,8 @@ export function buildMatchesQuery(eventId: string | "recent") {
 }
 
 function buildMatchQuery(matchId: string) {
-	return httpClient
+	const client = httpClient();
+	return client
 		.query("matches")
 		.where("id", "=", matchId)
 		.include("player1")
@@ -38,7 +40,8 @@ export async function fetchMatches(eventId: string | "recent") {
 		const matches = await unstable_cache(
 			async () => {
 				try {
-					return await httpClient.fetch(buildMatchesQuery(eventId).build());
+					const client = httpClient();
+					return await client.fetch(buildMatchesQuery(eventId).build());
 				} catch (error) {
 					logger.error({ eventId, error }, "Error fetching matches");
 					throw error;
@@ -60,9 +63,8 @@ export async function fetchMatch(matchId: string) {
 		const match = await unstable_cache(
 			async () => {
 				try {
-					const match = await httpClient.fetchOne(
-						buildMatchQuery(matchId).build(),
-					);
+					const client = httpClient();
+					const match = await client.fetchOne(buildMatchQuery(matchId).build());
 					if (!match) {
 						logger.warn({ matchId }, "Match not found");
 						return null;

@@ -24,6 +24,11 @@ export default {
 				destination: "/leaderboard",
 				permanent: true,
 			},
+			{
+				source: "/qr",
+				destination: "/sign-up?utm_source=qr",
+				permanent: false,
+			},
 		];
 	},
 	async rewrites() {

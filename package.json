@@ -8,7 +8,7 @@
 		"triplit-push-schema": "sleep 2 && ./bin/triplit-push-schema.sh",
 		"triplit-seed": "./bin/triplit-seed-local.sh",
 		"triplit-dev": "run-p triplit-start-server triplit-push-schema",
-		"dev": "run-p app triplit-dev",
+		"dev": "run-p app ",
 		"build": "next build",
 		"pages:build": "bunx @cloudflare/next-on-pages",
 		"preview": "bun run pages:build && wrangler pages dev",
@@ -20,7 +20,7 @@
 		"coverage": "vitest run --coverage"
 	},
 	"dependencies": {
-		"@clerk/nextjs": "^6.3.0",
+		"@clerk/nextjs": "^6.3.1",
 		"@faker-js/faker": "^9.2.0",
 		"@hookform/resolvers": "^3.9.1",
 		"@liveblocks/client": "^2.11.0",
@@ -63,6 +63,7 @@
 		"html2canvas": "^1.4.1",
 		"immer": "^10.1.1",
 		"jwt-decode": "^4.0.0",
+		"lmdb": "^3.1.4",
 		"lucide-react": "^0.456.0",
 		"next": "^15.0.3",
 		"pino": "^9.5.0",
@@ -112,6 +113,8 @@
 		"better-sqlite3",
 		"core-js",
 		"esbuild",
+		"lmdb",
+		"msgpackr-extract",
 		"sharp",
 		"workerd"
 	]

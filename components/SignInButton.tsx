@@ -17,13 +17,13 @@ async function checkAccountExists(email: string) {
 		throw new Error("NEXT_PUBLIC_TRIPLIT_TOKEN is not defined");
 	}
 
-	const httpClient = new HttpClient({
+	const client = new HttpClient({
 		serverUrl: process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
 		token: process.env.NEXT_PUBLIC_TRIPLIT_TOKEN,
 	});
 
-	const res = await httpClient.fetchOne(
-		httpClient.query("users").where("email", "=", email).build(),
+	const res = await client.fetchOne(
+		client.query("users").where("email", "=", email).build(),
 	);
 	return res !== null;
 }

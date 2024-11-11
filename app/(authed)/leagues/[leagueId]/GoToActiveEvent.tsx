@@ -27,16 +27,10 @@ async function maybeCreateTournament(
 			event.id,
 		);
 		if (existingTournament) {
+			console.log("existing tournament", existingTournament);
 			handleGoToEvent();
 			return;
 		}
-
-		const tournament = await tournamentService.createTournament(event.id);
-		if (!tournament) {
-			throw new Error("Failed to create tournament");
-		}
-
-		handleGoToEvent();
 	} catch (error) {
 		console.error("Error setting up tournament:", error);
 		toast({
@@ -67,7 +61,7 @@ export default function GoToActiveEvent({ event }: GoToActiveEventProps) {
 				disabled={!event || !user}
 				onClick={() => {
 					if (user) {
-						maybeCreateTournament(event, handleGoToEvent, user.id);
+						handleGoToEvent();
 					}
 				}}
 				size="lg"

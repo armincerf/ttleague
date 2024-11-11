@@ -18,7 +18,8 @@ export type Match = {
 };
 
 export async function fetchUser(userId: string) {
-	const user = await httpClient.fetchById("users", userId);
+	const client = httpClient();
+	const user = await client.fetchById("users", userId);
 	if (!user) {
 		console.error("User not found", userId);
 	}
@@ -26,8 +27,9 @@ export async function fetchUser(userId: string) {
 }
 
 export async function fetchUserMatches(userId: string): Promise<Match[]> {
-	const matches = await httpClient.fetch(
-		httpClient
+	const client = httpClient();
+	const matches = await client.fetch(
+		client
 			.query("matches")
 			.where([
 				or([
@@ -61,14 +63,14 @@ export async function fetchUserMatches(userId: string): Promise<Match[]> {
 	);
 
 	// Compare and update if different
-	const user = await httpClient.fetchById("users", userId);
+	const user = await client.fetchById("users", userId);
 	if (
 		user &&
 		(user.matches_played !== stats.matchesPlayed ||
 			user.wins !== stats.wins ||
 			user.losses !== stats.losses)
 	) {
-		await httpClient.update("users", userId, (user) => {
+		await client.update("users", userId, (user) => {
 			user.matches_played = stats.matchesPlayed;
 			user.wins = stats.wins;
 			user.losses = stats.losses;

@@ -6,13 +6,14 @@ import Link from "next/link";
 import WIPAlertBanner from "@/components/WIPAlertBanner";
 
 export async function getUsers() {
-	const query = httpClient
+	const client = httpClient();
+	const query = client
 		.query("users")
 		.order("first_name", "ASC")
 		.limit(25)
 		.build();
 
-	return httpClient.fetch(query);
+	return client.fetch(query);
 }
 
 export default async function FriendlyPage() {

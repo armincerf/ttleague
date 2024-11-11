@@ -26,8 +26,9 @@ export function eventQuery(
 
 export async function fetchEvent(eventId: string) {
 	try {
-		const event = await httpClient.fetchOne(
-			eventQuery(httpClient, eventId, "id").build(),
+		const client = httpClient();
+		const event = await client.fetchOne(
+			eventQuery(client, eventId, "id").build(),
 		);
 		if (!event) {
 			logger.warn({ eventId }, "Event not found");
@@ -42,8 +43,9 @@ export async function fetchEvent(eventId: string) {
 
 export async function fetchEvents(leagueId: string) {
 	try {
-		const res = await httpClient.fetch(
-			eventQuery(httpClient, leagueId, "league_id").build(),
+		const client = httpClient();
+		const res = await client.fetch(
+			eventQuery(client, leagueId, "league_id").build(),
 		);
 		return res.filter(Boolean);
 	} catch (error) {

@@ -95,18 +95,14 @@ function EventCard({
 
 	if (isCompleted) {
 		return (
-			<Card className="mb-8">
-				<CardHeader>
-					<CardTitle>Event Completed</CardTitle>
-					<CardDescription>
-						{event.name} - {formatDate(event.start_time, "dd MMM - h:mm a")}
-					</CardDescription>
-					<CardContent>
-						<h2>Results</h2>
-						<MatchListContent event={serverEvent} status="completed" />
-					</CardContent>
-				</CardHeader>
-			</Card>
+			<>
+				<CardTitle>Event Completed</CardTitle>
+				<CardDescription>
+					{event.name} - {formatDate(event.start_time, "dd MMM - h:mm a")}
+				</CardDescription>
+				<h2>Results</h2>
+				<MatchListContent event={serverEvent} status="completed" />
+			</>
 		);
 	}
 

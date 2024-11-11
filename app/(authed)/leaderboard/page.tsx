@@ -3,13 +3,10 @@ import PageLayout from "@/components/PageLayout";
 import { httpClient } from "@/lib/triplitServerClient";
 
 async function getInitialUsers() {
-	const query = httpClient
-		.query("users")
-		.order("rating", "DESC")
-		.limit(10)
-		.build();
+	const client = httpClient();
+	const query = client.query("users").order("rating", "DESC").limit(10).build();
 
-	return httpClient.fetch(query);
+	return client.fetch(query);
 }
 
 async function LeaderboardPage() {

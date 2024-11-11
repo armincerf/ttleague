@@ -153,11 +153,10 @@ export function WaitingPage({
 	);
 	const { results: players } = useQuery(
 		client,
-		client
-			.query("users")
-			.where(["events.event_id", "=", eventId])
-			.include("matches"),
+		client.query("users").include("matches"),
 	);
+
+	console.log("wp players", players);
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -366,7 +365,8 @@ export function WaitingPage({
 											const stats = getPlayerStats(currentPlayer, player);
 											return (
 												<>
-													{process.env.NODE_ENV === "development" &&
+													{user?.firstName === "Armin" &&
+														user?.lastName === "Cerf" &&
 														userId !== player.id && (
 															<button
 																className="text-blue-500 text-sm"

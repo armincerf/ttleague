@@ -124,6 +124,7 @@ const columns = [
 	}),
 	columnHelper.accessor("isManuallyCreated", {
 		header: "Manual",
+		enableHiding: true,
 		cell: (info) =>
 			info.getValue() ? (
 				<span className="text-amber-600">Yes</span>
@@ -172,6 +173,9 @@ export default function MatchHistoryTable({
 			sorting,
 			expanded,
 			globalFilter,
+			columnVisibility: {
+				isManuallyCreated: false,
+			},
 			pagination: {
 				pageIndex,
 				pageSize,

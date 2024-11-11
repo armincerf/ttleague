@@ -53,6 +53,7 @@ export function usePlayerTournament(playerId: string) {
 	if (!tournamentState || !players) {
 		return { loading: true };
 	}
+	console.log("players", players);
 	return {
 		loading: false,
 		state: {

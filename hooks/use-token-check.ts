@@ -38,22 +38,16 @@ function parseTokenPayload(
 			return null;
 		}
 		setTimeout(async () => {
-			if (
-				posthog._isIdentified() ||
-				client.syncEngine.connectionStatus !== "OPEN"
-			) {
-				return;
-			}
-
 			let user = await client.fetchById("users", result.data.sub);
 			if (!user) {
 				const remoteUser = await client.fetchById("users", result.data.sub, {
 					policy: "remote-first",
 				});
-				console.log("remoteUser", remoteUser, result.data.sub);
+				console.log("remoteUser", remoteUser, user, result.data.sub, client);
 				if (!remoteUser) {
-					posthog.reset();
-					router.push("/onboarding");
+					console.log("No remote user, resetting client");
+					//posthog.reset();
+					//router.push("/onboarding");
 					return;
 				}
 				user = remoteUser;
@@ -117,8 +111,12 @@ async function resetClient() {
 }
 
 async function updateClientToken(token: string | undefined) {
-	if (token === client.token) {
+	if (token === client.token || client.syncEngine.connectionStatus === "OPEN") {
 		return;
+	}
+
+	if (client.syncEngine.connectionStatus === "CLOSED") {
+		client.connect();
 	}
 
 	try {
@@ -273,10 +271,6 @@ export function useTokenCheck() {
 	const posthog = usePostHog();
 	useEffect(() => {
 		let cleanup: TokenCleanup;
-		if (process.env.NODE_ENV !== "development") {
-			return;
-		}
-
 		async function refreshToken() {
 			const token = await getToken({ template: "Triplit" });
 			await updateClientToken(token ?? process.env.NEXT_PUBLIC_TRIPLIT_TOKEN);
