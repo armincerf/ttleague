@@ -51,7 +51,11 @@ describe("TournamentService", () => {
 			const { tournament, player1, player2 } =
 				await setupTournamentTest(client);
 
-			const result = await tournamentService.generateNextMatch(tournament.id);
+			const result = await tournamentService.generateNextMatch({
+				tournamentId: tournament.id,
+				matchesAllTime: [],
+				silent: false,
+			});
 
 			expect(result?.success).toBe(true);
 			if (result?.success) {

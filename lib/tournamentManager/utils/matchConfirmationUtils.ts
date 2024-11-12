@@ -48,11 +48,26 @@ export function createMatchConfirmation(client: TriplitClient<typeof schema>) {
 		},
 
 		async confirmMatchUmpire(matchId: string, umpireId: string) {
-			await client.update("matches", matchId, (match) => {
+			await client.update("matches", matchId, async (match) => {
 				match.umpireConfirmed = true;
 				match.updated_by = umpireId;
 				match.playersConfirmed = new Set([match.player_1, match.player_2]);
 				match.status = "ended";
+				try {
+					await client.update(
+						"active_tournaments",
+						`tournament-${match.event_id}`,
+						(tournament) => {
+							tournament.player_ids.delete(match.player_1);
+							tournament.player_ids.delete(match.player_2);
+							if (match.umpire) {
+								tournament.player_ids.delete(match.umpire);
+							}
+						},
+					);
+				} catch (error) {
+					console.error("Error updating active tournament", error);
+				}
 			});
 		},
 	};

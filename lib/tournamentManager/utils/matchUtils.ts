@@ -6,7 +6,8 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 	return async function generateMatchups(
 		tournamentId: string,
 		waitingPlayers: User[],
-		matches: Match[],
+		matchesToday: Match[],
+		matchesAllTime: Match[],
 		eventId: string,
 		totalRounds: number,
 		freeTables: number,
@@ -20,13 +21,17 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			return { success: false, error: "No free tables available" };
 		}
 
-		const validPair = findValidPlayerPair(waitingPlayers, matches, totalRounds);
+		const validPair = findValidPlayerPair(
+			waitingPlayers,
+			matchesToday,
+			totalRounds,
+		);
 		if (!validPair?.[0] || !validPair?.[1]) {
 			return { success: false, error: "No more valid matches" };
 		}
 
 		const usedTables = new Set(
-			matches
+			matchesToday
 				.filter((m) => m.status === "ongoing" || m.status === "pending")
 				.map((m) => m.table_number),
 		);
@@ -36,6 +41,14 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			) ?? 1;
 
 		const [player1, player2] = validPair;
+
+		// Check if players have played before
+		const previousMatch = matchesAllTime.some(
+			(match) =>
+				(match.player_1 === player1.id && match.player_2 === player2.id) ||
+				(match.player_1 === player2.id && match.player_2 === player1.id),
+		);
+
 		const availableUmpires = waitingPlayers.filter(
 			(p) => p.id !== player1.id && p.id !== player2.id,
 		);
@@ -45,12 +58,15 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 		}
 
 		// Count how many times each player has umpired
-		const umpireCount = matches.reduce<Record<string, number>>((acc, match) => {
-			if (match.umpire) {
-				acc[match.umpire] = (acc[match.umpire] ?? 0) + 1;
-			}
-			return acc;
-		}, {});
+		const umpireCount = matchesToday.reduce<Record<string, number>>(
+			(acc, match) => {
+				if (match.umpire) {
+					acc[match.umpire] = (acc[match.umpire] ?? 0) + 1;
+				}
+				return acc;
+			},
+			{},
+		);
 
 		// Select umpire with lowest count
 		const umpire = availableUmpires.reduce((lowest, current) => {
@@ -69,6 +85,7 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			table_number: nextTable,
 			ranking_score_delta: 0,
 			event_id: eventId,
+			best_of: previousMatch ? 5 : 3,
 		} as const;
 
 		await client.transact(async (tx) => {

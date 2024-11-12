@@ -5,6 +5,12 @@ import { useTournament } from "./useTournament";
 
 export function usePlayerTournament(playerId: string) {
 	const { state: tournamentState } = useTournament();
+	const { results: registeredPlayers = [] } = useQuery(
+		client,
+		client
+			.query("event_registrations")
+			.where("event_id", "=", tournamentState?.event_id ?? ""),
+	);
 
 	const matches = tournamentState?.matches;
 	const activeMatches = matches?.filter(
@@ -33,6 +39,11 @@ export function usePlayerTournament(playerId: string) {
 		client,
 		client
 			.query("users")
+			.where(
+				"id",
+				"in",
+				registeredPlayers.map((r) => r.user_id),
+			)
 			.select([
 				"id",
 				"first_name",
@@ -53,7 +64,6 @@ export function usePlayerTournament(playerId: string) {
 	if (!tournamentState || !players) {
 		return { loading: true };
 	}
-	console.log("players", players);
 	return {
 		loading: false,
 		state: {

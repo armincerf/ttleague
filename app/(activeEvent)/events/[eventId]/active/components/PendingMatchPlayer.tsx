@@ -6,6 +6,7 @@ import {
 	tournamentService,
 	useTournament,
 } from "@/lib/tournamentManager/hooks/useTournament";
+import { client } from "@/lib/triplit";
 import { X } from "lucide-react";
 
 interface PendingMatchPlayerProps {
@@ -14,16 +15,16 @@ interface PendingMatchPlayerProps {
 }
 
 export function PendingMatchPlayer({ userId, match }: PendingMatchPlayerProps) {
+	if (!match) return <div>No match</div>;
+	const removeUmpireAction = useAsyncAction({
+		actionName: "Remove umpire",
+	});
 	const players = match?.players?.filter(Boolean);
 	const opponent = players?.find((p) => p.id !== userId);
 	const me = players?.find((p) => p.id === userId);
 	const initialConfirmAction = useAsyncAction({
 		actionName: "Initial match confirmation",
 	});
-	const removeUmpireAction = useAsyncAction({
-		actionName: "Remove umpire",
-	});
-
 	if (!match) return null;
 	const hasConfirmedInitialMatch = match.playersConfirmed?.has(userId);
 	const bothPlayersConfirmed = match.playersConfirmed?.size === 2;
@@ -47,6 +48,11 @@ export function PendingMatchPlayer({ userId, match }: PendingMatchPlayerProps) {
 				<div className="text-center mb-6">
 					<div className="text-xl font-semibold bg-yellow-100 rounded-lg py-2 px-4 inline-block">
 						Table {match.table_number}
+					</div>
+				</div>
+				<div className="text-center mb-6">
+					<div className="text-xl font-semibold bg-green-100 rounded-lg py-2 px-4 inline-block">
+						Best Of {match.best_of}
 					</div>
 				</div>
 

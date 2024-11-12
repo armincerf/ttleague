@@ -26,6 +26,11 @@ function TournamentManagerInner() {
 			.where("id", "nin", Array.from(tournamentState?.player_ids ?? [])),
 	);
 
+	const { results: matchesAllTime = [] } = useQuery(
+		triplitClient,
+		triplitClient.query("matches"),
+	);
+
 	const matches = tournamentState?.matches ?? [];
 	const players = tournamentState?.players ?? [];
 
@@ -51,9 +56,10 @@ function TournamentManagerInner() {
 		if (!tournamentState) return;
 		await service.generateNextMatch({
 			tournamentId: tournamentState.id,
+			matchesAllTime,
 			silent: false,
 		});
-	}, [tournamentState, service]);
+	}, [tournamentState, service, matchesAllTime]);
 
 	if (!tournamentState)
 		return (

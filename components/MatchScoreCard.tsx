@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ShareMatchButton } from "./ShareMatchButton";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { useQueryOne } from "@triplit/react";
 import { client } from "@/lib/triplit";
@@ -272,6 +272,12 @@ export function AutoMatchScoreCard({
 	matchId: string;
 	playerOneId: string;
 }) {
+	useEffect(() => {
+		client.fetch(client.query("matches").build());
+		client.fetch(client.query("games").build());
+		client.fetch(client.query("users").build());
+		client.fetch(client.query("events").build());
+	}, []);
 	const { result: match } = useQueryOne(
 		client,
 		client
@@ -284,6 +290,7 @@ export function AutoMatchScoreCard({
 			.include("event"),
 	);
 	if (!match) return null;
+	console.log(match);
 	const playerOne =
 		playerOneId === match.player_1 ? match.player1 : match.player2;
 	const playerTwo =

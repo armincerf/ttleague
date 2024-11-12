@@ -11,6 +11,7 @@ import { useQuery as useTSQuery } from "@tanstack/react-query";
 import { client } from "@/lib/triplit";
 import { fetchMatchScores } from "@/lib/matches/queries";
 import { calculateCurrentServer } from "@/lib/scoreboard/utils";
+import MatchStatistics from "./MatchStatistics";
 
 type OngoingMatchPlayerProps = {
 	match: TournamentMatch;
@@ -73,9 +74,17 @@ export function OngoingMatchPlayer({
 							scores={data}
 							bestOf={match.best_of}
 						/>
-						<p className="text-gray-600 text-sm mt-4 mb-6">
-							Please wait for the umpire to confirm the scores.
-						</p>
+						<MatchStatistics match={match} />
+						<div className="text-gray-600 text-xl mt-4 mb-6">
+							<div className="flex items-center justify-center gap-2 animate-pulse">
+								<span>Waiting for umpire confirmation</span>
+								<span className="inline-flex">
+									<span className="animate-bounce">.</span>
+									<span className="animate-bounce delay-100">.</span>
+									<span className="animate-bounce delay-200">.</span>
+								</span>
+							</div>
+						</div>
 					</div>
 				)}
 		</div>

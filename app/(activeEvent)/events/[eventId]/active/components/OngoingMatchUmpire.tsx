@@ -12,6 +12,7 @@ import { fetchMatchScores } from "@/lib/matches/queries";
 import { useQuery as useTSQuery } from "@tanstack/react-query";
 import { useUser } from "@/lib/hooks/useUser";
 import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
+import MatchStatistics from "./MatchStatistics";
 
 type OngoingMatchUmpireProps = {
 	match: TournamentMatch;
@@ -256,12 +257,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 							eventDate={match.startTime}
 							isManuallyCreated={match.manually_created}
 						/>
-						<p className="text-gray-600 text-sm mt-4 mb-6">
-							If the players are happy the above score is correct, please
-							confirm and give them a chance to leave the event if they want.
-							When you press the button below everyone on this table will be
-							allocated a new match.
-						</p>
+						<MatchStatistics match={match} />
 						<Button
 							className="w-full text-lg py-6"
 							onClick={() => {

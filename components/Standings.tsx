@@ -1,8 +1,11 @@
+import { client } from "@/lib/triplit";
 import type { Match, User } from "@/triplit/schema";
+import { useQuery } from "@triplit/react";
+import { useEffect } from "react";
 
 type ScoreboardProps = {
 	players: User[];
-	matches: Match[];
+	eventId: string;
 };
 
 function calculatePlayerStats(playerId: string, matches: Match[]) {
@@ -25,7 +28,14 @@ function calculatePlayerStats(playerId: string, matches: Match[]) {
 	);
 }
 
-export function Standings({ players, matches }: ScoreboardProps) {
+export function Standings({ players, eventId }: ScoreboardProps) {
+	useEffect(() => {
+		client.fetch(client.query("matches").build());
+	}, []);
+	const { results: matches = [] } = useQuery(
+		client,
+		client.query("matches").where("event_id", "=", eventId),
+	);
 	const playerStats = players.map((player) => ({
 		...player,
 		...calculatePlayerStats(player.id, matches),

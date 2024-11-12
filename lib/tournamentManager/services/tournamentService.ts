@@ -1,6 +1,12 @@
 import { toast } from "@/hooks/use-toast";
 import type { TriplitClient } from "@triplit/client";
-import type { schema, ActiveTournament, Event, Game } from "@/triplit/schema";
+import type {
+	schema,
+	ActiveTournament,
+	Event,
+	Game,
+	Match,
+} from "@/triplit/schema";
 import { createMatchGenerator } from "../utils/matchUtils";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createMatchConfirmation } from "../utils/matchConfirmationUtils";
@@ -106,8 +112,10 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 
 		async generateNextMatch({
 			tournamentId,
+			matchesAllTime,
 			silent = true,
 		}: {
+			matchesAllTime: Match[];
 			tournamentId: string;
 			silent?: boolean;
 		}) {
@@ -127,19 +135,20 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 				return;
 			}
 			console.log("tournament", tournament);
-			const matches = tournament.matches;
 			const players = tournament.players;
 			const event = tournament.event;
-			const activeMatches = matches.filter(
+			const matchesToday = tournament.matches;
+			const activeMatches = matchesToday.filter(
 				(m) => m.status === "ongoing" || m.status === "pending",
 			);
 			const freeTables = (event?.tables.size ?? 1) - activeMatches.length;
 
-			const waitingPlayers = getWaitingPlayers(players, matches);
+			const waitingPlayers = getWaitingPlayers(players, matchesToday);
 			const result = await matchGenerator(
 				tournament.id,
 				waitingPlayers,
-				matches,
+				matchesToday,
+				matchesAllTime,
 				tournament.event_id,
 				tournament.total_rounds ?? 1,
 				freeTables,

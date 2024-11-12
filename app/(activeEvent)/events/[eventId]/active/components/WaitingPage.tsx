@@ -146,17 +146,38 @@ export function WaitingPage({
 	tournamentId: string;
 	playerIds: Set<string> | undefined;
 }) {
+	useEffect(() => {
+		client.fetch(client.query("matches").build());
+		client.fetch(client.query("games").build());
+		client.fetch(client.query("users").build());
+		client.fetch(client.query("events").build());
+		client.fetch(client.query("event_registrations").build());
+	}, []);
 	const [loading, setLoading] = useState(false);
 	const { result: event } = useQueryOne(
 		client,
 		client.query("events").where("id", "=", eventId).select(["name"]),
 	);
+	const { results: matchesAllTime = [] } = useQuery(
+		client,
+		client.query("matches"),
+	);
+	const { results: registeredPlayers = [] } = useQuery(
+		client,
+		client.query("event_registrations").where("event_id", "=", eventId),
+	);
 	const { results: players } = useQuery(
 		client,
-		client.query("users").include("matches"),
+		client
+			.query("users")
+			.where(
+				"id",
+				"in",
+				registeredPlayers.map((r) => r.user_id),
+			)
+			.include("matches"),
 	);
 
-	console.log("wp players", players);
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -171,14 +192,18 @@ export function WaitingPage({
 		const interval = setInterval(() => {
 			const randomDelay = Math.floor(Math.random() * (15000 - 5000) + 5000);
 			setTimeout(() => {
-				tournamentService.generateNextMatch({ tournamentId, silent: true });
+				tournamentService.generateNextMatch({
+					tournamentId,
+					matchesAllTime,
+					silent: true,
+				});
 			}, randomDelay);
 		}, 15000);
 
 		return () => {
 			clearInterval(interval);
 		};
-	}, [tournamentId, waiting]);
+	}, [tournamentId, waiting, matchesAllTime]);
 
 	if (!userId) {
 		return "loading...";
@@ -254,6 +279,14 @@ export function WaitingPage({
 										"You'll be notified when you're assigned to play or umpire a match.",
 								});
 							} else {
+								if (!currentUser) {
+									await client.insert("event_registrations", {
+										user_id: userId,
+										event_id: eventId,
+										league_id: "mk-singles",
+										confidence_level: 0,
+									});
+								}
 								await client.update(
 									"active_tournaments",
 									tournamentId,
@@ -263,6 +296,7 @@ export function WaitingPage({
 								);
 								await tournamentService.generateNextMatch({
 									tournamentId,
+									matchesAllTime,
 									silent: true,
 								});
 							}
@@ -365,8 +399,8 @@ export function WaitingPage({
 											const stats = getPlayerStats(currentPlayer, player);
 											return (
 												<>
-													{user?.firstName === "Armin" &&
-														user?.lastName === "Cerf" &&
+													{user?.firstName === "Alex" &&
+														user?.lastName === "Davis" &&
 														userId !== player.id && (
 															<button
 																className="text-blue-500 text-sm"
@@ -496,14 +530,7 @@ export function WaitingPage({
 						<DialogHeader>
 							<DialogTitle>Current Standings</DialogTitle>
 						</DialogHeader>
-						<Standings
-							players={players ?? []}
-							matches={
-								players
-									?.flatMap((p) => p.matches)
-									.filter((m) => isToday(new Date(m.created_at))) ?? []
-							}
-						/>
+						<Standings players={players ?? []} eventId={eventId} />
 					</DialogContent>
 				</Dialog>
 

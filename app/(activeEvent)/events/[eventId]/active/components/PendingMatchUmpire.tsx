@@ -6,28 +6,15 @@ import { client } from "@/lib/triplit";
 import { useQuery, useQueryOne } from "@triplit/react";
 import { ChooseServer } from "./ChooseServer";
 import { useState } from "react";
+import type { TournamentMatch } from "@/lib/tournamentManager/hooks/usePlayerTournament";
 
 interface PendingMatchUmpireProps {
-	match: {
-		id: string;
-		players:
-			| Array<
-					| {
-							id: string;
-							profile_image_url: string | undefined;
-							first_name: string;
-							last_name: string;
-					  }
-					| undefined
-			  >
-			| undefined;
-		table: number;
-		playersConfirmed: Set<string>;
-	};
+	match: TournamentMatch | null;
 	userId: string;
 }
 
 export function PendingMatchUmpire({ match, userId }: PendingMatchUmpireProps) {
+	if (!match) return <div>No match</div>;
 	const bothPlayersConfirmed = match.playersConfirmed.size === 2;
 	const initialConfirmAction = useAsyncAction({
 		actionName: "Umpire - Start Match",
@@ -49,6 +36,11 @@ export function PendingMatchUmpire({ match, userId }: PendingMatchUmpireProps) {
 				<div className="text-center mb-6">
 					<div className="text-xl font-semibold bg-blue-100 rounded-lg py-2 px-4 inline-block">
 						Table {match.table}
+					</div>
+				</div>
+				<div className="text-center mb-6">
+					<div className="text-xl font-semibold bg-green-100 rounded-lg py-2 px-4 inline-block">
+						Best Of {match.best_of}
 					</div>
 				</div>
 				<div className="mt-2">

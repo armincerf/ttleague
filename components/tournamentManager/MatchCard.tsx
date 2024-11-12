@@ -41,7 +41,9 @@ export function MatchCard({
 		onSuccess: async () => {
 			try {
 				if (!state?.id) throw new Error("Tournament ID is not set");
-				await service.generateNextMatch({ tournamentId: state.id });
+				await service.removePlayer(state.id, match.player_1);
+				await service.removePlayer(state.id, match.player_2);
+				await service.removePlayer(state.id, umpire.id);
 			} catch (error) {
 				console.error("Error generating next match:", error);
 			}
