@@ -137,6 +137,25 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 											? match.player_1
 											: match.player_2;
 									await client.update("games", currentGames[0].id, (game) => {
+										try {
+											const scoreHistory = JSON.parse(
+												game.score_history_blob ?? "[]",
+											) as {
+												score: number;
+												playerId: string;
+												timestamp: Date;
+												gameWinner: string;
+											}[];
+											scoreHistory.push({
+												score: playerOneScore,
+												playerId: match.player_1,
+												timestamp: new Date(),
+												gameWinner: winner,
+											});
+											game.score_history_blob = JSON.stringify(scoreHistory);
+										} catch {
+											console.error("Error parsing score history");
+										}
 										game.player_1_score = playerOneScore;
 										game.player_2_score = playerTwoScore;
 										game.updated_at = new Date();
@@ -175,6 +194,24 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 									console.log("updateScore", playerId, score);
 									if (!currentGames || currentGames.length === 0) return;
 									await client.update("games", currentGames[0].id, (game) => {
+										try {
+											const scoreHistory = JSON.parse(
+												game.score_history_blob ?? "[]",
+											) as {
+												score: number;
+												playerId: string;
+												timestamp: Date;
+												gameWinner?: string;
+											}[];
+											scoreHistory.push({
+												score,
+												playerId,
+												timestamp: new Date(),
+											});
+											game.score_history_blob = JSON.stringify(scoreHistory);
+										} catch {
+											console.error("Error parsing score history");
+										}
 										game.sides_swapped = sidesSwapped;
 										if (playerId === match.player_1) {
 											game.player_1_score = score;
