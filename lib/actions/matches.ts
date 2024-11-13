@@ -8,6 +8,7 @@ export function buildMatchesQuery(eventId: string | "recent") {
 		.query("matches")
 		.include("player1")
 		.include("player2")
+		.include("umpireUser")
 		.include("event")
 		.include("games");
 
@@ -30,6 +31,7 @@ function buildMatchQuery(matchId: string) {
 		.where("id", "=", matchId)
 		.include("player1")
 		.include("player2")
+		.include("umpireUser")
 		.include("event", (rel) => rel("event").include("club").build())
 		.include("games");
 }

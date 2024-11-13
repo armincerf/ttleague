@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useMemo, useCallback } from "react";
 import {
 	useReactTable,
 	getCoreRowModel,
@@ -14,7 +14,12 @@ import {
 	type ExpandedState,
 } from "@tanstack/react-table";
 import { format } from "date-fns";
-import { ChevronRight, ChevronDown, ArrowUpDown } from "lucide-react";
+import {
+	ChevronRight,
+	ChevronDown,
+	ArrowUpDown,
+	ChevronsUpDown,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
 	Table,
@@ -27,31 +32,109 @@ import {
 import { MatchScoreCard } from "./MatchScoreCard";
 import { getDivision } from "@/lib/ratingSystem";
 import type { Match } from "@/app/(authed)/users/[userId]/fetchers";
+import { UserSelect } from "./UserSelect";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
 const columnHelper = createColumnHelper<Match>();
 
-function createMatchFilter(match: Match, filterValue: string): boolean {
-	const searchTerm = filterValue.toLowerCase();
+function sanitizeFilterValue(filterValue: string): string {
+	return filterValue
+		.replace(/[^a-zA-Z0-9]/g, "")
+		.toLowerCase()
+		.trim();
+}
 
-	// Search player names
-	const player =
-		`${match.player.first_name} ${match.player.last_name}`.toLowerCase();
-	const opponent =
-		`${match.opponent.first_name} ${match.opponent.last_name}`.toLowerCase();
-
-	// Search scores
-	const scoresString = match.scores
-		.map((score) => `${score.player1Points}-${score.player2Points}`)
-		.join(" ");
-
+function checkPlayerId(match: Match, filterValue: string): boolean {
 	return (
-		player.includes(searchTerm) ||
-		opponent.includes(searchTerm) ||
-		scoresString.includes(searchTerm)
+		sanitizeFilterValue(match.player.id) === sanitizeFilterValue(filterValue) ||
+		sanitizeFilterValue(match.opponent.id) === sanitizeFilterValue(filterValue)
 	);
 }
 
-const columns = [
+function createMatchFilter(match: Match, filterValue: string): boolean {
+	if (!filterValue) return true;
+	const filters = filterValue.split(",").map(sanitizeFilterValue);
+
+	console.log("Filters:", filters);
+	console.log("Match:", match);
+	// For each filter term, check if it matches any of our searchable fields
+	return filters.filter(Boolean).some((searchTerm) => {
+		console.log(
+			"Checking search term:",
+			searchTerm,
+			match.player.id,
+			match.opponent.id,
+		);
+
+		// Search player IDs
+		if (checkPlayerId(match, searchTerm)) {
+			console.log("Matched player ID");
+			return true;
+		}
+
+		// Search player names
+		const player =
+			`${match.player.first_name} ${match.player.last_name}`.toLowerCase();
+		const opponent =
+			`${match.opponent.first_name} ${match.opponent.last_name}`.toLowerCase();
+
+		console.log("Player name:", player);
+		console.log("Opponent name:", opponent);
+
+		// Search scores
+		const scoresString = match.scores
+			.map((score) => `${score.player1Points}-${score.player2Points}`)
+			.join(" ");
+
+		console.log("Scores string:", scoresString);
+
+		const result =
+			player.includes(searchTerm) ||
+			opponent.includes(searchTerm) ||
+			scoresString.includes(searchTerm);
+
+		console.log("Match result:", result);
+
+		return result;
+	});
+}
+
+const getPlayerColumns = (currentUserId: string) => {
+	if (!currentUserId) {
+		return [
+			columnHelper.accessor("player", {
+				header: "Player One",
+				cell: (info) => (
+					<span>
+						{info.getValue().first_name} {info.getValue().last_name}
+					</span>
+				),
+			}),
+			columnHelper.accessor("opponent", {
+				header: "Player Two",
+				cell: (info) => (
+					<span>
+						{info.getValue().first_name} {info.getValue().last_name}
+					</span>
+				),
+			}),
+		];
+	}
+
+	return [
+		columnHelper.accessor("opponent", {
+			header: "Opponent",
+			cell: (info) => (
+				<span>
+					{info.getValue().first_name} {info.getValue().last_name}
+				</span>
+			),
+		}),
+	];
+};
+
+const createColumns = (currentUserId: string) => [
 	columnHelper.display({
 		id: "expander",
 		header: ({ table }) => (
@@ -99,11 +182,7 @@ const columns = [
 		),
 		cell: (info) => format(info.getValue(), "dd MMM yyyy"),
 	}),
-	columnHelper.accessor("opponent", {
-		header: "Opponent",
-		cell: (info) =>
-			`${info.getValue().first_name} ${info.getValue().last_name}`,
-	}),
+	...getPlayerColumns(currentUserId),
 	columnHelper.accessor("result", {
 		header: "Result",
 		cell: (info) => (
@@ -138,14 +217,22 @@ interface MatchHistoryTableProps {
 	matches: Match[];
 	currentUserId: string;
 	pageSize?: number;
+	onUserSelect?: (userId: string) => void;
+	allowUserSelect?: boolean;
 }
 
 export default function MatchHistoryTable({
 	matches,
 	currentUserId,
 	pageSize = 10,
+	onUserSelect = () => {},
+	allowUserSelect = false,
 }: MatchHistoryTableProps) {
 	const [isMounted, setIsMounted] = useState(false);
+	const [showUserSelect, setShowUserSelect] = useState(false);
+	const [selectedUserId, setSelectedUserId] = useState<string | null>(
+		currentUserId,
+	);
 
 	useEffect(() => {
 		setIsMounted(true);
@@ -161,6 +248,8 @@ export default function MatchHistoryTable({
 		pageSize,
 	});
 
+	const columns = useMemo(() => createColumns(currentUserId), [currentUserId]);
+
 	const table = useReactTable({
 		data: matches,
 		columns,
@@ -172,7 +261,9 @@ export default function MatchHistoryTable({
 		state: {
 			sorting,
 			expanded,
-			globalFilter,
+			globalFilter: selectedUserId
+				? `${selectedUserId},${globalFilter}`
+				: globalFilter,
 			columnVisibility: {
 				isManuallyCreated: false,
 			},
@@ -190,23 +281,51 @@ export default function MatchHistoryTable({
 			return createMatchFilter(row.original, filterValue);
 		},
 	});
-	if (!isMounted) {
-		return null; // Or a loading skeleton
-	}
+
+	console.log("user", selectedUserId);
+
 	return (
 		<div className="space-y-4">
-			<div className="flex items-center justify-between">
-				<Input
-					placeholder="Search matches..."
-					value={globalFilter}
-					onChange={(e) => setGlobalFilter(e.target.value)}
-					className="max-w-sm"
-				/>
+			<div className="flex items-center justify-between gap-4">
+				<div className="flex items-center gap-4 flex-1">
+					<Input
+						placeholder="Search matches..."
+						value={globalFilter}
+						onChange={(e) => setGlobalFilter(e.target.value)}
+						className="max-w-sm"
+					/>
+					<UserSelect
+						open={showUserSelect}
+						onOpenChange={setShowUserSelect}
+						value={selectedUserId ?? undefined}
+						onSelect={(userId) => {
+							setShowUserSelect(false);
+							setSelectedUserId(userId);
+							onUserSelect(userId);
+						}}
+					/>
+					{allowUserSelect && (
+						<div className="flex items-center gap-2">
+							{selectedUserId && (
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={() => {
+										setSelectedUserId("");
+										onUserSelect("");
+									}}
+									className="text-red-500 hover:text-red-600"
+								>
+									Clear
+								</Button>
+							)}
+						</div>
+					)}
+				</div>
 				<div className="text-sm text-muted-foreground">
 					{table.getFilteredRowModel().rows.length} matches
 				</div>
 			</div>
-
 			<div className="rounded-md border">
 				<Table>
 					<TableHeader>
