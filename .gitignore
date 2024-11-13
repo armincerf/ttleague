@@ -51,3 +51,6 @@ next-env.d.ts
 *.key.pub
 triplit/.data/*
 .triplit-migration-config.json
+triplit/.data/lmdb/app.db
+triplit/.data/lmdb/app.db-lock
+

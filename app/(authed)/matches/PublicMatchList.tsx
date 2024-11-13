@@ -18,10 +18,15 @@ export default function PublicMatchList({
 }: { serverMatches: Matches }) {
 	const { results: liveGames } = useQuery(client, client.query("games"));
 
-	const matches = serverMatches.map((match) => ({
-		...match,
-		games: liveGames?.filter((g) => g.match_id === match.id) ?? match.games,
-	}));
+	const matches = serverMatches
+		.sort(
+			(a, b) =>
+				new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+		)
+		.map((match) => ({
+			...match,
+			games: liveGames?.filter((g) => g.match_id === match.id) ?? match.games,
+		}));
 
 	return (
 		<Table>
