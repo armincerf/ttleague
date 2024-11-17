@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import { TriplitClient } from "@triplit/client";
+import { HttpClient as TriplitClient } from "@triplit/client";
 import { prompt } from "enquirer";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -119,20 +119,18 @@ const migrateCollection = async (
 		if (records.length > 0) {
 			console.log("First record sample:", JSON.stringify(records[0], null, 2));
 
-			await destClient.transact(async (tx) => {
-				for (const record of records) {
-					try {
-						await tx.insert(collectionName, record);
-					} catch (insertError) {
-						console.error(
-							`Failed to insert record in ${collectionName}:`,
-							JSON.stringify(record, null, 2),
-							"\nError:",
-							insertError,
-						);
-					}
+			for (const record of records) {
+				try {
+					await destClient.insert(collectionName, record);
+				} catch (insertError) {
+					console.error(
+						`Failed to insert record in ${collectionName}:`,
+						JSON.stringify(record, null, 2),
+						"\nError:",
+						insertError,
+					);
 				}
-			});
+			}
 			// wait 10 seconds
 			await new Promise((resolve) => setTimeout(resolve, 100));
 

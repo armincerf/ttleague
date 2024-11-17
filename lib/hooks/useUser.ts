@@ -8,7 +8,12 @@ export function useUser() {
 	const overrideUser = useEntity(client, "users", override ?? "").result;
 	if (!user)
 		return {
-			user: null,
+			user: {
+				...overrideUser,
+				id: override ?? "",
+				firstName: overrideUser?.first_name ?? "",
+				lastName: overrideUser?.last_name ?? "",
+			},
 			isLoaded,
 			isSignedIn,
 		};

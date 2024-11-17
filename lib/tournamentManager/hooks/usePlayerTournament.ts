@@ -1,10 +1,10 @@
 "use client";
 import { useQuery } from "@triplit/react";
 import { client } from "@/lib/triplit";
-import { useTournament } from "./useTournament";
+import { tournamentService, useTournament } from "./useTournament";
 
 export function usePlayerTournament(playerId: string) {
-	const { state: tournamentState } = useTournament();
+	const { state: tournamentState, service } = useTournament();
 	const { results: registeredPlayers = [] } = useQuery(
 		client,
 		client
@@ -62,10 +62,11 @@ export function usePlayerTournament(playerId: string) {
 			: "playing"
 		: "waiting";
 	if (!tournamentState || !players) {
-		return { loading: true };
+		return { loading: true, createActiveTournament: service.createTournament };
 	}
 	return {
 		loading: false,
+		createActiveTournament: undefined,
 		state: {
 			id: tournamentState.id,
 			players: players.filter(Boolean),

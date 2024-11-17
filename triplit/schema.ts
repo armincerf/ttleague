@@ -188,22 +188,6 @@ export const schema = {
 			user: S.RelationById("users", "$user_id"),
 			event: S.RelationById("events", "$event_id"),
 		}),
-		permissions: {
-			admin: adminFullAccess,
-			user: {
-				read: { filter: [true] },
-				insert: {
-					filter: [["user_id", "=", "$role.userId"]],
-				},
-				delete: {
-					filter: [["user_id", "=", "$role.userId"]],
-				},
-			},
-			anonymous: {
-				insert: { filter: [true] },
-				read: { filter: [true] },
-			},
-		},
 	},
 	// matches are generated one hour or so before the start date
 	matches: {
@@ -266,21 +250,6 @@ export const schema = {
 			updated_at: S.Date({ default: S.Default.now() }),
 			updated_by: S.Optional(S.String()),
 		}),
-		permissions: {
-			...defaultPermissions,
-			user: {
-				...userReadOnly,
-				delete: {
-					filter: [true],
-				},
-				insert: {
-					filter: [true],
-				},
-				update: {
-					filter: [true],
-				},
-			},
-		},
 	},
 	leagues: {
 		schema: S.Schema({

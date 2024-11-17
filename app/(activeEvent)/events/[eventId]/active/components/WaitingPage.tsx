@@ -177,6 +177,7 @@ export function WaitingPage({
 			)
 			.include("matches"),
 	);
+	console.log("players", players, registeredPlayers);
 
 	const router = useRouter();
 	const searchParams = useSearchParams();
