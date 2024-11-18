@@ -51,6 +51,7 @@
 		"@tanstack/zod-form-adapter": "^0.34.4",
 		"@triplit/client": "^0.5.15",
 		"@triplit/react": "^0.4.15",
+		"@vercel/og": "^0.6.3",
 		"@vercel/speed-insights": "^1.1.0",
 		"@xstate/graph": "^2.0.1",
 		"@xstate/react": "^4.1.3",

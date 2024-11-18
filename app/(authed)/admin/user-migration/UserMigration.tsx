@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { z } from "zod";
 import { ComboBox } from "../manual-match-entry/components/ComboBox";
 import { useToast } from "@/hooks/use-toast";
-import { client } from "@/lib/triplit";
+import { client } from "../adminClient";
 import type {
 	Match,
 	Game,

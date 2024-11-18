@@ -1,0 +1,4 @@
+User-Agent: *
+Allow: /api/og/*
+Allow: /
+Disallow: /private/

@@ -1,4 +1,3 @@
-import { unstable_cache } from "next/cache";
 import { httpClient } from "@/lib/triplitServerClient";
 import logger from "@/lib/logging";
 
@@ -39,20 +38,8 @@ function buildMatchQuery(matchId: string) {
 export async function fetchMatches(eventId: string | "recent") {
 	const start = performance.now();
 	try {
-		const matches = await unstable_cache(
-			async () => {
-				try {
-					const client = httpClient();
-					return await client.fetch(buildMatchesQuery(eventId).build());
-				} catch (error) {
-					logger.error({ eventId, error }, "Error fetching matches");
-					throw error;
-				}
-			},
-			["matches", eventId],
-			{ revalidate: 60 },
-		)();
-		return matches;
+		const client = httpClient();
+		return await client.fetch(buildMatchesQuery(eventId).build());
 	} finally {
 		const end = performance.now();
 		logger.info({ duration: end - start, eventId }, "fetchMatches completed");
@@ -62,24 +49,12 @@ export async function fetchMatches(eventId: string | "recent") {
 export async function fetchMatch(matchId: string) {
 	const start = performance.now();
 	try {
-		const match = await unstable_cache(
-			async () => {
-				try {
-					const client = httpClient();
-					const match = await client.fetchOne(buildMatchQuery(matchId).build());
-					if (!match) {
-						logger.warn({ matchId }, "Match not found");
-						return null;
-					}
-					return match;
-				} catch (error) {
-					logger.error({ matchId, error }, "Error fetching match");
-					throw error;
-				}
-			},
-			["match", matchId],
-			{ revalidate: 60 },
-		)();
+		const client = httpClient();
+		const match = await client.fetchOne(buildMatchQuery(matchId).build());
+		if (!match) {
+			logger.warn({ matchId }, "Match not found");
+			return null;
+		}
 		return match;
 	} finally {
 		const end = performance.now();

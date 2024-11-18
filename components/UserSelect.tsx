@@ -55,7 +55,7 @@ export function UserSelect({
 				<Button
 					variant="outline"
 					aria-expanded={open}
-					className="w-[300px] justify-between"
+					className="w-[200px] justify-between"
 				>
 					{selectedUser ? (
 						<div className="flex items-center gap-2">
@@ -74,11 +74,11 @@ export function UserSelect({
 					<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent className="w-[300px] p-0">
+			<PopoverContent className="w-[200px] p-0">
 				<Command>
 					<CommandInput placeholder="Search users..." />
 					<CommandEmpty>No users found.</CommandEmpty>
-					<CommandGroup className="max-h-[300px] overflow-y-auto">
+					<CommandGroup className="max-h-[200px] overflow-y-auto">
 						{userOptions.map((user) => (
 							<CommandItem
 								key={user.value}

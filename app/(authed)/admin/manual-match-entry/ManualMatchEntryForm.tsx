@@ -10,7 +10,19 @@ import { ComboBox } from "./components/ComboBox";
 import { MatchScoreInput, type MatchScore } from "@/components/MatchScoreInput";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { client } from "@/lib/triplit";
+import { useMemo, useCallback, useEffect } from "react";
+import { client } from "../adminClient";
+
+const savedValuesSchema = z.object({
+	eventId: z.string(),
+	player1Id: z.string(),
+	player2Id: z.string(),
+	umpireId: z.string(),
+	bestOf: z.number().min(3).max(7),
+	rankingScoreDelta: z.number().min(0),
+});
+
+type SavedValues = z.infer<typeof savedValuesSchema>;
 
 const matchEntrySchema = z.object({
 	eventId: z.string(),
@@ -30,36 +42,55 @@ const matchEntrySchema = z.object({
 
 type MatchEntryFormValues = z.infer<typeof matchEntrySchema>;
 
+const STORAGE_KEY = "manual-match-entry-form";
+
+const createInitialScores = (bestOf: number): MatchScore[] => {
+	return Array.from({ length: bestOf }, () => ({
+		player1Points: 0,
+		player2Points: 0,
+		isValid: false,
+	}));
+};
+
 export function ManualMatchEntryForm() {
 	const { toast } = useToast();
-	const { results: events } = useQuery(client, client.query("events"));
 
-	const { results: users } = useQuery(
+	// Query our data
+	const { results: events, fetching: eventsLoading } = useQuery(
+		client,
+		client.query("events"),
+	);
+
+	const { results: users, fetching: usersLoading } = useQuery(
 		client,
 		client.query("users").select(["id", "first_name", "last_name"]),
 	);
 
-	const eventOptions =
-		events?.map((event) => ({
-			value: event.id,
-			label: event.name,
-		})) ?? [];
+	// Get saved values from localStorage
+	const savedValues = useMemo(() => {
+		if (typeof window === "undefined") return null;
+		const saved = localStorage.getItem(STORAGE_KEY);
+		if (!saved) return null;
 
-	const userOptions =
-		users?.map((user) => ({
-			value: user.id,
-			label: `${user.first_name} ${user.last_name}`,
-		})) ?? [];
+		try {
+			const parsed = JSON.parse(saved);
+			return savedValuesSchema.parse(parsed);
+		} catch (error) {
+			console.error("Invalid saved values:", error);
+			localStorage.removeItem(STORAGE_KEY);
+			return null;
+		}
+	}, []);
 
 	const form = useForm({
 		defaultValues: {
-			eventId: "",
-			player1Id: "",
-			player2Id: "",
-			umpireId: "",
-			bestOf: 3,
-			rankingScoreDelta: 0,
-			scores: [] as MatchScore[],
+			eventId: savedValues?.eventId ?? "",
+			player1Id: savedValues?.player1Id ?? "",
+			player2Id: savedValues?.player2Id ?? "",
+			umpireId: savedValues?.umpireId ?? "",
+			bestOf: savedValues?.bestOf ?? 3,
+			rankingScoreDelta: savedValues?.rankingScoreDelta ?? 0,
+			scores: createInitialScores(savedValues?.bestOf ?? 3),
 		} satisfies MatchEntryFormValues,
 		onSubmit: async ({ value }) => {
 			try {
@@ -78,6 +109,17 @@ export function ManualMatchEntryForm() {
 					const matchEndTime = new Date(
 						matchStartTime.getTime() + numberOfGames * 60 * 1000,
 					);
+
+					// Calculate who won the most games
+					let player1Wins = 0;
+					let player2Wins = 0;
+					for (const score of value.scores) {
+						if (score.player1Points > score.player2Points) player1Wins++;
+						else if (score.player2Points > score.player1Points) player2Wins++;
+					}
+					const winnerId =
+						player1Wins > player2Wins ? value.player1Id : value.player2Id;
+
 					const matchId = nanoid();
 					await tx.insert("matches", {
 						id: matchId,
@@ -93,6 +135,7 @@ export function ManualMatchEntryForm() {
 						endTime: matchEndTime,
 						table_number: 1,
 						status: "ended",
+						winner: winnerId,
 					});
 					for (let i = 0; i < numberOfGames; i++) {
 						const p1Score = value.scores[i].player1Points;
@@ -127,8 +170,21 @@ export function ManualMatchEntryForm() {
 					description: "Match has been successfully recorded",
 				});
 
-				// Reset form after successful submission
-				form.reset();
+				// Save form values before resetting
+				localStorage.setItem(
+					STORAGE_KEY,
+					JSON.stringify({
+						eventId: value.eventId,
+						player1Id: value.player1Id,
+						player2Id: value.player2Id,
+						umpireId: value.umpireId,
+						bestOf: value.bestOf,
+						rankingScoreDelta: value.rankingScoreDelta,
+					}),
+				);
+
+				// Only reset scores
+				form.setFieldValue("scores", []);
 			} catch (error) {
 				toast({
 					title: "Error",
@@ -143,6 +199,27 @@ export function ManualMatchEntryForm() {
 			onSubmit: matchEntrySchema,
 		},
 	});
+
+	// Show loading state while data is being fetched
+	if (eventsLoading || usersLoading) {
+		return <div>Loading...</div>;
+	}
+
+	const eventOptions =
+		events?.map((event) => ({
+			value: event.id,
+			label: event.name,
+		})) ?? [];
+
+	const userOptions =
+		users?.map((user) => ({
+			value: user.id,
+			label: `${user.first_name} ${user.last_name}`,
+		})) ?? [];
+
+	const getPlayerName = (playerId: string) => {
+		return users?.find((u) => u.id === playerId)?.first_name ?? "Player";
+	};
 
 	return (
 		<form
@@ -162,6 +239,20 @@ export function ManualMatchEntryForm() {
 						searchPlaceholder="Search events..."
 						emptyText="No events found"
 					/>
+				)}
+			</form.Field>
+
+			<form.Field name="bestOf">
+				{(field) => (
+					<select
+						value={field.state.value}
+						onChange={(e) => field.handleChange(Number(e.target.value))}
+						className="w-full p-2 border rounded"
+					>
+						<option value={3}>Best of 3</option>
+						<option value={5}>Best of 5</option>
+						<option value={7}>Best of 7</option>
+					</select>
 				)}
 			</form.Field>
 
@@ -204,20 +295,6 @@ export function ManualMatchEntryForm() {
 				)}
 			</form.Field>
 
-			<form.Field name="bestOf">
-				{(field) => (
-					<select
-						value={field.state.value}
-						onChange={(e) => field.handleChange(Number(e.target.value))}
-						className="w-full p-2 border rounded"
-					>
-						<option value={3}>Best of 3</option>
-						<option value={5}>Best of 5</option>
-						<option value={7}>Best of 7</option>
-					</select>
-				)}
-			</form.Field>
-
 			<form.Field name="rankingScoreDelta">
 				{(field) => (
 					<Input
@@ -235,14 +312,8 @@ export function ManualMatchEntryForm() {
 						scores={field.state.value}
 						onChange={field.handleChange}
 						bestOf={form.getFieldValue("bestOf")}
-						player1Name={
-							users?.find((u) => u.id === form.getFieldValue("player1Id"))
-								?.first_name ?? "Player 1"
-						}
-						player2Name={
-							users?.find((u) => u.id === form.getFieldValue("player2Id"))
-								?.first_name ?? "Player 2"
-						}
+						player1Name={getPlayerName(form.getFieldValue("player1Id"))}
+						player2Name={getPlayerName(form.getFieldValue("player2Id"))}
 					/>
 				)}
 			</form.Field>

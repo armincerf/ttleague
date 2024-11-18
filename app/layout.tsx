@@ -18,6 +18,16 @@ const geistMono = localFont({
 	weight: "100 900",
 });
 
+function MaintenanceBanner() {
+
+
+	return (
+		<div className="bg-yellow-500 text-black px-4 py-2 text-center font-medium fixed top-0 left-0 w-full z-50">
+			🛠️ Database is currently under maintenance. Some features may be unavailable and data may be stale.
+		</div>
+	);
+}
+
 function RootLayout({
 	children,
 }: {
@@ -75,6 +85,7 @@ function RootLayout({
 				{/* ... Add all other portrait splash screens ... */}
 			</head>
 			<PHProvider>
+					{/* <MaintenanceBanner /> */}
 				<body
 					className={`${geistSans.variable} ${geistMono.variable} antialiased overflow-y-auto h-screen relative`}
 					style={{ height: "100dvh" }}

@@ -70,7 +70,7 @@ export default function PublicMatchList({
 		.filter(Boolean);
 
 	return (
-		<div className="p-8">
+		<div className="sm:p-8">
 			<MatchHistoryTable
 				matches={transformedMatches}
 				currentUserId={selectedUser ?? ""}

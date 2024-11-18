@@ -54,3 +54,5 @@ triplit/.data/*
 triplit/.data/lmdb/app.db
 triplit/.data/lmdb/app.db-lock
 
+triplit-prod/triplit/.data/lmdb/app.db
+triplit-prod/triplit/.data/lmdb/app.db-lock

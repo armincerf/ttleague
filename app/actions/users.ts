@@ -19,15 +19,10 @@ export async function createUser(
 			return { success: false, error: "Not authenticated" };
 		}
 
-		const token = await getToken();
-		if (!token) {
-			return { success: false, error: "No token available" };
-		}
-
 		const client = new HttpClient({
 			schema,
 			serverUrl: process.env.NEXT_PUBLIC_TRIPLIT_SERVER_URL,
-			token,
+			token: process.env.TRIPLIT_SERVICE_TOKEN,
 		});
 
 		const result = await client.insert("users", {

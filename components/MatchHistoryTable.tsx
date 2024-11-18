@@ -29,12 +29,13 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
-import { MatchScoreCard } from "./MatchScoreCard";
+import { AutoMatchScoreCard, MatchScoreCard } from "./MatchScoreCard";
 import { getDivision } from "@/lib/ratingSystem";
 import type { Match } from "@/app/(authed)/users/[userId]/fetchers";
 import { UserSelect } from "./UserSelect";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const columnHelper = createColumnHelper<Match>();
 
@@ -100,13 +101,28 @@ function createMatchFilter(match: Match, filterValue: string): boolean {
 	});
 }
 
-const getPlayerColumns = (currentUserId: string) => {
+const getPlayerColumns = (
+	currentUserId: string,
+	router: ReturnType<typeof useRouter>,
+) => {
 	if (!currentUserId) {
 		return [
 			columnHelper.accessor("player", {
 				header: "Player One",
 				cell: (info) => (
-					<span>
+					<span
+						className="cursor-pointer underline"
+						onClick={(e) => {
+							e.stopPropagation();
+							router.push(`/users/${info.getValue().id}`);
+						}}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.stopPropagation();
+								router.push(`/users/${info.getValue().id}`);
+							}
+						}}
+					>
 						{info.getValue().first_name} {info.getValue().last_name}
 					</span>
 				),
@@ -114,7 +130,19 @@ const getPlayerColumns = (currentUserId: string) => {
 			columnHelper.accessor("opponent", {
 				header: "Player Two",
 				cell: (info) => (
-					<span>
+					<span
+						className="cursor-pointer underline"
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.stopPropagation();
+								router.push(`/users/${info.getValue().id}`);
+							}
+						}}
+						onClick={(e) => {
+							e.stopPropagation();
+							router.push(`/users/${info.getValue().id}`);
+						}}
+					>
 						{info.getValue().first_name} {info.getValue().last_name}
 					</span>
 				),
@@ -126,7 +154,19 @@ const getPlayerColumns = (currentUserId: string) => {
 		columnHelper.accessor("opponent", {
 			header: "Opponent",
 			cell: (info) => (
-				<span>
+				<span
+					className="cursor-pointer text-blue-600 hover:underline"
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.stopPropagation();
+							router.push(`/users/${info.getValue().id}`);
+						}
+					}}
+					onClick={(e) => {
+						e.stopPropagation();
+						router.push(`/users/${info.getValue().id}`);
+					}}
+				>
 					{info.getValue().first_name} {info.getValue().last_name}
 				</span>
 			),
@@ -134,7 +174,11 @@ const getPlayerColumns = (currentUserId: string) => {
 	];
 };
 
-const createColumns = (currentUserId: string) => [
+const createColumns = (
+	currentUserId: string,
+	handleRowClick: (matchId: string) => void,
+	router: ReturnType<typeof useRouter>,
+) => [
 	columnHelper.display({
 		id: "expander",
 		header: ({ table }) => (
@@ -182,14 +226,24 @@ const createColumns = (currentUserId: string) => [
 		),
 		cell: (info) => format(info.getValue(), "dd MMM yyyy"),
 	}),
-	...getPlayerColumns(currentUserId),
+	...getPlayerColumns(currentUserId, router),
 	columnHelper.accessor("result", {
 		header: "Result",
 		cell: (info) => (
 			<span
-				className={
+				className={`${
 					info.getValue() === "win" ? "text-green-600" : "text-red-600"
-				}
+				} cursor-pointer underline`}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.stopPropagation(); // Prevent row click event
+						handleRowClick(info.row.original.id);
+					}
+				}}
+				onClick={(e) => {
+					e.stopPropagation(); // Prevent row click event
+					handleRowClick(info.row.original.id);
+				}}
 			>
 				{info.getValue().toUpperCase()}
 			</span>
@@ -228,6 +282,7 @@ export default function MatchHistoryTable({
 	onUserSelect = () => {},
 	allowUserSelect = false,
 }: MatchHistoryTableProps) {
+	const router = useRouter();
 	const [isMounted, setIsMounted] = useState(false);
 	const [showUserSelect, setShowUserSelect] = useState(false);
 	const [selectedUserId, setSelectedUserId] = useState<string | null>(
@@ -248,7 +303,17 @@ export default function MatchHistoryTable({
 		pageSize,
 	});
 
-	const columns = useMemo(() => createColumns(currentUserId), [currentUserId]);
+	const handleRowClick = useCallback(
+		(matchId: string) => {
+			router.push(`/matches/${matchId}`);
+		},
+		[router],
+	);
+
+	const columns = useMemo(
+		() => createColumns(currentUserId, handleRowClick, router),
+		[currentUserId, handleRowClick, router],
+	);
 
 	const table = useReactTable({
 		data: matches,
@@ -282,28 +347,28 @@ export default function MatchHistoryTable({
 		},
 	});
 
-	console.log("user", selectedUserId);
-
 	return (
 		<div className="space-y-4">
 			<div className="flex items-center justify-between gap-4">
-				<div className="flex items-center gap-4 flex-1">
+				<div className="flex items-center gap-4 flex-1 flex-wrap">
 					<Input
 						placeholder="Search matches..."
 						value={globalFilter}
 						onChange={(e) => setGlobalFilter(e.target.value)}
 						className="max-w-sm"
 					/>
-					<UserSelect
-						open={showUserSelect}
-						onOpenChange={setShowUserSelect}
-						value={selectedUserId ?? undefined}
-						onSelect={(userId) => {
-							setShowUserSelect(false);
-							setSelectedUserId(userId);
-							onUserSelect(userId);
-						}}
-					/>
+					{allowUserSelect && (
+						<UserSelect
+							open={showUserSelect}
+							onOpenChange={setShowUserSelect}
+							value={selectedUserId ?? undefined}
+							onSelect={(userId) => {
+								setShowUserSelect(false);
+								setSelectedUserId(userId);
+								onUserSelect(userId);
+							}}
+						/>
+					)}
 					{allowUserSelect && (
 						<div className="flex items-center gap-2">
 							{selectedUserId && (
@@ -346,10 +411,31 @@ export default function MatchHistoryTable({
 						{table.getRowModel().rows.map((row) => (
 							<Fragment key={row.id}>
 								<TableRow
-									className={row.getIsExpanded() ? "bg-gray-50" : undefined}
+									className={`${row.getIsExpanded() ? "bg-gray-50" : undefined} ${
+										selectedUserId
+											? row.original.result === "win"
+												? "bg-green-50 hover:bg-green-100"
+												: "bg-red-50 hover:bg-red-100"
+											: ""
+									}`}
 								>
 									{row.getVisibleCells().map((cell) => (
-										<TableCell key={cell.id}>
+										<TableCell
+											key={cell.id}
+											className={
+												!selectedUserId &&
+												(cell.column.id === "player" ||
+													cell.column.id === "opponent")
+													? cell.column.id === "player"
+														? row.original.result === "win"
+															? "bg-green-50"
+															: "bg-red-50"
+														: row.original.result === "win"
+															? "bg-red-50"
+															: "bg-green-50"
+													: undefined
+											}
+										>
 											{flexRender(
 												cell.column.columnDef.cell,
 												cell.getContext(),
@@ -361,34 +447,9 @@ export default function MatchHistoryTable({
 									<TableRow>
 										<TableCell colSpan={row.getVisibleCells().length}>
 											<div className="px-4 py-2 bg-gray-50">
-												<MatchScoreCard
-													player1={{
-														id: row.original.player.id,
-														name: `${row.original.player.first_name} ${row.original.player.last_name}`,
-														division: getDivision(
-															row.original.player.current_division,
-														),
-														rating: row.original.player.rating,
-													}}
-													player2={{
-														id: row.original.opponent.id,
-														name: `${row.original.opponent.first_name} ${row.original.opponent.last_name}`,
-														division: getDivision(
-															row.original.opponent.current_division,
-														),
-														rating: row.original.opponent.rating,
-													}}
-													scores={row.original.scores}
-													bestOf={row.original.bestOf}
-													tableNumber={row.original.tableNumber}
-													leagueName="MK Singles League"
-													eventDate={row.original.date}
-													isManuallyCreated={row.original.isManuallyCreated}
-													umpire={
-														row.original.umpire
-															? `${row.original.umpire.first_name} ${row.original.umpire.last_name}`
-															: "None"
-													}
+												<AutoMatchScoreCard
+													matchId={row.original.id}
+													playerOneId={row.original.player.id}
 												/>
 											</div>
 										</TableCell>

@@ -1,4 +1,3 @@
-
 export interface UserPageProps {
 	params: Promise<{ userId: string }>;
 }
@@ -32,10 +31,10 @@ export default async function UserPage({ params }: UserPageProps) {
 	}
 
 	return (
-		<div className="relative min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 text-slate-900 dark:text-white p-8">
+		<div className="relative min-h-screen bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-900 dark:to-slate-800 text-slate-900 dark:text-white sm:p-8">
 			<EditUserModal user={user} />
 			<div className="max-w-4xl mx-auto space-y-8">
-				<div className="relative bg-white/50 dark:bg-slate-800/50 rounded-2xl shadow-xl p-8 backdrop-blur-sm">
+				<div className="relative bg-white/50 dark:bg-slate-800/50 rounded-2xl shadow-xl p-4 sm:p-8 backdrop-blur-sm">
 					<div className="grid lg:grid-cols-[200px_1fr] gap-8">
 						<div className="space-y-6">
 							<div className="block md:hidden">
@@ -50,7 +49,8 @@ export default async function UserPage({ params }: UserPageProps) {
 									alt={`${user.first_name} ${user.last_name}`}
 									width={128}
 									height={128}
-									className="w-32 mx-auto aspect-square object-cover rounded-xl shadow-lg" />
+									className="w-32 mx-auto aspect-square object-cover rounded-xl shadow-lg"
+								/>
 							</div>
 
 							<div className="bg-slate-200/50 dark:bg-slate-700/50 rounded-lg p-4 space-y-2">
@@ -62,14 +62,10 @@ export default async function UserPage({ params }: UserPageProps) {
 										<p className="text-slate-600 dark:text-slate-400">
 											Matches
 										</p>
-										<p className="text-2xl font-bold">
-											{user.matches_played}
-										</p>
+										<p className="text-2xl font-bold">{user.matches_played}</p>
 									</div>
 									<div>
-										<p className="text-slate-600 dark:text-slate-400">
-											Rating
-										</p>
+										<p className="text-slate-600 dark:text-slate-400">Rating</p>
 										<p className="text-2xl font-bold text-emerald-400">
 											{user.rating}
 										</p>
@@ -81,9 +77,7 @@ export default async function UserPage({ params }: UserPageProps) {
 										</p>
 									</div>
 									<div>
-										<p className="text-slate-600 dark:text-slate-400">
-											Losses
-										</p>
+										<p className="text-slate-600 dark:text-slate-400">Losses</p>
 										<p className="text-2xl font-bold text-red-400">
 											{user.losses}
 										</p>
@@ -110,7 +104,6 @@ export default async function UserPage({ params }: UserPageProps) {
 							</div>
 							<UserBio user={user} />
 
-
 							<div className="bg-slate-200/50 dark:bg-slate-700/50 rounded-lg p-4">
 								<h2 className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-4">
 									Playing Style
@@ -121,9 +114,7 @@ export default async function UserPage({ params }: UserPageProps) {
 											<p className="text-slate-600 dark:text-slate-400">
 												Style
 											</p>
-											<p className="text-lg font-semibold">
-												{user.playStyle}
-											</p>
+											<p className="text-lg font-semibold">{user.playStyle}</p>
 										</div>
 										{user.forehandRubber && (
 											<div>
@@ -156,14 +147,16 @@ export default async function UserPage({ params }: UserPageProps) {
 					</div>
 				</div>
 
-				<div className="relative bg-white/50 dark:bg-slate-800/50 rounded-2xl shadow-xl p-8 backdrop-blur-sm">
+				<div className="relative bg-white/50 dark:bg-slate-800/50 rounded-2xl shadow-xl p-4 sm:p-8 backdrop-blur-sm">
 					<h2 className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mb-6">
 						Match History
 					</h2>
 					<MatchHistoryTable
+						allowUserSelect={false}
 						matches={matches}
 						currentUserId={userId}
-						pageSize={20} />
+						pageSize={20}
+					/>
 				</div>
 			</div>
 		</div>
