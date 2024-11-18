@@ -282,6 +282,7 @@ export default function MatchHistoryTable({
 	onUserSelect = () => {},
 	allowUserSelect = false,
 }: MatchHistoryTableProps) {
+		"use no memo";
 	const router = useRouter();
 	const [isMounted, setIsMounted] = useState(false);
 	const [showUserSelect, setShowUserSelect] = useState(false);
@@ -323,6 +324,7 @@ export default function MatchHistoryTable({
 		getPaginationRowModel: getPaginationRowModel(),
 		getSortedRowModel: getSortedRowModel(),
 		getExpandedRowModel: getExpandedRowModel(),
+		getRowCanExpand: () => true,
 		state: {
 			sorting,
 			expanded,
@@ -341,7 +343,6 @@ export default function MatchHistoryTable({
 		onExpandedChange: setExpanded,
 		onGlobalFilterChange: setGlobalFilter,
 		onPaginationChange: setPagination,
-		getRowCanExpand: () => true,
 		globalFilterFn: (row, columnId, filterValue) => {
 			return createMatchFilter(row.original, filterValue);
 		},

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ShareMatchButton } from "./ShareMatchButton";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useQueryOne } from "@triplit/react";
+import { useQuery, useQueryOne } from "@triplit/react";
 import { client } from "@/lib/triplit";
 import { getDivision } from "@/lib/ratingSystem";
 
@@ -274,29 +274,37 @@ export function AutoMatchScoreCard({
 }) {
 	useEffect(() => {
 		client.fetch(client.query("matches").build());
-		client.fetch(client.query("games").build());
+		client.http.fetch(client.query("games").build());
 		client.fetch(client.query("users").build());
 		client.fetch(client.query("events").build());
 	}, []);
+
 	const { result: match } = useQueryOne(
 		client,
-		client
-			.query("matches")
-			.where("id", "=", matchId)
-			.include("games")
-			.include("player1")
-			.include("player2")
-			.include("umpireUser")
-			.include("event"),
+		client.query("matches").where("id", "=", matchId),
+		{ localOnly: true },
 	);
+	const { results: users } = useQuery(client, client.query("users").build(), {
+		localOnly: true,
+	});
+	const { results: allGames } = useQuery(
+		client,
+		client.query("games").build(),
+	);
+	const { results: events } = useQuery(client, client.query("events").build());
+
 	if (!match) return null;
-	console.log(match);
-	const playerOne =
-		playerOneId === match.player_1 ? match.player1 : match.player2;
-	const playerTwo =
-		playerOneId === match.player_1 ? match.player2 : match.player1;
-	if (!playerOne || !playerTwo) return null;
-	const games = match.games.sort((a, b) => a.game_number - b.game_number);
+	const actualPlayerOne = users?.find((user) => user.id === match.player_1);
+	const actualPlayerTwo = users?.find((user) => user.id === match.player_2);
+	if (!actualPlayerOne || !actualPlayerTwo) return null;
+	const isP1 = actualPlayerOne.id === playerOneId;
+	const playerOne = isP1 ? actualPlayerOne : actualPlayerTwo;
+	const playerTwo = isP1 ? actualPlayerTwo : actualPlayerOne;
+	const games =
+		allGames
+			?.filter((game) => game.match_id === matchId)
+			.sort((a, b) => a.game_number - b.game_number) ?? [];
+	const event = events?.find((event) => event.id === match.event_id);
 
 	return (
 		<MatchScoreCard
@@ -313,16 +321,16 @@ export function AutoMatchScoreCard({
 				rating: 0,
 			}}
 			scores={games.map((game) => ({
-				player1Points: game.player_1_score,
-				player2Points: game.player_2_score,
+				player1Points: isP1 ? game.player_1_score : game.player_2_score,
+				player2Points: isP1 ? game.player_2_score : game.player_1_score,
 				startedAt: game.created_at,
 				completedAt: game.completed_at,
 				isValid: true,
 			}))}
 			leagueName={""}
 			bestOf={match.best_of}
-			eventName={match.event?.name ?? ""}
-			eventDate={match.event?.start_time}
+			eventName={event?.name ?? ""}
+			eventDate={event?.start_time}
 		/>
 	);
 }

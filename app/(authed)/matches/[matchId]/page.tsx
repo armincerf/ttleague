@@ -10,9 +10,10 @@ export const runtime = "nodejs";
 export async function generateMetadata({
 	params,
 }: {
-	params: { matchId: string };
+	params: Promise<{ matchId: string }>;
 }): Promise<Metadata> {
-	const match = await fetchMatch(params.matchId);
+	const { matchId } = await params;
+	const match = await fetchMatch(matchId);
 
 	if (!match || !match.player1 || !match.player2) {
 		return {
@@ -30,11 +31,11 @@ export async function generateMetadata({
 		title: `${match.player1.first_name} vs ${match.player2.first_name}`,
 		description: `Match played on ${format(match.startTime, "dd MMM yyyy")}, ${winnerFirstName} won ${matchFinalScore}`,
 		openGraph: {
-			images: [`/api/og/match?matchId=${params.matchId}`],
+			images: [`/api/og/match?matchId=${matchId}`],
 		},
 		twitter: {
-			card: 'summary_large_image',
-			images: [`/api/og/match?matchId=${params.matchId}`],
+			card: "summary_large_image",
+			images: [`/api/og/match?matchId=${matchId}`],
 		},
 	};
 }
