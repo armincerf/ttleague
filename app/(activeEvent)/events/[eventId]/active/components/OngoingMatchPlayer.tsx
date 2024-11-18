@@ -12,6 +12,7 @@ import { client } from "@/lib/triplit";
 import { fetchMatchScores } from "@/lib/matches/queries";
 import { calculateCurrentServer } from "@/lib/scoreboard/utils";
 import MatchStatistics from "./MatchStatistics";
+import { useQuery, useQueryOne } from "@triplit/react";
 
 type OngoingMatchPlayerProps = {
 	match: TournamentMatch;

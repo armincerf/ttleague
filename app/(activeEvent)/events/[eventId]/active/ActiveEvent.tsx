@@ -27,6 +27,7 @@ function ActiveEvent({ eventId }: { eventId: string }) {
 			const overrideUser = queryParams.get("overrideUser");
 			if (!signupRequested || !overrideUser) return;
 			await client.insert("event_registrations", {
+				id: `${overrideUser}-${eventId}`,
 				event_id: eventId,
 				user_id: overrideUser,
 				league_id: "mk-ttl-singles",

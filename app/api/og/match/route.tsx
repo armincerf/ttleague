@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 				isValid: true,
 			}));
 
-		const bestOf = match.best_of ?? 5;
+		const bestOf = match.best_of;
 		const paddedScores = [
 			...scores,
 			...Array(bestOf - scores.length)

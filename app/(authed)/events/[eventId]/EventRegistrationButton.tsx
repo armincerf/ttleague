@@ -116,7 +116,7 @@ export default function EventRegistrationButton({
 		}
 		setError(undefined);
 		const eventRegistration: EventRegistration = {
-			id: `${eventId}-${userId}`,
+			id: `${userId}-${eventId}`,
 			league_id: leagueId,
 			event_id: eventId,
 			user_id: userId,

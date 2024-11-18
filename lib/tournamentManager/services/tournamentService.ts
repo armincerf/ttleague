@@ -22,7 +22,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 
 		async createTournament(eventId: string) {
 			marky.mark("createTournament");
-			const tournament = await client.insert("active_tournaments", {
+			const tournament = await client.http.insert("active_tournaments", {
 				id: `tournament-${eventId}`,
 				event_id: eventId,
 				status: "idle",
@@ -38,7 +38,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 		},
 
 		async removeMatchUmpire(matchId: string) {
-			await client.delete("matches", matchId);
+			await client.http.delete("matches", matchId);
 		},
 
 		async resetMatch(games: Game[]) {
@@ -85,9 +85,13 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 
 		async removePlayer(tournamentId: string, playerId: string) {
 			marky.mark("removePlayer");
-			await client.update("active_tournaments", tournamentId, (tournament) => {
-				tournament.player_ids.delete(playerId);
-			});
+			await client.http.update(
+				"active_tournaments",
+				tournamentId,
+				(tournament) => {
+					tournament.player_ids.delete(playerId);
+				},
+			);
 			marky.stop("removePlayer");
 		},
 
@@ -96,15 +100,19 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 			updates: Partial<ActiveTournament>,
 		) {
 			marky.mark("updateTournament");
-			await client.update("active_tournaments", tournamentId, (tournament) => {
-				Object.assign(tournament, updates);
-			});
+			await client.http.update(
+				"active_tournaments",
+				tournamentId,
+				(tournament) => {
+					Object.assign(tournament, updates);
+				},
+			);
 			marky.stop("updateTournament");
 		},
 
 		async updateEvent(eventId: string, updates: Partial<Event>) {
 			marky.mark("updateEvent");
-			await client.update("events", eventId, (event) => {
+			await client.http.update("events", eventId, (event) => {
 				Object.assign(event, updates);
 			});
 			marky.stop("updateEvent");
@@ -120,7 +128,7 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 			silent?: boolean;
 		}) {
 			marky.mark("generateNextMatch");
-			const tournament = await client.fetchOne(
+			const tournament = await client.http.fetchOne(
 				client
 					.query("active_tournaments")
 					.where("id", "=", tournamentId)
@@ -128,7 +136,6 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 					.include("matches")
 					.include("event")
 					.build(),
-				{ policy: "remote-first" },
 			);
 			if (!tournament) {
 				console.error(`Tournament not found: ${tournamentId}`);

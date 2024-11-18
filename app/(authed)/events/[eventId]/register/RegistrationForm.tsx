@@ -96,7 +96,7 @@ export default function RegistrationForm({
 		onSubmit: async ({ value }) => {
 			try {
 				await client.insert("event_registrations", {
-					id: `registration_${userId}-${eventId}`,
+					id: `${userId}-${eventId}`,
 					user_id: userId,
 					event_id: eventId,
 					league_id: leagueId,

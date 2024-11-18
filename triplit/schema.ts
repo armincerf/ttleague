@@ -100,22 +100,6 @@ export const schema = {
 				where: [["members", "has", "$id"]],
 			}),
 		}),
-		permissions: {
-			admin: adminFullAccess,
-			user: {
-				...userReadOnly,
-				insert: {
-					filter: [["id", "=", "$role.userId"]],
-				},
-				// TODO - just for local test
-				update: { filter: [true] },
-				delete: { filter: [["id", "=", "$role.userId"]] },
-			},
-			anonymous: {
-				read: { filter: [true] },
-				insert: { filter: [true] },
-			},
-		},
 	},
 	clubs: {
 		schema: S.Schema({

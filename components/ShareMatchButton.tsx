@@ -73,9 +73,11 @@ export function ShareMatchButton({
 		if (!navigator.share) return;
 
 		try {
-			await navigator.share(
-				createShareData(winner, player1, player2, totalGamesWon, leagueName),
-			);
+			await navigator.share({
+				title: `${leagueName} Match Result`,
+				text: `${player1.name} - ${totalGamesWon.player1}\n${player2.name} - ${totalGamesWon.player2}\nWinner: ${winner}`,
+				url: window.location.href,
+			});
 		} catch (error) {
 			console.log("Share failed:", error);
 		}

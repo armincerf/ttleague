@@ -27,14 +27,21 @@ export function UserRegistrationForm() {
 	}
 	console.log(users, latestEvent);
 
-	const userOptions =
-		users?.map((user) => ({
+	const userOptions = [
+		{
+			value: "new-user",
+			label: "+ New User",
+		},
+		...(users?.map((user) => ({
 			value: user.id,
 			label: `${user.first_name} ${user.last_name}`,
-		})) ?? [];
+		})) ?? []),
+	];
 
 	const qrCodeUrl = selectedUserId
-		? `${window.location.origin}/events/${latestEvent?.id}/active?overrideUser=${selectedUserId}&signupRequested=true`
+		? selectedUserId === "new-user"
+			? `${window.location.origin}/sign-up`
+			: `${window.location.origin}/events/${latestEvent?.id}/active?overrideUser=${selectedUserId}&signupRequested=true`
 		: "";
 
 	const generateQrCode = () => {
@@ -91,11 +98,20 @@ export function UserRegistrationForm() {
 			{selectedUserId && (
 				<div className="flex flex-col items-center space-y-4">
 					{selectedUser && userRegistered(selectedUser) ? (
-						<AnimatedTick />
+						<>
+							<AnimatedTick />
+							{process.env.NODE_ENV === "development" && (
+								<p className="text-sm text-gray-500">
+									{selectedUser.id} is already registered for this event
+								</p>
+							)}
+						</>
 					) : (
 						<>
 							<img src={generateQrCode() ?? ""} alt="QR Code" />
-							<p className="text-sm text-gray-500">{qrCodeUrl}</p>
+							{process.env.NODE_ENV === "development" && (
+								<p className="text-sm text-gray-500">{qrCodeUrl}</p>
+							)}
 						</>
 					)}
 				</div>

@@ -40,6 +40,7 @@ function RecordScoreForm({
 		setIsSubmitting(true);
 		try {
 			const now = new Date();
+			await client.fetchById("games", gameId);
 			const tx = await client.update("games", gameId, (game) => {
 				game.completed_at = now;
 				game.last_edited_at = now;
@@ -99,6 +100,7 @@ function RecordScoreForm({
 
 			setGameId(newGameId);
 		} else {
+			await client.fetchById("games", gameId);
 			await client.update("games", gameId, (game) => {
 				if (fieldName === "player1Score") {
 					game.player_1_score = newValue;

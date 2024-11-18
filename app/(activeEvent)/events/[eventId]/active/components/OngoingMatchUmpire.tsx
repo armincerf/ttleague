@@ -44,7 +44,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 		currentGames?.[0] && !currentGames[0].completed_at ? currentGames[0] : null;
 	const playerOneScore = currentGame?.player_1_score ?? 0;
 	const playerTwoScore = currentGame?.player_2_score ?? 0;
-	const bestOf = match.best_of ?? 3;
+	const bestOf = match.best_of;
 	const gamesNeededToWin = Math.floor(bestOf / 2) + 1;
 
 	const { data: scores = [] } = useTSQuery({
@@ -98,6 +98,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 		) {
 			return;
 		}
+		await client.fetchById("matches", match.id);
 
 		await client.update("matches", match.id, (m) => {
 			const temp = m.player_1;
@@ -136,6 +137,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 										playerOneScore > playerTwoScore
 											? match.player_1
 											: match.player_2;
+									await client.fetchById("games", currentGames[0].id);
 									await client.update("games", currentGames[0].id, (game) => {
 										try {
 											const scoreHistory = JSON.parse(
@@ -162,6 +164,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 										game.updated_by = userId;
 										game.winner = winner;
 									});
+									await client.fetchById("matches", match.id);
 									await client.update("matches", match.id, (m) => {
 										const oldPlayerOneScore = m.player_1_score ?? 0;
 										const oldPlayerTwoScore = m.player_2_score ?? 0;
@@ -193,6 +196,7 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 								updateScore: async (playerId, score, sidesSwapped) => {
 									console.log("updateScore", playerId, score);
 									if (!currentGames || currentGames.length === 0) return;
+									await client.fetchById("games", currentGames[0].id);
 									await client.update("games", currentGames[0].id, (game) => {
 										try {
 											const scoreHistory = JSON.parse(

@@ -18,7 +18,7 @@ export const DEFAULT_GAME_STATE: ScoreboardContext = {
 		matchPoint: false,
 	},
 	pointsToWin: 11,
-	bestOf: 3,
+	bestOf: 5,
 	playerOneStarts: true,
 	sidesSwapped: false,
 	disableAnimations: false,

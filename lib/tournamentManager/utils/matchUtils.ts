@@ -85,10 +85,11 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 			table_number: nextTable,
 			ranking_score_delta: 0,
 			event_id: eventId,
-			best_of: previousMatch ? 5 : 3,
+			best_of: 5,
 		} as const;
 
 		await client.transact(async (tx) => {
+			await tx.fetchById("active_tournaments", tournamentId);
 			await tx.update("active_tournaments", tournamentId, (tournament) => {
 				tournament.status = "started";
 			});

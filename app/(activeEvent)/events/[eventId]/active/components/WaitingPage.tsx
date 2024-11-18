@@ -1,5 +1,5 @@
 import { client } from "@/lib/triplit";
-import { useQuery, useQueryOne } from "@triplit/react";
+import { useEntity, useQuery, useQueryOne } from "@triplit/react";
 import { Button } from "@/components/ui/button";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
 import { useUser } from "@/lib/hooks/useUser";
@@ -28,16 +28,12 @@ import {
 	TooltipProvider,
 	TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { InfoIcon } from "lucide-react";
-import {
-	AutoMatchScoreCard,
-	MatchScoreCard,
-} from "@/components/MatchScoreCard";
+import { AutoMatchScoreCard } from "@/components/MatchScoreCard";
 import { TodayMatches } from "@/components/TodayMatches";
 
 function processPlayers(
 	players: (User & {
-		matches: Match[];
+		matches?: Match[];
 	})[],
 	userId: string,
 	waitingPlayerIds: Set<string>,
@@ -51,7 +47,7 @@ function processPlayers(
 			const inMatch = playersInMatch.some((p) => p.id === player.id);
 			const currentMatch = playersInMatch
 				.find((p) => p.id === player.id)
-				?.matches.find((m) => !m.winner);
+				?.matches?.find((m) => !m.winner);
 			const matchTable = currentMatch?.table_number;
 			const isUmpiring = currentMatch?.umpire === player.id;
 
@@ -146,53 +142,42 @@ export function WaitingPage({
 	tournamentId: string;
 	playerIds: Set<string> | undefined;
 }) {
-	useEffect(() => {
-		client.fetch(client.query("matches").build());
-		client.fetch(client.query("games").build());
-		client.fetch(client.query("users").build());
-		client.fetch(client.query("events").build());
-		client.fetch(client.query("event_registrations").build());
-	}, []);
 	const [loading, setLoading] = useState(false);
+
 	const { result: event } = useQueryOne(
 		client,
 		client.query("events").where("id", "=", eventId).select(["name"]),
 	);
+
+	const { results: allUsers = [] } = useQuery(
+		client,
+		client.query("users").include("events"),
+	);
+
+	const registeredUsers = allUsers.filter((u) =>
+		u.events.some((e) => e.event_id === eventId),
+	);
+	const players = registeredUsers;
+
 	const { results: matchesAllTime = [] } = useQuery(
 		client,
 		client.query("matches"),
 	);
-	const { results: registeredPlayers = [] } = useQuery(
-		client,
-		client.query("event_registrations").where("event_id", "=", eventId),
-	);
-	const { results: players } = useQuery(
-		client,
-		client
-			.query("users")
-			.where(
-				"id",
-				"in",
-				registeredPlayers.map((r) => r.user_id),
-			)
-			.include("matches"),
-	);
-	console.log("players", players, registeredPlayers);
 
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
 	const { user } = useUser();
 	const userId = searchParams.get("overrideUser") ?? user?.id;
-	const currentUser = players?.find((p) => p.id === userId);
+	const currentUser = allUsers?.find((user) => user?.id === userId);
 	const waiting = waitingPlayerIds?.has(userId ?? "");
 	useEffect(() => {
 		if (!waiting) {
 			return;
 		}
 		const interval = setInterval(() => {
-			const randomDelay = Math.floor(Math.random() * (15000 - 5000) + 5000);
-			setTimeout(() => {
+			const randomDelay = Math.floor(Math.random() * (1500 - 500) + 500);
+			setTimeout(async () => {
 				tournamentService.generateNextMatch({
 					tournamentId,
 					matchesAllTime,
@@ -210,10 +195,9 @@ export function WaitingPage({
 		return "loading...";
 	}
 
-	const unplayedPlayers =
-		players && waitingPlayerIds
-			? processPlayers(players, userId, waitingPlayerIds)
-			: [];
+	const unplayedPlayers = waitingPlayerIds
+		? processPlayers(registeredUsers, userId, waitingPlayerIds)
+		: [];
 
 	return (
 		<div className="flex flex-col items-center justify-center p-4 space-y-6">
@@ -266,6 +250,7 @@ export function WaitingPage({
 					onClick={async () => {
 						setLoading(true);
 						try {
+							await client.fetchById("active_tournaments", tournamentId);
 							if (waiting) {
 								await client.update(
 									"active_tournaments",
@@ -280,14 +265,6 @@ export function WaitingPage({
 										"You'll be notified when you're assigned to play or umpire a match.",
 								});
 							} else {
-								if (!currentUser) {
-									await client.insert("event_registrations", {
-										user_id: userId,
-										event_id: eventId,
-										league_id: "mk-singles",
-										confidence_level: 0,
-									});
-								}
 								await client.update(
 									"active_tournaments",
 									tournamentId,
@@ -392,12 +369,19 @@ export function WaitingPage({
 											{player.first_name} {player.last_name}
 										</h4>
 										{(() => {
-											if (!players) return null;
-											const currentPlayer = players.find(
-												(p) => p.id === userId,
-											);
+											if (!event?.registrations) return null;
+											const currentPlayer = event.registrations.find(
+												(r) => r.user?.id === userId,
+											)?.user;
 											if (!currentPlayer) return null;
-											const stats = getPlayerStats(currentPlayer, player);
+											const stats = getPlayerStats(currentPlayer, {
+												...player,
+												matches: matchesAllTime.filter(
+													(m) =>
+														m.player_1 === player.id ||
+														m.player_2 === player.id,
+												),
+											});
 											return (
 												<>
 													{user?.firstName === "Alex" &&

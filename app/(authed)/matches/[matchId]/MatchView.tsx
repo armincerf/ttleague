@@ -50,7 +50,7 @@ export function MatchView2({ serverMatch }: { serverMatch: Match }) {
 				eventDate={match.startTime}
 				isManuallyCreated={match.manually_created}
 				scores={scores}
-				bestOf={match.best_of ?? 5}
+				bestOf={match.best_of}
 			/>
 		</div>
 	);

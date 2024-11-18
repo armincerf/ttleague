@@ -5,6 +5,7 @@ import type { TriplitClient } from "@triplit/client";
 export function createMatchConfirmation(client: TriplitClient<typeof schema>) {
 	return {
 		async confirmInitialMatch(matchId: string, playerId: string) {
+			await client.fetchById("matches", matchId);
 			await client.update("matches", matchId, (match) => {
 				match.playersConfirmed.add(playerId);
 			});
@@ -15,6 +16,7 @@ export function createMatchConfirmation(client: TriplitClient<typeof schema>) {
 			umpireId: string,
 			serverId: string,
 		) {
+			await client.fetchById("matches", matchId);
 			await client.transact(async (tx) => {
 				await tx.update("matches", matchId, (match) => {
 					match.status = "ongoing";
@@ -40,6 +42,7 @@ export function createMatchConfirmation(client: TriplitClient<typeof schema>) {
 			});
 		},
 		async confirmWinner(matchId: string, winnerId: string) {
+			await client.fetchById("matches", matchId);
 			await client.update("matches", matchId, (match) => {
 				match.winner = winnerId;
 				match.playersConfirmed = new Set();
@@ -48,12 +51,17 @@ export function createMatchConfirmation(client: TriplitClient<typeof schema>) {
 		},
 
 		async confirmMatchUmpire(matchId: string, umpireId: string) {
+			await client.fetchById("matches", matchId);
 			await client.update("matches", matchId, async (match) => {
 				match.umpireConfirmed = true;
 				match.updated_by = umpireId;
 				match.playersConfirmed = new Set([match.player_1, match.player_2]);
 				match.status = "ended";
 				try {
+					await client.fetchById(
+						"active_tournaments",
+						`tournament-${match.event_id}`,
+					);
 					await client.update(
 						"active_tournaments",
 						`tournament-${match.event_id}`,

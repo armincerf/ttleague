@@ -2,14 +2,13 @@ import { client } from "@/lib/triplit";
 import type { MatchScore } from "@/components/MatchScoreCard";
 
 export async function fetchMatchScores(matchId: string) {
-	const match = await client.fetchOne(
+	const match = await client.http.fetchOne(
 		client
 			.query("matches")
 			.where(["id", "=", matchId])
 			.include("games")
 			.order("endTime", "DESC")
 			.build(),
-		{ policy: "remote-first" },
 	);
 
 	const scores = match?.games
