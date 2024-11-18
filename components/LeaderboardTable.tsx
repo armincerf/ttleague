@@ -57,6 +57,16 @@ export type User = Entity<typeof schema, "users">;
 const columnHelper = createColumnHelper<User>();
 
 const columns = [
+  columnHelper.accessor((row) => row, {
+    id: "rank",
+    header: "#",
+    cell: (info) => {
+      const table = info.table;
+      const rowIndex = info.row.index + 1 + (table.getState().pagination.pageIndex * table.getState().pagination.pageSize);
+      return rowIndex === 1 ? "👑" : rowIndex;
+    },
+    maxSize: 1,
+  }),
   columnHelper.accessor((row) => `${row.first_name} ${row.last_name}`, {
     id: "name",
     header: "Player",
@@ -394,6 +404,7 @@ function LeaderboardSkeleton({ columns, rows }: LeaderboardSkeletonProps) {
               >
                 {Array.from({ length: columns }).map((_, colIndex) => (
                   <TableCell
+                    className={colIndex === 0 ? "w-1" : undefined}
                     key={`cell-${rowIndex}-${
                       // biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
                       colIndex
