@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@triplit/react";
 import { Button } from "@/components/ui/button";
-import { ComboBox } from "../manual-match-entry/components/ComboBox";
+import { ComboBox } from "@/components/ComboBox";
 import type { Game, Match, User } from "@/triplit/schema";
 import { client } from "../adminClient";
 import {

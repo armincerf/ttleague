@@ -369,11 +369,15 @@ export function WaitingPage({
 											{player.first_name} {player.last_name}
 										</h4>
 										{(() => {
-											if (!event?.registrations) return null;
-											const currentPlayer = event.registrations.find(
-												(r) => r.user?.id === userId,
-											)?.user;
-											if (!currentPlayer) return null;
+											const currentPlayer = {
+												...player,
+												matches: matchesAllTime.filter(
+													(m) =>
+														m.player_1 === player.id ||
+														m.player_2 === player.id,
+												),
+											};
+											if (!event) return null;
 											const stats = getPlayerStats(currentPlayer, {
 												...player,
 												matches: matchesAllTime.filter(

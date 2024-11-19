@@ -5,7 +5,7 @@ import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useQuery } from "@triplit/react";
 import { Button } from "@/components/ui/button";
 import { z } from "zod";
-import { ComboBox } from "../manual-match-entry/components/ComboBox";
+import { ComboBox } from "@/components/ComboBox";
 import { useToast } from "@/hooks/use-toast";
 import { client } from "../adminClient";
 import type {

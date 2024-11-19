@@ -55,3 +55,58 @@ export async function createUser(
 		};
 	}
 }
+
+export async function verifyEmail(userId: string) {
+	const clerk = await clerkClient();
+	const user = await clerk.users.getUser(userId);
+	const primaryEmailId = user.primaryEmailAddressId;
+
+	if (!primaryEmailId) {
+		throw new Error("User has no primary email");
+	}
+	try {
+		await clerk.emailAddresses.updateEmailAddress(primaryEmailId, {
+			verified: true,
+		});
+	} catch (error) {
+		const email = await clerk.emailAddresses.getEmailAddress(primaryEmailId);
+		console.error("Error verifying email:", {
+			error,
+			email,
+		});
+		throw error;
+	}
+}
+
+export async function unverifyEmail(userId: string) {
+	try {
+		const clerk = await clerkClient();
+		const user = await clerk.users.getUser(userId);
+		const primaryEmailId = user.primaryEmailAddressId;
+
+		if (!primaryEmailId) {
+			throw new Error("User has no primary email");
+		}
+
+		console.log("Attempting to unverify email:", {
+			userId,
+			primaryEmailId,
+			email: user.primaryEmailAddress?.emailAddress,
+		});
+
+		const response = await clerk.emailAddresses.updateEmailAddress(
+			primaryEmailId,
+			{ verified: false },
+		);
+
+		console.log("Clerk API Response:", response);
+		return response;
+	} catch (error) {
+		console.error("Detailed unverify error:", {
+			error,
+			message: error instanceof Error ? error.message : "Unknown error",
+			stack: error instanceof Error ? error.stack : undefined,
+		});
+		throw error;
+	}
+}

@@ -6,7 +6,7 @@ import { zodValidator } from "@tanstack/zod-form-adapter";
 import { useQuery } from "@triplit/react";
 import { Button } from "@/components/ui/button";
 import { z } from "zod";
-import { ComboBox } from "./components/ComboBox";
+import { ComboBox } from "@/components/ComboBox";
 import { MatchScoreInput, type MatchScore } from "@/components/MatchScoreInput";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";

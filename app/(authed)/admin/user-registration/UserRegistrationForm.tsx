@@ -2,11 +2,10 @@
 
 import { useQuery, useQueryOne } from "@triplit/react";
 import { client } from "@/lib/triplit";
-import { ComboBox } from "../manual-match-entry/components/ComboBox";
+import { ComboBox } from "@/components/ComboBox";
 import { qrcodegen } from "@/lib/qrcodegen";
 import { useState } from "react";
 import { AnimatedTick } from "@/components/AnimatedTick";
-import { User } from "@/triplit/schema";
 
 export function UserRegistrationForm() {
 	const [selectedUserId, setSelectedUserId] = useState<string>("");
