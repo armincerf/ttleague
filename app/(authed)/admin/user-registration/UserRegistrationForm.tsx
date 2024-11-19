@@ -38,11 +38,18 @@ export function UserRegistrationForm() {
 		})) ?? []),
 	];
 
-	const qrCodeUrl = selectedUserId
-		? selectedUserId === "new-user"
-			? `${window.location.origin}/sign-up`
-			: `${window.location.origin}/events/${latestEvent?.id}/active?overrideUser=${selectedUserId}&signupRequested=true`
-		: "";
+	// Add a new function to generate the URL based on registration status
+	const getQrCodeUrl = (userId: string) => {
+		if (userId === "new-user") {
+			return `${window.location.origin}/sign-up`;
+		}
+		const baseUrl = `${window.location.origin}/events/${latestEvent?.id}/active?overrideUser=${userId}`;
+		const isRegistered = selectedUser && userRegistered(selectedUser);
+		return isRegistered ? baseUrl : `${baseUrl}&signupRequested=true`;
+	};
+
+	// Update the qrCodeUrl to use the new function
+	const qrCodeUrl = selectedUserId ? getQrCodeUrl(selectedUserId) : "";
 
 	const generateQrCode = () => {
 		if (!selectedUserId) return null;
@@ -100,10 +107,9 @@ export function UserRegistrationForm() {
 					{selectedUser && userRegistered(selectedUser) ? (
 						<>
 							<AnimatedTick />
+							<img src={generateQrCode() ?? ""} alt="QR Code" />
 							{process.env.NODE_ENV === "development" && (
-								<p className="text-sm text-gray-500">
-									{selectedUser.id} is already registered for this event
-								</p>
+								<p className="text-sm text-gray-500">{qrCodeUrl}</p>
 							)}
 						</>
 					) : (
