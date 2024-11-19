@@ -37,7 +37,9 @@ export function UserRegistrationForm() {
 		})) ?? []),
 	];
 
-	// Add a new function to generate the URL based on registration status
+	const selectedUser = users?.find((user) => user.id === selectedUserId);
+
+	// Update getQrCodeUrl to handle the case where selectedUser might be undefined
 	const getQrCodeUrl = (userId: string) => {
 		if (userId === "new-user") {
 			return `${window.location.origin}/sign-up`;
@@ -86,9 +88,6 @@ export function UserRegistrationForm() {
 
 		return canvas.toDataURL();
 	};
-
-	// Find the selected user object
-	const selectedUser = users?.find((user) => user.id === selectedUserId);
 
 	return (
 		<div className="space-y-6">
