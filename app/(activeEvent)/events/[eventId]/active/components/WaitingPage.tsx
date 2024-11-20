@@ -144,15 +144,42 @@ export function WaitingPage({
 }) {
 	const [loading, setLoading] = useState(false);
 
+	const router = useRouter();
 	const { result: event } = useQueryOne(
 		client,
 		client.query("events").where("id", "=", eventId).select(["name"]),
 	);
 
+	const { result: eventWithRelations } = useQueryOne(
+		client,
+		client
+			.query("events")
+			.where("id", "=", eventId)
+			.include("registrations", (r) =>
+				r("registrations")
+					.include("user", (r) => r("user").include("matches").build())
+					.build(),
+			)
+			.select(["name"]),
+	);
 	const { results: allUsers = [] } = useQuery(
 		client,
 		client.query("users").include("events"),
 	);
+
+	const { user } = useUser();
+	const userId = user?.id;
+	const currentUser = allUsers?.find((user) => user?.id === userId);
+
+	const currentUserQ = client.http
+		.fetchById("users", userId ?? "")
+		.then((user) => {
+			console.log("currentUserQ", {
+				currentUser,
+				user,
+				userId,
+			});
+		});
 
 	const registeredUsers = allUsers.filter((u) =>
 		u.events.some((e) => e.event_id === eventId),
@@ -164,12 +191,8 @@ export function WaitingPage({
 		client.query("matches"),
 	);
 
-	const router = useRouter();
-	const searchParams = useSearchParams();
+	console.log("eventWithRelations", eventWithRelations);
 
-	const { user } = useUser();
-	const userId = searchParams.get("overrideUser") ?? user?.id;
-	const currentUser = allUsers?.find((user) => user?.id === userId);
 	const waiting = waitingPlayerIds?.has(userId ?? "");
 	useEffect(() => {
 		if (!waiting) {

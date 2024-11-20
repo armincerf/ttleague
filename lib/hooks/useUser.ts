@@ -21,7 +21,7 @@ export function useUser() {
 		...user,
 		user: {
 			...user,
-			id: overrideUser?.id ?? user.id,
+			id: override ?? user.id,
 			firstName: overrideUser?.first_name ?? user.firstName,
 			lastName: overrideUser?.last_name ?? user.lastName,
 		},
