@@ -1,10 +1,8 @@
-import { useQueryOne } from "@triplit/react";
+import { useQuery, useQueryOne } from "@triplit/react";
 import { client as triplitClient } from "@/lib/triplit";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createTournamentService } from "../services/tournamentService";
-import { useEffect, useMemo } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import type { Match, User } from "@/triplit/schema";
 
 const TOURNAMENT_QUERY = triplitClient
@@ -16,12 +14,28 @@ const TOURNAMENT_QUERY = triplitClient
 export const tournamentService = createTournamentService(triplitClient);
 
 export function useTournament() {
-	const eventId = useParams().eventId;
+	const params = useSearchParams();
+	const eventId = params.get("eventId");
 
 	const { result } = useQueryOne(
 		triplitClient,
 		TOURNAMENT_QUERY.vars({ event_id: eventId ?? "" }),
 	);
+
+	const { results: allTournaments } = useQuery(
+		triplitClient,
+		triplitClient.query("active_tournaments"),
+	);
+	triplitClient.http
+		.fetchOne(
+			TOURNAMENT_QUERY.vars({ event_id: eventId ?? "" }).build(),
+		)
+		.then((res) => {
+			console.log("fetch res", res);
+		});
+	console.log("allTournaments query res", allTournaments);
+
+	console.log("result", result, eventId, params, allTournaments);
 
 	const state = result
 		? {

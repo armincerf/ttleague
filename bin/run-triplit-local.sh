@@ -9,4 +9,4 @@ if [[ -z "$TRIPLIT_EXTERNAL_JWT_SECRET" ]]; then
 fi
 
 # Run the triplit dev command
-bunx triplit dev --schemaPath triplit/schema.ts
+cd .. && bunx triplit dev --dbPort 6900 -s sqlite
