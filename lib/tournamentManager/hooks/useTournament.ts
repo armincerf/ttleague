@@ -2,7 +2,7 @@ import { useQuery, useQueryOne } from "@triplit/react";
 import { client as triplitClient } from "@/lib/triplit";
 import { getWaitingPlayers } from "../utils/playerUtils";
 import { createTournamentService } from "../services/tournamentService";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import type { Match, User } from "@/triplit/schema";
 
 const TOURNAMENT_QUERY = triplitClient
@@ -15,28 +15,13 @@ export const tournamentService = createTournamentService(triplitClient);
 
 export function useTournament() {
 	const params = useSearchParams();
-	const eventId = params.get("eventId");
+	const pathParams = useParams();
+	const eventId = params.get("eventId") ?? pathParams.eventId;
 
 	const { result } = useQueryOne(
 		triplitClient,
 		TOURNAMENT_QUERY.vars({ event_id: eventId ?? "" }),
 	);
-
-	const { results: allTournaments } = useQuery(
-		triplitClient,
-		triplitClient.query("active_tournaments"),
-	);
-	triplitClient.http
-		.fetchOne(
-			TOURNAMENT_QUERY.vars({ event_id: eventId ?? "" }).build(),
-		)
-		.then((res) => {
-			console.log("fetch res", res);
-		});
-	console.log("allTournaments query res", allTournaments);
-
-	console.log("result", result, eventId, params, allTournaments);
-
 	const state = result
 		? {
 				...result,

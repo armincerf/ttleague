@@ -83,33 +83,9 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 		gamesNeededToWin,
 	]);
 
-	const showChooseServer =
-		playerOneGamesWon === 0 &&
-		playerTwoGamesWon === 0 &&
-		currentGame?.player_1_score === 0 &&
-		currentGame?.player_2_score === 0;
-
-	const handleServerChosen = async (serverId: string) => {
-		if (
-			!match.id ||
-			!match.player_1 ||
-			!match.player_2 ||
-			serverId === match.player_1
-		) {
-			return;
-		}
-		await client.fetchById("matches", match.id);
-
-		await client.update("matches", match.id, (m) => {
-			const temp = m.player_1;
-			m.player_1 = m.player_2;
-			m.player_2 = temp;
-		});
-	};
-
 	return (
 		<div className="p-2 flex flex-col gap-4 items-center justify-center">
-			{!awaitingUmpireConfirmation && playerOne?.id && playerTwo?.id && (
+			{!awaitingUmpireConfirmation && playerOne?.id && (
 				<div className="bg-blue-50 border-2 border-blue-300 rounded-xl p-6 py-20 w-full shadow-lg">
 					<h2 className="text-5xl font-bold mb-4 text-center">Umpire Duty</h2>
 					<div className="text-center mb-6">
@@ -252,9 +228,9 @@ export function OngoingMatchUmpire({ match, userId }: OngoingMatchUmpireProps) {
 								matchPoint: false,
 							}}
 							player2={{
-								id: playerTwo.id,
-								firstName: playerTwo.first_name,
-								lastName: playerTwo.last_name,
+								id: playerTwo?.id ?? "",
+								firstName: playerTwo?.first_name ?? "",
+								lastName: playerTwo?.last_name ?? "",
 								gamesWon: playerTwoGamesWon,
 								currentScore: playerTwoScore,
 								matchPoint: false,

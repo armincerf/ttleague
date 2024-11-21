@@ -28,7 +28,7 @@ const navItems = [
 export default function BottomNav() {
 	const pathname = usePathname();
 
-	//useTokenCheck();
+	useTokenCheck();
 	useAdminActionListener();
 	const isHidden =
 		pathname.includes("onboarding") || pathname.endsWith("/active");
