@@ -263,7 +263,7 @@ export function useTokenCheck() {
 				}, 1000);
 				return () => clearTimeout(connectTimer);
 			}
-		}, 10000);
+		}, 2000);
 		return () => clearTimeout(timer);
 	}, []);
 
@@ -273,7 +273,7 @@ export function useTokenCheck() {
 		let cleanup: TokenCleanup;
 		async function refreshToken() {
 			const token = await getToken({ template: "Triplit" });
-			await updateClientToken(token ?? process.env.NEXT_PUBLIC_TRIPLIT_TOKEN);
+			await updateClientToken(process.env.NEXT_PUBLIC_TRIPLIT_TOKEN);
 			const parsedToken = parseTokenPayload(token ?? "", router, posthog);
 			console.log("parsedToken", parsedToken);
 
