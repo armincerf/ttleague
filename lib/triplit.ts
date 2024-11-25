@@ -13,5 +13,3 @@ export const client = new TriplitClient({
 		},
 	},
 });
-
-client.connect();

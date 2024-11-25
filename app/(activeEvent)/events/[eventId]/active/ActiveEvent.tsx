@@ -47,7 +47,7 @@ function ActiveEvent({ eventId }: { eventId: string }) {
 						.where([["event_id", "=", eventId]])
 						.build(),
 				);
-				console.log("existing", existing);
+				//console.log("existing", existing);
 				if (!existing) {
 					createActiveTournament?.(eventId);
 				}

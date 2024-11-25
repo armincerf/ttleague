@@ -111,30 +111,32 @@ async function resetClient() {
 }
 
 async function updateClientToken(token: string | undefined) {
-	if (token === client.token || client.syncEngine.connectionStatus === "OPEN") {
+	console.log("updateClientToken", token);
+	if (!token) {
+		console.log("no token");
+		return;
+	}
+	if (client.syncEngine.connectionStatus === "OPEN") {
+		client.updateSessionToken(token);
 		return;
 	}
 
-	if (client.syncEngine.connectionStatus === "CLOSED") {
-		client.connect();
-	}
-
 	try {
-		client.disconnect();
-		client.updateToken(token ?? "");
+		console.log("starting session", token, client.syncEngine.connectionStatus);
+		client.endSession();
+		client.startSession(token, true);
 
 		if (!token) {
 			await client.reset();
 			return;
 		}
 
-		client.connect();
 		setTimeout(async () => {
 			if (client.syncEngine.connectionStatus === "CLOSED") {
 				console.log("Connection closed, resetting", client.syncEngine);
 				resetClient();
 			}
-		}, 1000);
+		}, 5000);
 	} catch (error) {
 		console.error("Failed to connect to Triplit", error);
 	}
@@ -254,19 +256,6 @@ export function useCheckForOnboarding() {
 export function useTokenCheck() {
 	const { getToken } = useAuth();
 
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			if (client.syncEngine.connectionStatus !== "OPEN") {
-				client.reset();
-				const connectTimer = setTimeout(() => {
-					client.connect();
-				}, 1000);
-				return () => clearTimeout(connectTimer);
-			}
-		}, 2000);
-		return () => clearTimeout(timer);
-	}, []);
-
 	const router = useRouter();
 	const posthog = usePostHog();
 	useEffect(() => {
@@ -274,10 +263,9 @@ export function useTokenCheck() {
 		async function refreshToken() {
 			const token = await getToken({ template: "Triplit" });
 			await updateClientToken(process.env.NEXT_PUBLIC_TRIPLIT_TOKEN);
-			const parsedToken = parseTokenPayload(token ?? "", router, posthog);
-			console.log("parsedToken", parsedToken);
 
 			if (token) {
+				parseTokenPayload(token, router, posthog);
 				cleanup?.();
 				cleanup = setupTokenRefreshTimer(token, refreshToken);
 			}

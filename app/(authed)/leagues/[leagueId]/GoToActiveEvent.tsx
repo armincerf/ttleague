@@ -27,7 +27,7 @@ async function maybeCreateTournament(
 			event.id,
 		);
 		if (existingTournament) {
-			console.log("existing tournament", existingTournament);
+			//console.log("existing tournament", existingTournament);
 			handleGoToEvent();
 			return;
 		}

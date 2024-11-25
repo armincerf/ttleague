@@ -171,16 +171,6 @@ export function WaitingPage({
 	const userId = user?.id;
 	const currentUser = allUsers?.find((user) => user?.id === userId);
 
-	const currentUserQ = client.http
-		.fetchById("users", userId ?? "")
-		.then((user) => {
-			console.log("currentUserQ", {
-				currentUser,
-				user,
-				userId,
-			});
-		});
-
 	const registeredUsers = allUsers.filter((u) =>
 		u.events.some((e) => e.event_id === eventId),
 	);
@@ -191,7 +181,7 @@ export function WaitingPage({
 		client.query("matches"),
 	);
 
-	console.log("eventWithRelations", eventWithRelations);
+	//console.log("eventWithRelations", eventWithRelations);
 
 	const waiting = waitingPlayerIds?.has(userId ?? "");
 	useEffect(() => {
