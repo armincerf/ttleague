@@ -8,6 +8,7 @@ export const onboardingSchema = z.object({
 	currentLeagueDivision: leagueDivisionsSchema,
 	tableTennisEnglandId: z.string().optional(),
 	profilePicture: z.instanceof(File).optional(),
+	gender: z.enum(["male", "female"]).optional(),
 });
 
 export type OnboardingFormValues = z.infer<typeof onboardingSchema>;

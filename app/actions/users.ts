@@ -32,6 +32,7 @@ export async function createUser(
 			first_name: formData.firstName,
 			last_name: formData.lastName,
 			rating: 0,
+			gender: formData.gender,
 			current_division: formData.currentLeagueDivision,
 			registered_league_ids: new Set(["mk-ttl-singles"]),
 			matches_played: 0,

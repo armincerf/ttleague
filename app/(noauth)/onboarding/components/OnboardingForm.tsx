@@ -44,6 +44,9 @@ export default function OnboardingForm() {
 	const searchParams = new URLSearchParams(
 		typeof window !== "undefined" ? window.location.search : "",
 	);
+	const validatedGender = onboardingSchema.shape.gender.safeParse(
+		searchParams.get("gender"),
+	).data;
 	const form = useForm({
 		defaultValues: {
 			email:
@@ -56,6 +59,7 @@ export default function OnboardingForm() {
 				searchParams.get("currentLeagueDivision") || "Not in a league",
 			),
 			tableTennisEnglandId: searchParams.get("tableTennisEnglandId") || "",
+			gender: validatedGender,
 		} satisfies OnboardingFormValues,
 		onSubmit: async ({ value }) => {
 			posthog?.capture("onboarding_form_submitted", {
@@ -116,7 +120,7 @@ export default function OnboardingForm() {
 	}
 
 	return (
-		<Card className="w-[90vw] sm:w-full max-w-[450px] mx-auto mt-8 px-4 sm:px-0">
+		<Card className="w-[90vw] sm:w-full max-w-[450px] mx-auto mt-12 px-4 sm:px-0">
 			<CardHeader>
 				<CardTitle>Onboarding</CardTitle>
 				<CardDescription>Complete your profile to get started</CardDescription>
@@ -214,6 +218,45 @@ export default function OnboardingForm() {
 							</FormItem>
 						)}
 					</form.Field>
+
+					<form.Field name="gender">
+						{(field) => (
+							<FormItem>
+								<FormLabel>Gender (Optional)</FormLabel>
+								<FormControl>
+									<div className="flex space-x-4">
+										<label className="flex items-center space-x-2">
+											<input
+												type="radio"
+												name="gender"
+												value="male"
+												checked={field.state.value === "male"}
+												onChange={() => {
+													field.handleChange("male");
+													updateUrlWithFormState("gender", "male");
+												}}
+											/>
+											<span>Male</span>
+										</label>
+										<label className="flex items-center space-x-2">
+											<input
+												type="radio"
+												name="gender"
+												value="female"
+												checked={field.state.value === "female"}
+												onChange={() => {
+													field.handleChange("female");
+													updateUrlWithFormState("gender", "female");
+												}}
+											/>
+											<span>Female</span>
+										</label>
+									</div>
+								</FormControl>
+							</FormItem>
+						)}
+					</form.Field>
+
 					<ProfileImageUpload />
 					<div className="flex justify-end space-x-2">
 						<form.Subscribe
