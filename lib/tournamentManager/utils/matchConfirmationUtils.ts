@@ -57,25 +57,6 @@ export function createMatchConfirmation(client: TriplitClient<typeof schema>) {
 				match.updated_by = umpireId;
 				match.playersConfirmed = new Set([match.player_1, match.player_2]);
 				match.status = "ended";
-				try {
-					await client.fetchById(
-						"active_tournaments",
-						`tournament-${match.event_id}`,
-					);
-					await client.update(
-						"active_tournaments",
-						`tournament-${match.event_id}`,
-						(tournament) => {
-							tournament.player_ids.delete(match.player_1);
-							tournament.player_ids.delete(match.player_2);
-							if (match.umpire) {
-								tournament.player_ids.delete(match.umpire);
-							}
-						},
-					);
-				} catch (error) {
-					console.error("Error updating active tournament", error);
-				}
 			});
 		},
 	};

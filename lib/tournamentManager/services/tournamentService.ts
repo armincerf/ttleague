@@ -148,7 +148,9 @@ export function createTournamentService(client: TriplitClient<typeof schema>) {
 			const activeMatches = matchesToday.filter(
 				(m) => m.status === "ongoing" || m.status === "pending",
 			);
-			const freeTables = (event?.tables.size ?? 1) - activeMatches.length;
+
+			const usedTables = new Set(activeMatches.map((m) => m.table_number));
+			const freeTables = event?.tables.difference(usedTables) ?? new Set();
 
 			const waitingPlayers = getWaitingPlayers(players, matchesToday);
 			const result = await matchGenerator(

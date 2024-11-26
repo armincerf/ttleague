@@ -95,12 +95,8 @@ export function EventRegisteredPlayers({
 		(player) => player?.id === user?.id,
 	);
 	console.log({
-		event,
-		isLoading,
 		players,
-		playerCount,
-		currentUserRegistered,
-		results,
+		registeredUserIds,
 	});
 
 	return (

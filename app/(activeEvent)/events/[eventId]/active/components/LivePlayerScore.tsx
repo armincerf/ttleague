@@ -90,7 +90,7 @@ export function LivePlayerScore({ match, isP1 }: LivePlayerScoreProps) {
 	const { results: games } = useGameData(match?.id);
 	const currentGame = games?.[0];
 	const swappedSides = !!currentGame?.sides_swapped;
-	const side = isP1 ? "left" : "right";
+	const side = isP1 ? "right" : "left";
 
 	const {
 		currentScore,

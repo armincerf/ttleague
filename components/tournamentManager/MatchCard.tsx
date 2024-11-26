@@ -4,6 +4,7 @@ import { getMatchState } from "@/lib/tournamentManager/utils/matchStateUtils";
 import { useTournament } from "@/lib/tournamentManager/hooks/useTournament";
 import { useState } from "react";
 import { useAsyncAction } from "@/lib/hooks/useAsyncAction";
+import { client } from "@/lib/triplit";
 
 interface MatchCardProps {
 	match: Match;
@@ -40,10 +41,17 @@ export function MatchCard({
 		actionName: "Final umpire confirmation",
 		onSuccess: async () => {
 			try {
+				console.log("finalUmpireConfirmAction.onSuccess");
 				if (!state?.id) throw new Error("Tournament ID is not set");
-				await service.removePlayer(state.id, match.player_1);
-				await service.removePlayer(state.id, match.player_2);
-				await service.removePlayer(state.id, umpire.id);
+				const matchesAllTime = await client.http.fetch(
+					client.query("matches").build(),
+				);
+				console.log("matchesAllTime", matchesAllTime);
+				await service.generateNextMatch({
+					tournamentId: state.id,
+					matchesAllTime,
+				});
+				console.log("nextMatchGenerated");
 			} catch (error) {
 				console.error("Error generating next match:", error);
 			}

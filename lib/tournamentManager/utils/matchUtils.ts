@@ -1,7 +1,8 @@
 import type { TriplitClient } from "@triplit/client";
 import type { Match, schema, User } from "@/triplit/schema";
-import { findValidPlayerPair } from "./pairingUtils";
+import { performMatchmaking } from "./matchmakingUtils";
 import { nanoid } from "nanoid";
+
 export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 	return async function generateMatchups(
 		tournamentId: string,
@@ -10,23 +11,80 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 		matchesAllTime: Match[],
 		eventId: string,
 		totalRounds: number,
-		freeTables: number,
+		freeTables: Set<number>,
 	) {
 		if (waitingPlayers.length < 3) {
 			console.log("Not enough players", waitingPlayers);
 			return { success: false, error: "Not enough players" };
 		}
 
-		if (freeTables < 1) {
+		if (freeTables.size < 1) {
 			return { success: false, error: "No free tables available" };
 		}
 
-		const validPair = findValidPlayerPair(
-			waitingPlayers,
-			matchesToday,
-			totalRounds,
-		);
-		if (!validPair?.[0] || !validPair?.[1]) {
+		// Gather last played and umpired dates
+		const playerInfoMap = new Map<
+			string,
+			{ lastPlayedAt?: Date; lastUmpiredAt?: Date }
+		>();
+
+		for (const match of matchesAllTime) {
+			const { player_1, player_2, umpire, updated_at } = match;
+
+			if (
+				!playerInfoMap.has(player_1) ||
+				(playerInfoMap.get(player_1)?.lastPlayedAt?.getTime() ?? 0) <
+					updated_at.getTime()
+			) {
+				playerInfoMap.set(player_1, {
+					...playerInfoMap.get(player_1),
+					lastPlayedAt: updated_at,
+				});
+			}
+
+			if (
+				!playerInfoMap.has(player_2) ||
+				(playerInfoMap.get(player_2)?.lastPlayedAt?.getTime() ?? 0) <
+					updated_at.getTime()
+			) {
+				playerInfoMap.set(player_2, {
+					...playerInfoMap.get(player_2),
+					lastPlayedAt: updated_at,
+				});
+			}
+
+			if (
+				umpire &&
+				(!playerInfoMap.has(umpire) ||
+					(playerInfoMap.get(umpire)?.lastUmpiredAt?.getTime() ?? 0) <
+						updated_at.getTime())
+			) {
+				playerInfoMap.set(umpire, {
+					...playerInfoMap.get(umpire),
+					lastUmpiredAt: updated_at,
+				});
+			}
+		}
+
+		// Map waiting players to PlayerInfo
+		const playerInfos = waitingPlayers.map((user) => ({
+			userId: user.id,
+			lastPlayedAt: playerInfoMap.get(user.id)?.lastPlayedAt,
+			lastUmpiredAt: playerInfoMap.get(user.id)?.lastUmpiredAt,
+			usersPlayedToday: Array.from(
+				new Set(
+					matchesToday
+						.filter((m) => m.player_1 === user.id || m.player_2 === user.id)
+						.map((m) => (m.player_1 === user.id ? m.player_2 : m.player_1)),
+				),
+			),
+			timesUmpiredToday: matchesToday.filter((m) => m.umpire === user.id)
+				.length,
+		}));
+
+		const matches = performMatchmaking(playerInfos);
+
+		if (matches.length === 0) {
 			return { success: false, error: "No more valid matches" };
 		}
 
@@ -35,58 +93,37 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 				.filter((m) => m.status === "ongoing" || m.status === "pending")
 				.map((m) => m.table_number),
 		);
-		const nextTable =
-			Array.from({ length: freeTables }, (_, i) => i + 1).find(
-				(num) => !usedTables.has(num),
-			) ?? 1;
 
-		const [player1, player2] = validPair;
+		const newMatches: Match[] = [];
 
-		// Check if players have played before
-		const previousMatch = matchesAllTime.some(
-			(match) =>
-				(match.player_1 === player1.id && match.player_2 === player2.id) ||
-				(match.player_1 === player2.id && match.player_2 === player1.id),
-		);
+		const availableTables = freeTables.difference(usedTables);
 
-		const availableUmpires = waitingPlayers.filter(
-			(p) => p.id !== player1.id && p.id !== player2.id,
-		);
+		for (let i = 0; i < matches.length && i < availableTables.size; i++) {
+			const match = matches[i];
+			const nextTable = availableTables.values().next().value;
 
-		if (availableUmpires.length === 0) {
-			return { success: false, error: "No available umpire" };
+			const newMatch = {
+				id: `match-${nanoid()}`,
+				player_1: match.playerOneId,
+				player_2: match.playerTwoId,
+				umpire: match.umpireId,
+				status: "pending",
+				manually_created: false,
+				table_number: nextTable,
+				ranking_score_delta: 0,
+				event_id: eventId,
+				best_of: 5,
+				created_at: new Date(),
+				updated_at: new Date(),
+				edited_at: new Date(),
+				updated_by: "createMatchGenerator",
+				playersConfirmed: new Set(),
+				umpireConfirmed: false,
+				startTime: new Date(),
+			} as const satisfies Match;
+
+			newMatches.push(newMatch);
 		}
-
-		// Count how many times each player has umpired
-		const umpireCount = matchesToday.reduce<Record<string, number>>(
-			(acc, match) => {
-				if (match.umpire) {
-					acc[match.umpire] = (acc[match.umpire] ?? 0) + 1;
-				}
-				return acc;
-			},
-			{},
-		);
-
-		// Select umpire with lowest count
-		const umpire = availableUmpires.reduce((lowest, current) => {
-			const lowestCount = umpireCount[lowest.id] ?? 0;
-			const currentCount = umpireCount[current.id] ?? 0;
-			return currentCount < lowestCount ? current : lowest;
-		}, availableUmpires[0]);
-
-		const newMatch = {
-			id: `match-${nanoid()}`,
-			player_1: player1.id,
-			player_2: player2.id,
-			umpire: umpire.id,
-			status: "pending",
-			manually_created: false,
-			table_number: nextTable,
-			ranking_score_delta: 0,
-			event_id: eventId,
-			best_of: 5,
-		} as const;
 
 		await client.transact(async (tx) => {
 			await tx.fetchById("active_tournaments", tournamentId);
@@ -94,18 +131,22 @@ export function createMatchGenerator(client: TriplitClient<typeof schema>) {
 				tournament.status = "started";
 			});
 
-			await tx.insert("matches", newMatch);
-			await tx.update("users", player1.id, (user) => {
-				user.current_tournament_priority = 0;
-			});
-			await tx.update("users", player2.id, (user) => {
-				user.current_tournament_priority = 0;
-			});
-			await tx.update("users", umpire.id, (user) => {
-				user.current_tournament_priority = 3;
-			});
+			for (const newMatch of newMatches) {
+				await tx.insert("matches", newMatch);
+				await tx.update("users", newMatch.player_1, (user) => {
+					user.current_tournament_priority = 0;
+				});
+				await tx.update("users", newMatch.player_2, (user) => {
+					user.current_tournament_priority = 0;
+				});
+				if (newMatch.umpire) {
+					await tx.update("users", newMatch.umpire, (user) => {
+						user.current_tournament_priority = 3;
+					});
+				}
+			}
 		});
 
-		return { success: true, match: newMatch };
+		return { success: true, matches: newMatches };
 	};
 }

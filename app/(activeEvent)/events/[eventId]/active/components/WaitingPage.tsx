@@ -3,7 +3,7 @@ import { useEntity, useQuery, useQueryOne } from "@triplit/react";
 import { Button } from "@/components/ui/button";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
 import { useUser } from "@/lib/hooks/useUser";
-import type { User, Match } from "@/triplit/schema";
+import type { User, Match, Game } from "@/triplit/schema";
 import { useEffect, useState } from "react";
 import {
 	Dialog,
@@ -33,7 +33,7 @@ import { TodayMatches } from "@/components/TodayMatches";
 
 function processPlayers(
 	players: (User & {
-		matches?: Match[];
+		matches?: (Match & { games?: Game[] })[];
 	})[],
 	userId: string,
 	waitingPlayerIds: Set<string>,
@@ -41,6 +41,7 @@ function processPlayers(
 	const playersInMatch = players.filter((player) =>
 		player.matches?.some((match) => !match.winner),
 	);
+	console.log("playersInMatch", playersInMatch);
 	return players
 		.filter((player) => player.id !== userId)
 		.map((player) => {
@@ -50,8 +51,23 @@ function processPlayers(
 				?.matches?.find((m) => !m.winner);
 			const matchTable = currentMatch?.table_number;
 			const isUmpiring = currentMatch?.umpire === player.id;
+			const games = currentMatch?.games;
+			const currentGame = games?.find((g) => !g.winner);
 
-			const score = currentMatch
+			const currentGameScore =
+				currentMatch && currentGame
+					? {
+							playerScore:
+								currentMatch.player_1 === player.id
+									? (currentGame.player_1_score ?? 0)
+									: (currentGame.player_2_score ?? 0),
+							opponentScore:
+								currentMatch.player_1 === player.id
+									? (currentGame.player_2_score ?? 0)
+									: (currentGame.player_1_score ?? 0),
+						}
+					: undefined;
+			const matchScore = currentMatch
 				? {
 						playerScore:
 							currentMatch.player_1 === player.id
@@ -69,7 +85,8 @@ function processPlayers(
 				inMatch: inMatch && !isUmpiring,
 				isUmpiring,
 				matchTable,
-				score,
+				currentGameScore,
+				matchScore,
 				currentMatch,
 				isResting: !waitingPlayerIds.has(player.id) && !inMatch && !isUmpiring,
 			};
@@ -164,7 +181,10 @@ export function WaitingPage({
 	);
 	const { results: allUsers = [] } = useQuery(
 		client,
-		client.query("users").include("events"),
+		client
+			.query("users")
+			.include("events")
+			.include("matches", (m) => m("matches").include("games").build()),
 	);
 
 	const { user } = useUser();
@@ -189,7 +209,7 @@ export function WaitingPage({
 			return;
 		}
 		const interval = setInterval(() => {
-			const randomDelay = Math.floor(Math.random() * (1500 - 500) + 500);
+			const randomDelay = Math.floor(Math.random() * 5000);
 			setTimeout(async () => {
 				tournamentService.generateNextMatch({
 					tournamentId,
@@ -197,7 +217,7 @@ export function WaitingPage({
 					silent: true,
 				});
 			}, randomDelay);
-		}, 15000);
+		}, 5000);
 
 		return () => {
 			clearInterval(interval);
@@ -211,6 +231,7 @@ export function WaitingPage({
 	const unplayedPlayers = waitingPlayerIds
 		? processPlayers(registeredUsers, userId, waitingPlayerIds)
 		: [];
+	console.log("unplayedPlayers", unplayedPlayers);
 
 	return (
 		<div className="flex flex-col items-center justify-center p-4 space-y-6">
@@ -360,12 +381,16 @@ export function WaitingPage({
 														: "(Resting)"}
 											</span>
 										)}
-										{player.inMatch && !player.isUmpiring && player.score && (
-											<span className="pl-2 text-bold underline">
-												{player.score.playerScore} -{" "}
-												{player.score.opponentScore}
-											</span>
-										)}
+										{player.inMatch &&
+											!player.isUmpiring &&
+											player.matchScore && (
+												<span className="pl-2 text-bold underline">
+													{player.currentGameScore?.playerScore} -{" "}
+													{player.currentGameScore?.opponentScore} (
+													{player.matchScore?.playerScore} -{" "}
+													{player.matchScore?.opponentScore})
+												</span>
+											)}
 									</span>
 								</div>
 							</PopoverTrigger>
@@ -401,8 +426,8 @@ export function WaitingPage({
 											});
 											return (
 												<>
-													{user?.firstName === "Alex" &&
-														user?.lastName === "Davis" &&
+													{(user?.id === "user_2oGkUs4wC4r0MC2C64Dqb3sjmOK" ||
+														process.env.NODE_ENV === "development") &&
 														userId !== player.id && (
 															<button
 																className="text-blue-500 text-sm"
