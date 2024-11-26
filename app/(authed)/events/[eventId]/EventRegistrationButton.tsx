@@ -1,6 +1,6 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { useTransition } from "react";
+import { useCallback, useEffect, useTransition } from "react";
 import { client } from "@/lib/triplit";
 import type { EventRegistration } from "@/triplit/schema";
 import logger from "@/lib/logging";
@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import { handleSyncFailure } from "@/lib/triplit-utils";
 import { SignUpButton } from "@clerk/nextjs";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type EventRegistrationButtonProps = {
 	eventId: string;
@@ -110,7 +111,7 @@ export default function EventRegistrationButton({
 
 	const eventRegistration = clientEventRegistration ?? serverEventRegistration;
 
-	const handleRegister = () => {
+	const handleRegister = useCallback(() => {
 		if (!userId) {
 			return;
 		}
@@ -128,7 +129,6 @@ export default function EventRegistrationButton({
 			try {
 				await registerForEvent(eventRegistration);
 			} catch (error) {
-				// Make sure to use the error message
 				setError(
 					error instanceof Error
 						? error.message
@@ -136,16 +136,15 @@ export default function EventRegistrationButton({
 				);
 			}
 		});
-	};
+	}, [userId, eventId, leagueId]);
 
-	const handleUnregister = () => {
+	const handleUnregister = useCallback(() => {
 		setError(undefined);
 		startTransition(async () => {
 			if (eventRegistration) {
 				try {
 					await unregisterFromEvent(eventRegistration.id);
 				} catch (error) {
-					// Make sure to use the error message
 					setError(
 						error instanceof Error
 							? error.message
@@ -154,7 +153,27 @@ export default function EventRegistrationButton({
 				}
 			}
 		});
-	};
+	}, [eventRegistration]);
+
+	const searchParams = useSearchParams();
+	const signupRequested = searchParams.get("signupRequested");
+	const router = useRouter();
+
+	const clearSignupRequest = useCallback(() => {
+		const params = new URLSearchParams(searchParams.toString());
+		params.delete("signupRequested");
+		router.replace(`${window.location.pathname}?${params.toString()}`);
+	}, [searchParams, router]);
+  const path = usePathname();
+
+	const redirectUrl = `${path}?signupRequested=true`
+
+	useEffect(() => {
+		if (signupRequested === "true" && userId) {
+			handleRegister();
+			clearSignupRequest();
+		}
+	}, [signupRequested, userId, handleRegister, clearSignupRequest]);
 
 	return (
 		<>
@@ -182,7 +201,11 @@ export default function EventRegistrationButton({
 				</Button>
 			) : (
 				<>
-					<SignInButton>
+					<SignInButton
+						mode="modal"
+						forceRedirectUrl={redirectUrl}
+						signUpForceRedirectUrl={redirectUrl}
+					>
 						<Button className="w-full" variant="outline">
 							Sign in or sign up to Register
 						</Button>
