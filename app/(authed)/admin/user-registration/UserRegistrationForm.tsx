@@ -44,9 +44,7 @@ export function UserRegistrationForm() {
 		if (userId === "new-user") {
 			return `${window.location.origin}/sign-up`;
 		}
-		const baseUrl = `${window.location.origin}/events/${latestEvent?.id}/active?overrideUser=${userId}`;
-		const isRegistered = selectedUser && userRegistered(selectedUser);
-		return isRegistered ? baseUrl : `${baseUrl}&signupRequested=true`;
+		return `https://play.ttmk.co.uk/${latestEvent?.id}/game/${userId}`;
 	};
 
 	// Update the qrCodeUrl to use the new function
