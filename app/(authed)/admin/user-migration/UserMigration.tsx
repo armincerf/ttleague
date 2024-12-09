@@ -140,6 +140,56 @@ function UserMigrationInner() {
 		},
 	});
 
+	const duplicateUserForm = useForm({
+		defaultValues: {
+			userIdToDuplicate: "",
+			newUserId: "",
+		},
+		onSubmit: async ({ value }) => {
+			try {
+				const userToDuplicate = users?.find(
+					(user) => user.id === value.userIdToDuplicate,
+				);
+				if (!userToDuplicate) {
+					toast({
+						title: "Error",
+						description: "User not found",
+						variant: "destructive",
+					});
+					return;
+				}
+
+				const newUser = {
+					...userToDuplicate,
+					id: value.newUserId,
+				};
+
+				await client.insert("users", {
+					...newUser,
+					rating: 0,
+					matches_played: 0,
+					wins: 0,
+					losses: 0,
+					no_shows: 0,
+				});
+
+				toast({
+					title: "Success",
+					description: "User has been duplicated successfully",
+				});
+
+				duplicateUserForm.reset();
+			} catch (error) {
+				toast({
+					title: "Error",
+					description:
+						error instanceof Error ? error.message : "Failed to duplicate user",
+					variant: "destructive",
+				});
+			}
+		},
+	});
+
 	// Query all relevant collections for the old user ID
 	const { results: matches } = useQuery(
 		client,
@@ -189,84 +239,142 @@ function UserMigrationInner() {
 	};
 
 	return (
-		<form
-			onSubmit={(e) => {
-				e.preventDefault();
-				void form.handleSubmit();
-			}}
-			className="space-y-6"
-		>
-			<div className="space-y-4">
+		<div className="space-y-8">
+			<form
+				onSubmit={(e) => {
+					e.preventDefault();
+					void form.handleSubmit();
+				}}
+				className="space-y-6"
+			>
+				{/* Migration Form */}
+				<div className="space-y-4">
+					<div>
+						<label
+							htmlFor="oldUserId"
+							className="block text-sm font-medium mb-1"
+						>
+							Old User
+						</label>
+						<form.Field name="oldUserId">
+							{(field) => (
+								<ComboBox
+									options={userOptions}
+									value={field.state.value}
+									onChange={field.handleChange}
+									placeholder="Select user to migrate from..."
+									searchPlaceholder="Search users..."
+									emptyText="No users found"
+								/>
+							)}
+						</form.Field>
+					</div>
+					<div>
+						<label
+							htmlFor="newUserId"
+							className="block text-sm font-medium mb-1"
+						>
+							New User
+						</label>
+						<form.Field name="newUserId">
+							{(field) => (
+								<ComboBox
+									options={userOptions}
+									value={field.state.value}
+									onChange={field.handleChange}
+									placeholder="Select user to migrate to..."
+									searchPlaceholder="Search users..."
+									emptyText="No users found"
+								/>
+							)}
+						</form.Field>
+					</div>
+				</div>
+
+				{form.getFieldValue("oldUserId") && (
+					<div className="rounded-md border p-4">
+						<h3 className="font-medium mb-4">Records to be updated:</h3>
+						<ul className="space-y-2">
+							<li>Matches: {stats.matches.length}</li>
+							<li>Games: {stats.games.length}</li>
+							<li>Event Registrations: {stats.eventRegistrations.length}</li>
+							<li>Messages: {stats.messages.length}</li>
+							<li>Reactions: {stats.reactions.length}</li>
+						</ul>
+					</div>
+				)}
+
+				<div className="space-x-4">
+					<Button
+						type="button"
+						onClick={() => setPreviewMode(!previewMode)}
+						variant="outline"
+					>
+						{previewMode ? "Proceed with Migration" : "Back to Preview"}
+					</Button>
+					<Button
+						type="submit"
+						disabled={
+							form.state.isSubmitting ||
+							previewMode ||
+							!form.getFieldValue("oldUserId") ||
+							!form.getFieldValue("newUserId")
+						}
+					>
+						{form.state.isSubmitting ? "Migrating..." : "Migrate User Data"}
+					</Button>
+				</div>
+			</form>
+
+			<form
+				onSubmit={(e) => {
+					e.preventDefault();
+					void duplicateUserForm.handleSubmit();
+				}}
+				className="space-y-6"
+			>
+				{/* Duplicate User Form */}
 				<div>
-					<label htmlFor="oldUserId" className="block text-sm font-medium mb-1">
-						Old User
+					<label
+						htmlFor="userIdToDuplicate"
+						className="block text-sm font-medium mb-1"
+					>
+						User to Duplicate
 					</label>
-					<form.Field name="oldUserId">
+					<duplicateUserForm.Field name="userIdToDuplicate">
 						{(field) => (
 							<ComboBox
 								options={userOptions}
 								value={field.state.value}
 								onChange={field.handleChange}
-								placeholder="Select user to migrate from..."
+								placeholder="Select user to duplicate..."
 								searchPlaceholder="Search users..."
 								emptyText="No users found"
 							/>
 						)}
-					</form.Field>
+					</duplicateUserForm.Field>
 				</div>
+
 				<div>
 					<label htmlFor="newUserId" className="block text-sm font-medium mb-1">
-						New User
+						New User ID
 					</label>
-					<form.Field name="newUserId">
+					<duplicateUserForm.Field name="newUserId">
 						{(field) => (
-							<ComboBox
-								options={userOptions}
+							<input
+								type="text"
 								value={field.state.value}
-								onChange={field.handleChange}
-								placeholder="Select user to migrate to..."
-								searchPlaceholder="Search users..."
-								emptyText="No users found"
+								onChange={(e) => field.handleChange(e.target.value)}
+								placeholder="Enter new user ID..."
+								className="input-class"
 							/>
 						)}
-					</form.Field>
+					</duplicateUserForm.Field>
 				</div>
-			</div>
 
-			{form.getFieldValue("oldUserId") && (
-				<div className="rounded-md border p-4">
-					<h3 className="font-medium mb-4">Records to be updated:</h3>
-					<ul className="space-y-2">
-						<li>Matches: {stats.matches.length}</li>
-						<li>Games: {stats.games.length}</li>
-						<li>Event Registrations: {stats.eventRegistrations.length}</li>
-						<li>Messages: {stats.messages.length}</li>
-						<li>Reactions: {stats.reactions.length}</li>
-					</ul>
-				</div>
-			)}
-
-			<div className="space-x-4">
-				<Button
-					type="button"
-					onClick={() => setPreviewMode(!previewMode)}
-					variant="outline"
-				>
-					{previewMode ? "Proceed with Migration" : "Back to Preview"}
-				</Button>
-				<Button
-					type="submit"
-					disabled={
-						form.state.isSubmitting ||
-						previewMode ||
-						!form.getFieldValue("oldUserId") ||
-						!form.getFieldValue("newUserId")
-					}
-				>
-					{form.state.isSubmitting ? "Migrating..." : "Migrate User Data"}
-				</Button>
-			</div>
-		</form>
+				<Button type="submit">Duplicate User</Button>
+			</form>
+		</div>
 	);
 }
 
