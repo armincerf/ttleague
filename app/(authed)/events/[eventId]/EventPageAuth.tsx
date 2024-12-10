@@ -52,7 +52,7 @@ export function EventPageAuth({ event }: Props) {
 			)}
 
 			{event.status === "active" && myEventRegistration && (
-				<Link href={`/events/${event.id}/active`}>
+				<Link href={`https://play.ttmk.co.uk/${event.id}/game/${userId}`}>
 					<Button>Join Event!</Button>
 				</Link>
 			)}
