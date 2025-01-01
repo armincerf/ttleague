@@ -14,27 +14,9 @@ function LeagueHeader({
 	league,
 }: { league: NonNullable<Awaited<ReturnType<typeof fetchLeague>>> }) {
 	return (
-		<>
-			<div className="relative h-[20vh] sm:h-[40vh] w-full mb-8">
-				<div className="absolute inset-0">
-					<Image
-						src={league.logo_image_url}
-						alt={`${league.name} logo`}
-						fill
-						className="object-cover fixed-image"
-						priority
-					/>
-					<div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
-				</div>
-				<div className="relative h-full max-w-4xl mx-auto flex items-center px-4">
-					<h1 className="text-4xl md:text-5xl font-bold text-foreground drop-shadow-lg">
-						{league.name}
-					</h1>
-				</div>
-			</div>
-
-			<Card className="mb-8">
+			<Card className="my-8">
 				<CardContent className="pt-6">
+					<h1 className="text-2xl font-bold mb-4">{league.name}</h1>
 					<p className="mb-4">{league.description}</p>
 					{league.clubs && league.clubs.length > 0 && (
 						<div className="mb-4">
@@ -51,7 +33,6 @@ function LeagueHeader({
 					<FAQDialogButton faqHtml={league.faq_html} leagueId={league.id} />
 				</CardContent>
 			</Card>
-		</>
 	);
 }
 

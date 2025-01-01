@@ -278,3 +278,14 @@ export function useTokenCheck() {
 		};
 	}, [getToken, router, posthog]);
 }
+
+export function useAdmin() {
+	const { user } = useUser();
+	const userId = user?.id || "anon";
+	const { results: clubs = [] } = useQuery(
+		client,
+		client.query("clubs").where("admins", "has", userId),
+	);
+
+	return { isAdmin: clubs.length > 0, clubs };
+}
