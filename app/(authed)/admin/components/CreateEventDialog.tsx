@@ -49,12 +49,12 @@ async function generateEventId(values: {
 		.map((b) => b.toString(16).padStart(2, "0"))
 		.join("");
 
-	const timestamp = values.start_time.getTime().toString(36);
+	const timestamp = format(values.start_time, 'dd_MMM_yy');
 
-	const clubPrefix = values.club_id.slice(0, 3);
-	const leaguePrefix = values.league_id.slice(0, 3);
+	const clubPrefix = values.club_id.slice(0, 6);
+	const leaguePrefix = values.league_id.slice(0, 6);
 
-	const hashPart = hashHex.slice(0, 16);
+	const hashPart = hashHex.slice(0, 8);
 
 	return `${clubPrefix}_${leaguePrefix}_${timestamp}_${hashPart}`;
 }
