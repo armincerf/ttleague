@@ -7,6 +7,7 @@ import type { Event } from "@/lib/actions/events";
 import Link from "next/link";
 import { client } from "@/lib/triplit";
 import { useQueryOne } from "@triplit/react";
+import { getQrCodeUrl } from "../../admin/user-registration/UserRegistrationForm";
 
 type Props = {
 	event: NonNullable<Event>;
@@ -52,7 +53,7 @@ export function EventPageAuth({ event }: Props) {
 			)}
 
 			{event.status === "active" && myEventRegistration && (
-				<Link href={`https://play.ttmk.co.uk/${event.id}/game/${userId}`}>
+				<Link href={getQrCodeUrl(userId, event.id)}>
 					<Button>Join Event!</Button>
 				</Link>
 			)}

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { tournamentService } from "@/lib/tournamentManager/hooks/useTournament";
 import { toast } from "@/hooks/use-toast";
 import { useUser } from "@/lib/hooks/useUser";
+import { getQrCodeUrl } from "../../admin/user-registration/UserRegistrationForm";
 
 type GoToActiveEventProps = {
 	event: Event;
@@ -46,7 +47,7 @@ export default function GoToActiveEvent({ event }: GoToActiveEventProps) {
 	const router = useRouter();
 	const { user } = useUser();
 	function handleGoToEvent() {
-		router.push(`/events/${event?.id}/active`);
+		router.push(getQrCodeUrl(user?.id ?? "", event?.id ?? ""));
 	}
 	if (!event) {
 		return null;

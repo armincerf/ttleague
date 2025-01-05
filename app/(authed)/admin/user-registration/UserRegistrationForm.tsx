@@ -7,6 +7,13 @@ import { qrcodegen } from "@/lib/qrcodegen";
 import { useState } from "react";
 import { AnimatedTick } from "@/components/AnimatedTick";
 
+export function getQrCodeUrl(userId: string, latestEventId: string) {
+	if (userId === "new-user") {
+		return `${window.location.origin}/sign-up`;
+	}
+	return `https://play.ttmk.co.uk/${latestEventId}/game/${userId}`;
+}
+
 export function UserRegistrationForm() {
 	const [selectedUserId, setSelectedUserId] = useState<string>("");
 	const { result: latestEvent } = useQueryOne(
@@ -39,16 +46,10 @@ export function UserRegistrationForm() {
 
 	const selectedUser = users?.find((user) => user.id === selectedUserId);
 
-	// Update getQrCodeUrl to handle the case where selectedUser might be undefined
-	const getQrCodeUrl = (userId: string) => {
-		if (userId === "new-user") {
-			return `${window.location.origin}/sign-up`;
-		}
-		return `https://play.ttmk.co.uk/${latestEvent?.id}/game/${userId}`;
-	};
-
 	// Update the qrCodeUrl to use the new function
-	const qrCodeUrl = selectedUserId ? getQrCodeUrl(selectedUserId) : "";
+	const qrCodeUrl = selectedUserId
+		? getQrCodeUrl(selectedUserId, latestEvent?.id ?? "")
+		: "";
 
 	const generateQrCode = () => {
 		if (!selectedUserId) return null;
