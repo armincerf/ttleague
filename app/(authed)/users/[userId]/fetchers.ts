@@ -2,6 +2,7 @@ import { httpClient } from "@/lib/triplitServerClient";
 import type { MatchScore } from "@/components/MatchScoreCard";
 import { or } from "@triplit/client";
 import type { User } from "@/triplit/schema";
+import { getMatchWinner } from "@/lib/scoreboard/utils";
 
 export type Match = {
   id: string;
@@ -24,26 +25,6 @@ export async function fetchUser(userId: string) {
     console.error("User not found", userId);
   }
   return user;
-}
-
-type TriplitMatch = {
-  player_1: string;
-  player_2: string;
-  games: {
-    player_1_score: number;
-    player_2_score: number;
-  }[];
-};
-
-function getMatchWinner(match: TriplitMatch) {
-  let player_1_score = 0;
-  let player_2_score = 0;
-  // biome-ignore lint/complexity/noForEach: <explanation>
-  match.games.forEach((game) => {
-    player_1_score += game.player_1_score > player_2_score ? 1 : 0;
-    player_2_score += game.player_2_score > player_1_score ? 1 : 0;
-  });
-  return player_1_score > player_2_score ? match.player_1 : match.player_2;
 }
 
 export async function fetchUserMatches(userId: string): Promise<Match[]> {
