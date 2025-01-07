@@ -21,7 +21,7 @@ type EventRegistrationButtonProps = {
 	serverEventRegistration?: EventRegistration | null;
 };
 
-async function registerForEvent(data: EventRegistration) {
+export async function registerForEvent(data: EventRegistration) {
 	return new Promise<void>((resolve, reject) => {
 		client
 			.transact(async (tx) => {
