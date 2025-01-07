@@ -68,7 +68,13 @@ export async function fetchUserMatches(userId: string): Promise<Match[]> {
   // Calculate actual stats from matches
   const stats = matches.reduce(
     (acc, match) => {
-      const isWinner = getMatchWinner(match) === userId;
+      const winnerId = getMatchWinner(match);
+      const isWinner = winnerId === userId;
+      if (!match.winner) {
+        client.update("matches", match.id, (match) => {
+          match.winner = winnerId;
+        });
+      }
       return {
         matchesPlayed: acc.matchesPlayed + 1,
         wins: acc.wins + (isWinner ? 1 : 0),
