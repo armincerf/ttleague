@@ -16,14 +16,25 @@ type TriplitMatch = {
 };
 
 export function getMatchWinner(match: TriplitMatch) {
-  let player_1_score = 0;
-  let player_2_score = 0;
+  let player_1_wins = 0;
+  let player_2_wins = 0;
+
   // biome-ignore lint/complexity/noForEach: <explanation>
   match.games.forEach((game) => {
-    player_1_score += game.player_1_score > player_2_score ? 1 : 0;
-    player_2_score += game.player_2_score > player_1_score ? 1 : 0;
+    if (game.player_1_score > game.player_2_score) {
+      player_1_wins++;
+    } else if (game.player_2_score > game.player_1_score) {
+      player_2_wins++;
+    }
   });
-  return player_1_score > player_2_score ? match.player_1 : match.player_2;
+
+  if (player_1_wins > player_2_wins) {
+    return match.player_1;
+  }
+  if (player_2_wins > player_1_wins) {
+    return match.player_2;
+  }
+  return null;
 }
 
 export function getWinner({
