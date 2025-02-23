@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
 export default {
-	experimental: {
-		reactCompiler: true,
-	},
 	typescript: {
 		ignoreBuildErrors: true,
 	},

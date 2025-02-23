@@ -1,7 +1,7 @@
 import { Suspense, use } from "react";
 import { fetchSeasons } from "@/lib/actions/leagues";
 import { fetchEvents } from "@/lib/actions/events";
-import { SeasonList, EventList } from "./LeagueComponents";
+import { SeasonList, EventList, PlayButton } from "./LeagueComponents";
 
 function SeasonsContent({ leagueId }: { leagueId: string }) {
 	const seasons = use(fetchSeasons(leagueId));
@@ -42,7 +42,10 @@ async function EventsContent({ leagueId }: { leagueId: string }) {
 
 	return (
 		<>
-			<EventList past={false} title="Upcoming Event" events={upcomingEvents} />
+			<div className="mb-12">
+				<h2 className="text-2xl font-semibold mb-4">Upcoming Events</h2>
+				<PlayButton eventId={"mock-event-id"} />
+			</div>
 			<EventList
 				past={true}
 				title="Past Events"

@@ -9,6 +9,7 @@ import { client } from "@/lib/triplit";
 import { useMemo } from "react";
 import { formatDate } from "date-fns";
 import type { Events } from "@/lib/actions/events";
+import { useUser } from "@/lib/hooks/useUser";
 
 export function SeasonList({
 	title,
@@ -88,5 +89,28 @@ export function EventList({
 				))}
 			</div>
 		</div>
+	);
+}
+
+export function PlayButton({ eventId }: { eventId: string }) {
+	const { user } = useUser();
+	if (!user.id) {
+		return (
+			<p className="mb-4">
+				Events are currently held every Tuesday from 7:00 PM at Milton Keynes
+				Table Tennis Center. Sign up for an account{" "}
+				<a href="/sign-up" className="text-blue-500 hover:underline">
+					here
+				</a>{" "}
+				and just turn up to play, you do not need to register or pay in advance.
+			</p>
+		);
+	}
+	return (
+		<Button asChild variant="outline">
+			<Link href={`https://play.ttmk.co.uk/${eventId}/game/${user?.id}`}>
+				Click here to record match scores
+			</Link>
+		</Button>
 	);
 }
